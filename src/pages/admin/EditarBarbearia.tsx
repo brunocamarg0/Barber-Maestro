@@ -46,10 +46,10 @@ export default function EditarBarbearia() {
       if (data) {
         setBarbearia(data);
         setFormData({
-          nome: data.nome,
-          cnpjCpf: data.cnpjCpf,
-          responsavel: data.responsavel,
-          plano: data.plano,
+          nome: data.nome || "",
+          cnpjCpf: data.cnpjCpf || "",
+          responsavel: data.responsavel || "",
+          plano: data.plano || "basico",
           email: data.email || "",
           telefone: data.telefone || "",
           endereco: data.endereco || "",
@@ -129,7 +129,7 @@ export default function EditarBarbearia() {
                 <Label htmlFor="nome">Nome da Barbearia *</Label>
                 <Input
                   id="nome"
-                  value={formData.nome}
+                  value={formData.nome || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, nome: e.target.value })
                   }
@@ -141,7 +141,7 @@ export default function EditarBarbearia() {
                 <Label htmlFor="cnpjCpf">CNPJ / CPF *</Label>
                 <Input
                   id="cnpjCpf"
-                  value={formData.cnpjCpf}
+                  value={formData.cnpjCpf || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, cnpjCpf: e.target.value })
                   }
@@ -153,7 +153,7 @@ export default function EditarBarbearia() {
                 <Label htmlFor="responsavel">Responsável *</Label>
                 <Input
                   id="responsavel"
-                  value={formData.responsavel}
+                  value={formData.responsavel || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, responsavel: e.target.value })
                   }
@@ -164,7 +164,7 @@ export default function EditarBarbearia() {
               <div className="space-y-2">
                 <Label htmlFor="plano">Plano Contratado *</Label>
                 <Select
-                  value={formData.plano}
+                  value={formData.plano || "basico"}
                   onValueChange={(value: PlanoContratado) =>
                     setFormData({ ...formData, plano: value })
                   }
@@ -233,4 +233,3 @@ export default function EditarBarbearia() {
     </div>
   );
 }
-

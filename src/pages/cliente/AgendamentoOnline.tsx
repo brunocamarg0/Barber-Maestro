@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCliente } from "@/context/ClienteContext";
+import { useBarbearias } from "@/context/BarbeariasContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,12 +31,6 @@ const profissionais = [
   { id: "3", nome: "Pedro Santos", especialidades: ["Barba", "Combo"], disponivel: false },
 ];
 
-const servicos = [
-  { id: "1", nome: "Corte Masculino", tipo: "corte" as TipoServico, duracao: 30, valor: 25 },
-  { id: "2", nome: "Barba", tipo: "barba" as TipoServico, duracao: 20, valor: 15 },
-  { id: "3", nome: "Corte + Barba", tipo: "combo" as TipoServico, duracao: 60, valor: 45 },
-];
-
 const horariosDisponiveis = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
   "11:00", "11:30", "14:00", "14:30", "15:00", "15:30",
@@ -44,6 +39,7 @@ const horariosDisponiveis = [
 
 export default function AgendamentoOnline() {
   const { criarAgendamento } = useCliente();
+  const { getBarbearia } = useBarbearias();
   const navigate = useNavigate();
   const toast = useToast();
   const [step, setStep] = useState(1);
@@ -55,7 +51,11 @@ export default function AgendamentoOnline() {
     horario: "",
   });
 
-  const servicoSelecionado = servicos.find((s) => s.tipo === formData.servico);
+  // Buscar serviços da barbearia selecionada (apenas os ativos)
+  const barbearia = formData.barbeariaId ? getBarbearia(formData.barbeariaId) : undefined;
+  const servicosDisponiveis = barbearia?.servicos?.filter((s) => s.ativo) || [];
+  
+  const servicoSelecionado = servicosDisponiveis.find((s) => s.tipo === formData.servico);
   const profissionalSelecionado = profissionais.find((p) => p.id === formData.profissionalId);
 
   const handleSubmit = () => {

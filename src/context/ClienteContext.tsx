@@ -11,6 +11,7 @@ import {
   StatusAgendamento,
 } from "@/types/cliente";
 import { Profissional, Servico } from "@/types/barbearia-cliente";
+import { useBarbearias } from "./BarbeariasContext";
 
 interface ClienteContextType {
   cliente: Cliente;
@@ -147,6 +148,7 @@ const cuponsIniciais: Cupom[] = [
 ];
 
 export function ClienteProvider({ children }: { children: ReactNode }) {
+  const { getBarbearia } = useBarbearias();
   const [cliente, setCliente] = useState<Cliente>(clienteInicial);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>(agendamentosIniciais);
   const [notificacoes, setNotificacoes] = useState<NotificacaoCliente[]>(notificacoesIniciais);
@@ -154,15 +156,18 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   const [cupons, setCupons] = useState<Cupom[]>(cuponsIniciais);
 
   const criarAgendamento = (novoAgendamento: NovoAgendamento) => {
+    const barbearia = getBarbearia(novoAgendamento.barbeariaId);
+    const servico = barbearia?.servicos?.find((s) => s.tipo === novoAgendamento.servico && s.ativo);
+    
     const agendamento: Agendamento = {
       id: Date.now().toString(),
       ...novoAgendamento,
       clienteId: cliente.id,
-      barbeariaNome: "Barbearia do João", // Mock
-      profissionalNome: "Carlos Barbeiro", // Mock
-      servicoNome: novoAgendamento.servico === "corte" ? "Corte Masculino" : novoAgendamento.servico === "barba" ? "Barba" : "Combo",
-      duracao: novoAgendamento.servico === "combo" ? 60 : 30,
-      valor: novoAgendamento.servico === "combo" ? 45 : 25,
+      barbeariaNome: barbearia?.nome || "Barbearia",
+      profissionalNome: "Profissional", // TODO: buscar do contexto de profissionais
+      servicoNome: servico?.nome || novoAgendamento.servico,
+      duracao: servico?.duracao || 30,
+      valor: servico?.valor || 0,
       status: "aguardando_pagamento",
       dataCriacao: new Date().toISOString(),
     };

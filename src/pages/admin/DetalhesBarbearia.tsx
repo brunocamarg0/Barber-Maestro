@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, Building2, User, Calendar, CreditCard, Mail, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Building2, User, Calendar, CreditCard, Mail, Phone, MapPin, Scissors } from "lucide-react";
 import { Barbearia } from "@/types/barbearia";
 import { useToast } from "@/hooks/use-toast";
 
@@ -71,12 +71,20 @@ export default function DetalhesBarbearia() {
             </p>
           </div>
         </div>
-        <Button asChild>
-          <Link to={`/admin/barbearias/${barbearia.id}/editar`}>
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to={`/admin/barbearias/${barbearia.id}/servicos`}>
+              <Scissors className="h-4 w-4 mr-2" />
+              Serviços
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to={`/admin/barbearias/${barbearia.id}/editar`}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

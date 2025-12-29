@@ -1,0 +1,224 @@
+import { useDono } from "@/context/DonoContext";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  DollarSign,
+  Calendar,
+  XCircle,
+  Users,
+  Star,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+export default function DonoDashboard() {
+  const { kpi, agendamentos, notificacoes } = useDono();
+
+  const formatarMoeda = (valor: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(valor);
+  };
+
+  const agendamentosHoje = agendamentos.filter(
+    (a) => a.data === new Date().toISOString().split("T")[0]
+  );
+
+  const alertas = [
+    ...(agendamentosHoje.length < 5
+      ? [{ tipo: "warning", mensagem: "Agenda com poucos agendamentos hoje" }]
+      : []),
+    ...(notificacoes.filter((n) => !n.lida).length > 0
+      ? [{ tipo: "info", mensagem: `${notificacoes.filter((n) => !n.lida).length} notificações não lidas` }]
+      : []),
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard Geral</h2>
+        <p className="text-muted-foreground">
+          Visão completa do seu negócio
+        </p>
+      </div>
+
+      {/* Alertas */}
+      {alertas.length > 0 && (
+        <div className="space-y-2">
+          {alertas.map((alerta, index) => (
+            <Card key={index} className="border-yellow-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <p className="text-sm">{alerta.mensagem}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* KPIs Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Faturamento Hoje</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatarMoeda(kpi.faturamentoHoje)}</div>
+            <div className="flex items-center gap-1 mt-1">
+              <TrendingUp className="h-3 w-3 text-green-600" />
+              <p className="text-xs text-muted-foreground">
+                +12% vs ontem
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Agendamentos Hoje</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kpi.agendamentosHoje}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {agendamentosHoje.filter((a) => a.status === "confirmado").length} confirmados
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cancelamentos</CardTitle>
+            <XCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{kpi.cancelamentos}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Este mês
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Nota Média</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kpi.notaMedia.toFixed(1)}</div>
+            <div className="flex items-center gap-1 mt-1">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <p className="text-xs text-muted-foreground">
+                Baseado em {120} avaliações
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* KPIs Secundários */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Faturamento Semana</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatarMoeda(kpi.faturamentoSemana)}</div>
+            <div className="flex items-center gap-1 mt-1">
+              <TrendingUp className="h-3 w-3 text-green-600" />
+              <p className="text-xs text-muted-foreground">
+                +8% vs semana passada
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Faturamento Mês</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatarMoeda(kpi.faturamentoMes)}</div>
+            <div className="flex items-center gap-1 mt-1">
+              <TrendingUp className="h-3 w-3 text-green-600" />
+              <p className="text-xs text-muted-foreground">
+                +15% vs mês passado
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Clientes Recorrentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kpi.clientesRecorrentes}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Últimos 30 dias
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Agendamentos de Hoje */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Agendamentos de Hoje</CardTitle>
+          <CardDescription>
+            {agendamentosHoje.length} agendamentos programados
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {agendamentosHoje.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                Nenhum agendamento para hoje
+              </p>
+            ) : (
+              agendamentosHoje.map((agendamento) => (
+                <div
+                  key={agendamento.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{agendamento.clienteNome}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {agendamento.servicoNome} • {agendamento.profissionalNome} • {agendamento.horario}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        agendamento.status === "confirmado"
+                          ? "default"
+                          : agendamento.status === "pendente"
+                          ? "secondary"
+                          : "destructive"
+                      }
+                    >
+                      {agendamento.status}
+                    </Badge>
+                    <span className="font-medium">{formatarMoeda(agendamento.valor)}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+

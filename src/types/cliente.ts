@@ -1,6 +1,19 @@
 export type StatusAgendamento = "confirmado" | "aguardando_pagamento" | "concluido" | "cancelado" | "reagendado";
 
-export type TipoServico = "corte" | "barba" | "combo" | "outro";
+export type TipoServico = 
+  | "corte" 
+  | "barba" 
+  | "combo" 
+  | "hidratacao" 
+  | "alisamento" 
+  | "progressiva" 
+  | "luzes" 
+  | "coloring" 
+  | "manicure" 
+  | "pedicure" 
+  | "sobrancelha" 
+  | "bigode" 
+  | "outro";
 
 export type MetodoPagamento = "pix" | "cartao_credito" | "cartao_debito" | "dinheiro" | "creditos";
 

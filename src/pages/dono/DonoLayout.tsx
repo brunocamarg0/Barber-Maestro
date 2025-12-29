@@ -108,8 +108,9 @@ function DonoLayoutContent() {
   ];
 
   return (
-    <SidebarProvider>
-      <Sidebar>
+    <div className={theme === "dark" ? "dark" : "light"}>
+      <SidebarProvider>
+        <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="bg-primary p-2 rounded-full">
@@ -158,15 +159,15 @@ function DonoLayoutContent() {
             className="w-full justify-start"
             onClick={toggleTheme}
           >
-            {theme === "light" ? (
+            {theme === "dark" ? (
               <>
-                <Moon className="h-4 w-4 mr-2" />
-                Modo Escuro
+                <Sun className="h-4 w-4 mr-2" />
+                Desabilitar Modo Escuro
               </>
             ) : (
               <>
-                <Sun className="h-4 w-4 mr-2" />
-                Modo Claro
+                <Moon className="h-4 w-4 mr-2" />
+                Habilitar Modo Escuro
               </>
             )}
           </Button>
@@ -192,12 +193,12 @@ function DonoLayoutContent() {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              title={theme === "light" ? "Ativar modo escuro" : "Ativar modo claro"}
+              title={theme === "dark" ? "Desabilitar modo escuro" : "Habilitar modo escuro"}
             >
-              {theme === "light" ? (
-                <Moon className="h-5 w-5" />
-              ) : (
+              {theme === "dark" ? (
                 <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
               )}
             </Button>
           </div>
@@ -206,16 +207,15 @@ function DonoLayoutContent() {
           <Outlet />
         </div>
       </SidebarInset>
-    </SidebarProvider>
+      </SidebarProvider>
+    </div>
   );
 }
 
 export default function DonoLayout() {
   return (
     <ThemeProvider>
-      <div className="dono-panel-theme">
-        <DonoLayoutContent />
-      </div>
+      <DonoLayoutContent />
     </ThemeProvider>
   );
 }

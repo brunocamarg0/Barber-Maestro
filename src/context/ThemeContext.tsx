@@ -17,17 +17,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (savedTheme) {
       return savedTheme;
     }
-    // Padrão: modo claro
+    // Padrão: modo claro (modo escuro desabilitado)
     return "light";
   });
 
   useEffect(() => {
-    // Aplicar tema apenas no elemento do painel do dono
-    const donoPanel = document.querySelector(".dono-panel-theme");
-    if (donoPanel) {
-      donoPanel.classList.remove("light", "dark");
-      donoPanel.classList.add(theme);
-    }
+    // Salvar preferência no localStorage
     localStorage.setItem("dono-theme", theme);
   }, [theme]);
 

@@ -44,8 +44,8 @@ All colors MUST be HSL.
     --shadow-accent: 0 0 30px hsl(200 100% 50% / 0.2);
   }
 
-  /* Tema claro apenas para o painel do dono */
-  .dono-panel-theme.light {
+  /* Tema claro para o painel do dono (quando modo escuro está desabilitado) */
+  .light {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
 
@@ -80,8 +80,8 @@ All colors MUST be HSL.
     --shadow-accent: 0 0 30px hsl(200 100% 50% / 0.2);
   }
 
-  /* Tema escuro para o painel do dono */
-  .dono-panel-theme.dark {
+  /* Tema escuro para o painel do dono (quando modo escuro está habilitado) */
+  .dark {
     --background: 0 0% 8%;
     --foreground: 0 0% 98%;
 

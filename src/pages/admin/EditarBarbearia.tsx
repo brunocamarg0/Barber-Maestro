@@ -63,7 +63,8 @@ export default function EditarBarbearia() {
         navigate("/admin");
       }
     }
-  }, [id, getBarbearia, navigate, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (!barbearia) {
     return (

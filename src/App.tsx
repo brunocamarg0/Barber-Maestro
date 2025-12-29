@@ -6,6 +6,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BarbeariasProvider } from "@/context/BarbeariasContext";
 import { PlanosProvider } from "@/context/PlanosContext";
 import { FinanceiroProvider } from "@/context/FinanceiroContext";
+import { UsuariosProvider } from "@/context/UsuariosContext";
+import { MonitoramentoProvider } from "@/context/MonitoramentoContext";
+import { NotificacoesProvider } from "@/context/NotificacoesContext";
+import { IntegracoesGlobaisProvider } from "@/context/IntegracoesGlobaisContext";
+import { SegurancaProvider } from "@/context/SegurancaContext";
+import { SuporteProvider } from "@/context/SuporteContext";
+import { ConfiguracaoProvider } from "@/context/ConfiguracaoContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -20,6 +27,13 @@ import DetalhesAssinatura from "./pages/admin/DetalhesAssinatura";
 import FinanceiroDashboard from "./pages/admin/FinanceiroDashboard";
 import IntegracoesPagamento from "./pages/admin/IntegracoesPagamento";
 import WebhooksFalhas from "./pages/admin/WebhooksFalhas";
+import Usuarios from "./pages/admin/Usuarios";
+import Monitoramento from "./pages/admin/Monitoramento";
+import Notificacoes from "./pages/admin/Notificacoes";
+import IntegracoesGlobais from "./pages/admin/IntegracoesGlobais";
+import Seguranca from "./pages/admin/Seguranca";
+import Suporte from "./pages/admin/Suporte";
+import Configuracoes from "./pages/admin/Configuracoes";
 
 const queryClient = new QueryClient();
 
@@ -29,9 +43,16 @@ const App = () => (
       <BarbeariasProvider>
         <PlanosProvider>
           <FinanceiroProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+            <UsuariosProvider>
+              <MonitoramentoProvider>
+                <NotificacoesProvider>
+                  <IntegracoesGlobaisProvider>
+                    <SegurancaProvider>
+                      <SuporteProvider>
+                        <ConfiguracaoProvider>
+                          <Toaster />
+                          <Sonner />
+                          <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
@@ -46,11 +67,25 @@ const App = () => (
               <Route path="financeiro" element={<FinanceiroDashboard />} />
               <Route path="financeiro/integracoes" element={<IntegracoesPagamento />} />
               <Route path="financeiro/webhooks" element={<WebhooksFalhas />} />
+              <Route path="usuarios" element={<Usuarios />} />
+              <Route path="monitoramento" element={<Monitoramento />} />
+              <Route path="notificacoes" element={<Notificacoes />} />
+              <Route path="integracoes-globais" element={<IntegracoesGlobais />} />
+              <Route path="seguranca" element={<Seguranca />} />
+              <Route path="suporte" element={<Suporte />} />
+              <Route path="configuracoes" element={<Configuracoes />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+                        </ConfiguracaoProvider>
+                      </SuporteProvider>
+                    </SegurancaProvider>
+                  </IntegracoesGlobaisProvider>
+                </NotificacoesProvider>
+              </MonitoramentoProvider>
+            </UsuariosProvider>
           </FinanceiroProvider>
         </PlanosProvider>
       </BarbeariasProvider>

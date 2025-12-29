@@ -13,7 +13,21 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Scissors, Building2, LogOut, CreditCard, FileText, DollarSign } from "lucide-react";
+import {
+  Scissors,
+  Building2,
+  LogOut,
+  CreditCard,
+  FileText,
+  DollarSign,
+  Users,
+  Activity,
+  Bell,
+  Plug,
+  Shield,
+  MessageCircle,
+  Settings,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
@@ -40,6 +54,41 @@ export default function AdminLayout() {
       title: "Financeiro",
       url: "/admin/financeiro",
       icon: DollarSign,
+    },
+    {
+      title: "Usuários",
+      url: "/admin/usuarios",
+      icon: Users,
+    },
+    {
+      title: "Monitoramento",
+      url: "/admin/monitoramento",
+      icon: Activity,
+    },
+    {
+      title: "Notificações",
+      url: "/admin/notificacoes",
+      icon: Bell,
+    },
+    {
+      title: "Integrações Globais",
+      url: "/admin/integracoes-globais",
+      icon: Plug,
+    },
+    {
+      title: "Segurança",
+      url: "/admin/seguranca",
+      icon: Shield,
+    },
+    {
+      title: "Suporte",
+      url: "/admin/suporte",
+      icon: MessageCircle,
+    },
+    {
+      title: "Configurações",
+      url: "/admin/configuracoes",
+      icon: Settings,
     },
   ];
 

@@ -25,7 +25,7 @@ const Login = () => {
         console.log('Redirecionando para /cliente');
         navigate('/cliente', { replace: true });
       } else if (activeTab === 'owner') {
-        navigate('/dono'); // Redireciona para painel do dono
+        navigate('/admin'); // Redireciona para admin
       }
     }, 1000);
   };

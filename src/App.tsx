@@ -14,7 +14,6 @@ import { SegurancaProvider } from "@/context/SegurancaContext";
 import { SuporteProvider } from "@/context/SuporteContext";
 import { ConfiguracaoProvider } from "@/context/ConfiguracaoContext";
 import { ClienteProvider } from "@/context/ClienteContext";
-// import { DonoProvider } from "@/context/DonoContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -47,8 +46,6 @@ import Fidelidade from "./pages/cliente/Fidelidade";
 import SuporteCliente from "./pages/cliente/SuporteCliente";
 import ConfiguracoesCliente from "./pages/cliente/ConfiguracoesCliente";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-// import DonoLayout from "./pages/dono/DonoLayout";
-// import DonoDashboard from "./pages/dono/DonoDashboard";
 
 const queryClient = new QueryClient();
 
@@ -105,25 +102,6 @@ const App = () => (
               <Route path="fidelidade" element={<ErrorBoundary><Fidelidade /></ErrorBoundary>} />
               <Route path="suporte" element={<ErrorBoundary><SuporteCliente /></ErrorBoundary>} />
               <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesCliente /></ErrorBoundary>} />
-            </Route>
-            <Route path="/dono" element={
-              <div className="p-6">
-                <h2 className="text-2xl font-bold">Painel do Dono</h2>
-                <p className="text-muted-foreground">Em manutenção...</p>
-              </div>
-            }>
-              <Route index element={<div className="p-6"><h2>Dashboard</h2></div>} />
-              <Route path="agenda" element={<div className="p-6"><h2 className="text-2xl font-bold">Agenda Inteligente</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="servicos" element={<div className="p-6"><h2 className="text-2xl font-bold">Gestão de Serviços</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="profissionais" element={<div className="p-6"><h2 className="text-2xl font-bold">Gestão de Profissionais</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="clientes" element={<div className="p-6"><h2 className="text-2xl font-bold">Gestão de Clientes</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="financeiro" element={<div className="p-6"><h2 className="text-2xl font-bold">Financeiro & Pagamentos</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="fidelidade" element={<div className="p-6"><h2 className="text-2xl font-bold">Fidelidade & Promoções</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="avaliacoes" element={<div className="p-6"><h2 className="text-2xl font-bold">Avaliações & Reputação</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="produtos" element={<div className="p-6"><h2 className="text-2xl font-bold">Produtos & Estoque</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="notificacoes" element={<div className="p-6"><h2 className="text-2xl font-bold">Comunicação & Notificações</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="configuracoes" element={<div className="p-6"><h2 className="text-2xl font-bold">Configurações da Barbearia</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
-              <Route path="relatorios" element={<div className="p-6"><h2 className="text-2xl font-bold">Relatórios Avançados</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

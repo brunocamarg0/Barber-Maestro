@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useMemo } from "react";
 import {
   Faturamento,
   MRR,
@@ -137,8 +137,8 @@ const falhasCobrancaIniciais: FalhaCobranca[] = [
 ];
 
 export function FinanceiroProvider({ children }: { children: ReactNode }) {
-  const { assinaturas, getAssinaturasPorStatus } = usePlanos();
-  const { barbearias } = useBarbearias();
+  const { assinaturas = [], getAssinaturasPorStatus } = usePlanos();
+  const { barbearias = [] } = useBarbearias();
   const [integracoes, setIntegracoes] = useState<IntegracaoPagamento[]>(integracoesIniciais);
   const [webhooks, setWebhooks] = useState<Webhook[]>(webhooksIniciais);
   const [falhasCobranca, setFalhasCobranca] = useState<FalhaCobranca[]>(falhasCobrancaIniciais);
@@ -229,7 +229,7 @@ export function FinanceiroProvider({ children }: { children: ReactNode }) {
 
   // Calcular churn
   const calcularChurn = (): Churn => {
-    const cancelados = getAssinaturasPorStatus("cancelado");
+    const cancelados = assinaturas.filter((a) => a.status === "cancelado");
     const totalAssinaturas = assinaturas.length;
     const assinaturasAtivas = assinaturas.filter(
       (a) => a.status === "em_dia" || a.status === "atrasado"
@@ -241,7 +241,6 @@ export function FinanceiroProvider({ children }: { children: ReactNode }) {
         : 0;
 
     const detalhes: ChurnDetalhe[] = cancelados.map((assinatura) => {
-      const barbearia = barbearias.find((b) => b.id === assinatura.barbeariaId);
       return {
         id: assinatura.id,
         barbeariaId: assinatura.barbeariaId,
@@ -266,15 +265,18 @@ export function FinanceiroProvider({ children }: { children: ReactNode }) {
     const percentualComissao = 2.5; // Mock
     const totalComissao = (faturamento.mensal * percentualComissao) / 100;
 
-    const detalhes: ComissaoDetalhe[] = integracoes
-      .filter((i) => i.conectado)
-      .map((integracao) => ({
-        id: integracao.id,
-        gateway: integracao.nome,
-        valor: totalComissao / integracoes.filter((i) => i.conectado).length,
-        percentual: percentualComissao,
-        data: new Date().toISOString().split("T")[0],
-      }));
+    const integracoesConectadas = integracoes.filter((i) => i.conectado);
+    const quantidadeConectadas = integracoesConectadas.length;
+
+    const detalhes: ComissaoDetalhe[] = quantidadeConectadas > 0
+      ? integracoesConectadas.map((integracao) => ({
+          id: integracao.id,
+          gateway: integracao.nome,
+          valor: totalComissao / quantidadeConectadas,
+          percentual: percentualComissao,
+          data: new Date().toISOString().split("T")[0],
+        }))
+      : [];
 
     return {
       total: totalComissao,
@@ -369,12 +371,13 @@ export function FinanceiroProvider({ children }: { children: ReactNode }) {
     // Os valores são calculados dinamicamente
   };
 
-  const faturamento = calcularFaturamento();
-  const mrr = calcularMRR();
-  const ticketMedio = calcularTicketMedio();
-  const churn = calcularChurn();
-  const comissao = calcularComissao();
-  const receitaPeriodo = calcularReceitaPeriodo();
+  // Calcular valores usando useMemo para evitar recálculos desnecessários
+  const faturamento = useMemo(() => calcularFaturamento(), [assinaturas]);
+  const mrr = useMemo(() => calcularMRR(), [assinaturas]);
+  const ticketMedio = useMemo(() => calcularTicketMedio(), [assinaturas]);
+  const churn = useMemo(() => calcularChurn(), [assinaturas, barbearias]);
+  const comissao = useMemo(() => calcularComissao(), [assinaturas, integracoes]);
+  const receitaPeriodo = useMemo(() => calcularReceitaPeriodo(), []);
 
   return (
     <FinanceiroContext.Provider

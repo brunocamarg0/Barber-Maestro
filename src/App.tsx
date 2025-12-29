@@ -44,6 +44,7 @@ import NotificacoesCliente from "./pages/cliente/NotificacoesCliente";
 import Fidelidade from "./pages/cliente/Fidelidade";
 import SuporteCliente from "./pages/cliente/SuporteCliente";
 import ConfiguracoesCliente from "./pages/cliente/ConfiguracoesCliente";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -84,17 +85,21 @@ const App = () => (
               <Route path="suporte" element={<Suporte />} />
               <Route path="configuracoes" element={<Configuracoes />} />
             </Route>
-            <Route path="/cliente" element={<ClienteLayout />}>
-              <Route index element={<ClienteDashboard />} />
-              <Route path="agendar" element={<AgendamentoOnline />} />
-              <Route path="pagamentos" element={<PagamentoIntegrado />} />
-              <Route path="historico" element={<HistoricoAgendamentos />} />
-              <Route path="avaliacoes" element={<Avaliacoes />} />
-              <Route path="perfil" element={<PerfilCliente />} />
-              <Route path="notificacoes" element={<NotificacoesCliente />} />
-              <Route path="fidelidade" element={<Fidelidade />} />
-              <Route path="suporte" element={<SuporteCliente />} />
-              <Route path="configuracoes" element={<ConfiguracoesCliente />} />
+            <Route path="/cliente" element={
+              <ErrorBoundary>
+                <ClienteLayout />
+              </ErrorBoundary>
+            }>
+              <Route index element={<ErrorBoundary><ClienteDashboard /></ErrorBoundary>} />
+              <Route path="agendar" element={<ErrorBoundary><AgendamentoOnline /></ErrorBoundary>} />
+              <Route path="pagamentos" element={<ErrorBoundary><PagamentoIntegrado /></ErrorBoundary>} />
+              <Route path="historico" element={<ErrorBoundary><HistoricoAgendamentos /></ErrorBoundary>} />
+              <Route path="avaliacoes" element={<ErrorBoundary><Avaliacoes /></ErrorBoundary>} />
+              <Route path="perfil" element={<ErrorBoundary><PerfilCliente /></ErrorBoundary>} />
+              <Route path="notificacoes" element={<ErrorBoundary><NotificacoesCliente /></ErrorBoundary>} />
+              <Route path="fidelidade" element={<ErrorBoundary><Fidelidade /></ErrorBoundary>} />
+              <Route path="suporte" element={<ErrorBoundary><SuporteCliente /></ErrorBoundary>} />
+              <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesCliente /></ErrorBoundary>} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -33,9 +33,30 @@ import { Badge } from "@/components/ui/badge";
 
 export default function ClienteLayout() {
   const location = useLocation();
-  const clienteContext = useCliente();
-  const { cliente, notificacoes } = clienteContext;
-  const notificacoesNaoLidas = notificacoes.filter((n) => !n.lida).length;
+  
+  let cliente, notificacoes, notificacoesNaoLidas = 0;
+  
+  try {
+    const clienteContext = useCliente();
+    cliente = clienteContext.cliente;
+    notificacoes = clienteContext.notificacoes || [];
+    notificacoesNaoLidas = notificacoes.filter((n) => !n.lida).length;
+  } catch (error) {
+    console.error("Erro ao carregar contexto do cliente:", error);
+    // Fallback para evitar crash
+    cliente = { 
+      id: "1",
+      nome: "Cliente", 
+      email: "", 
+      telefone: "",
+      pontosFidelidade: 0,
+      creditos: 0,
+      dataCadastro: new Date().toISOString(),
+      preferencias: {}
+    };
+    notificacoes = [];
+    notificacoesNaoLidas = 0;
+  }
 
   const menuItems = [
     {
@@ -91,6 +112,16 @@ export default function ClienteLayout() {
     },
   ];
 
+  if (!cliente || !cliente.nome) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-muted-foreground">Carregando painel do cliente...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -101,7 +132,7 @@ export default function ClienteLayout() {
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-sm text-sidebar-foreground">
-                {cliente.nome}
+                {cliente.nome || "Cliente"}
               </span>
               <span className="text-xs text-sidebar-foreground/70">
                 Painel do Cliente

@@ -17,6 +17,7 @@ import {
   CalendarCheck,
   History,
   UserCircle,
+  Gift,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -41,6 +42,17 @@ export default function ClienteDashboard() {
       </div>
     );
   }
+
+  if (!cliente || !getProximoAgendamento || !fidelidade) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-muted-foreground">Carregando dados do cliente...</p>
+        </div>
+      </div>
+    );
+  }
+
   const proximoAgendamento = getProximoAgendamento();
 
   const formatarMoeda = (valor: number) => {

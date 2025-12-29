@@ -14,6 +14,7 @@ import { SegurancaProvider } from "@/context/SegurancaContext";
 import { SuporteProvider } from "@/context/SuporteContext";
 import { ConfiguracaoProvider } from "@/context/ConfiguracaoContext";
 import { ClienteProvider } from "@/context/ClienteContext";
+import { DonoProvider } from "@/context/DonoContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -46,6 +47,32 @@ import Fidelidade from "./pages/cliente/Fidelidade";
 import SuporteCliente from "./pages/cliente/SuporteCliente";
 import ConfiguracoesCliente from "./pages/cliente/ConfiguracoesCliente";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import DonoLayout from "./pages/dono/DonoLayout";
+import DonoDashboard from "./pages/dono/DonoDashboard";
+import AgendaInteligente from "./pages/dono/AgendaInteligente";
+import GestaoServicos from "./pages/dono/GestaoServicos";
+import GestaoProfissionais from "./pages/dono/GestaoProfissionais";
+import GestaoClientes from "./pages/dono/GestaoClientes";
+import FinanceiroPagamentos from "./pages/dono/FinanceiroPagamentos";
+import FidelidadePromocoes from "./pages/dono/FidelidadePromocoes";
+import AvaliacoesReputacao from "./pages/dono/AvaliacoesReputacao";
+import ProdutosEstoque from "./pages/dono/ProdutosEstoque";
+import ComunicacaoNotificacoes from "./pages/dono/ComunicacaoNotificacoes";
+import ConfiguracoesBarbearia from "./pages/dono/ConfiguracoesBarbearia";
+import RelatoriosAvancados from "./pages/dono/RelatoriosAvancados";
+import DonoLayout from "./pages/dono/DonoLayout";
+import DonoDashboard from "./pages/dono/DonoDashboard";
+import AgendaInteligente from "./pages/dono/AgendaInteligente";
+import GestaoServicos from "./pages/dono/GestaoServicos";
+import GestaoProfissionais from "./pages/dono/GestaoProfissionais";
+import GestaoClientes from "./pages/dono/GestaoClientes";
+import FinanceiroPagamentos from "./pages/dono/FinanceiroPagamentos";
+import FidelidadePromocoes from "./pages/dono/FidelidadePromocoes";
+import AvaliacoesReputacao from "./pages/dono/AvaliacoesReputacao";
+import ProdutosEstoque from "./pages/dono/ProdutosEstoque";
+import ComunicacaoNotificacoes from "./pages/dono/ComunicacaoNotificacoes";
+import ConfiguracoesBarbearia from "./pages/dono/ConfiguracoesBarbearia";
+import RelatoriosAvancados from "./pages/dono/RelatoriosAvancados";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +90,7 @@ const App = () => (
                       <SuporteProvider>
                         <ConfiguracaoProvider>
                           <ClienteProvider>
+                            <DonoProvider>
                               <Toaster />
                               <Sonner />
                               <BrowserRouter>
@@ -103,10 +131,29 @@ const App = () => (
               <Route path="suporte" element={<ErrorBoundary><SuporteCliente /></ErrorBoundary>} />
               <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesCliente /></ErrorBoundary>} />
             </Route>
+            <Route path="/dono" element={
+              <ErrorBoundary>
+                <DonoLayout />
+              </ErrorBoundary>
+            }>
+              <Route index element={<ErrorBoundary><DonoDashboard /></ErrorBoundary>} />
+              <Route path="agenda" element={<ErrorBoundary><AgendaInteligente /></ErrorBoundary>} />
+              <Route path="servicos" element={<ErrorBoundary><GestaoServicos /></ErrorBoundary>} />
+              <Route path="profissionais" element={<ErrorBoundary><GestaoProfissionais /></ErrorBoundary>} />
+              <Route path="clientes" element={<ErrorBoundary><GestaoClientes /></ErrorBoundary>} />
+              <Route path="financeiro" element={<ErrorBoundary><FinanceiroPagamentos /></ErrorBoundary>} />
+              <Route path="fidelidade" element={<ErrorBoundary><FidelidadePromocoes /></ErrorBoundary>} />
+              <Route path="avaliacoes" element={<ErrorBoundary><AvaliacoesReputacao /></ErrorBoundary>} />
+              <Route path="produtos" element={<ErrorBoundary><ProdutosEstoque /></ErrorBoundary>} />
+              <Route path="notificacoes" element={<ErrorBoundary><ComunicacaoNotificacoes /></ErrorBoundary>} />
+              <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesBarbearia /></ErrorBoundary>} />
+              <Route path="relatorios" element={<ErrorBoundary><RelatoriosAvancados /></ErrorBoundary>} />
+            </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+                            </DonoProvider>
                           </ClienteProvider>
                         </ConfiguracaoProvider>
                       </SuporteProvider>

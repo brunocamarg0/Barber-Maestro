@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BarbeariasProvider } from "@/context/BarbeariasContext";
 import { PlanosProvider } from "@/context/PlanosContext";
+import { FinanceiroProvider } from "@/context/FinanceiroContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -16,6 +17,9 @@ import DetalhesBarbearia from "./pages/admin/DetalhesBarbearia";
 import Planos from "./pages/admin/Planos";
 import Assinaturas from "./pages/admin/Assinaturas";
 import DetalhesAssinatura from "./pages/admin/DetalhesAssinatura";
+import FinanceiroDashboard from "./pages/admin/FinanceiroDashboard";
+import IntegracoesPagamento from "./pages/admin/IntegracoesPagamento";
+import WebhooksFalhas from "./pages/admin/WebhooksFalhas";
 
 const queryClient = new QueryClient();
 
@@ -24,9 +28,10 @@ const App = () => (
     <TooltipProvider>
       <BarbeariasProvider>
         <PlanosProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+          <FinanceiroProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
@@ -38,11 +43,15 @@ const App = () => (
               <Route path="planos" element={<Planos />} />
               <Route path="assinaturas" element={<Assinaturas />} />
               <Route path="assinaturas/:id" element={<DetalhesAssinatura />} />
+              <Route path="financeiro" element={<FinanceiroDashboard />} />
+              <Route path="financeiro/integracoes" element={<IntegracoesPagamento />} />
+              <Route path="financeiro/webhooks" element={<WebhooksFalhas />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+          </FinanceiroProvider>
         </PlanosProvider>
       </BarbeariasProvider>
     </TooltipProvider>

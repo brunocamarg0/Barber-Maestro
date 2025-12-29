@@ -13,7 +13,7 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Scissors, Building2, LogOut, CreditCard, FileText } from "lucide-react";
+import { Scissors, Building2, LogOut, CreditCard, FileText, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
@@ -35,6 +35,11 @@ export default function AdminLayout() {
       title: "Assinaturas",
       url: "/admin/assinaturas",
       icon: CreditCard,
+    },
+    {
+      title: "Financeiro",
+      url: "/admin/financeiro",
+      icon: DollarSign,
     },
   ];
 

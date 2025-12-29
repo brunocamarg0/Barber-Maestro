@@ -28,16 +28,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 export default function FinanceiroDashboard() {
-  let faturamento, mrr, ticketMedio, churn, comissao, receitaPeriodo;
+  let financeiro;
   
   try {
-    const financeiro = useFinanceiro();
-    faturamento = financeiro.faturamento;
-    mrr = financeiro.mrr;
-    ticketMedio = financeiro.ticketMedio;
-    churn = financeiro.churn;
-    comissao = financeiro.comissao;
-    receitaPeriodo = financeiro.receitaPeriodo;
+    financeiro = useFinanceiro();
   } catch (error) {
     console.error("Erro ao carregar dados financeiros:", error);
     return (
@@ -47,15 +41,13 @@ export default function FinanceiroDashboard() {
           <p className="text-muted-foreground">
             {error instanceof Error ? error.message : "Erro desconhecido"}
           </p>
-          <pre className="text-xs text-left bg-muted p-4 rounded">
-            {error instanceof Error ? error.stack : String(error)}
-          </pre>
+          <Button onClick={() => window.location.reload()}>Recarregar Página</Button>
         </div>
       </div>
     );
   }
   
-  if (!faturamento || !mrr || !ticketMedio || !churn || !comissao || !receitaPeriodo) {
+  if (!financeiro) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -64,6 +56,16 @@ export default function FinanceiroDashboard() {
       </div>
     );
   }
+
+  const { faturamento, mrr, ticketMedio, churn, comissao, receitaPeriodo } = financeiro;
+  
+  // Valores padrão caso algum esteja undefined
+  const safeFaturamento = faturamento || { total: 0, mensal: 0, anual: 0, periodo: "" };
+  const safeMrr = mrr || { valor: 0, crescimento: 0, periodo: "" };
+  const safeTicketMedio = ticketMedio || { valor: 0, crescimento: 0, periodo: "" };
+  const safeChurn = churn || { taxa: 0, quantidade: 0, periodo: "", detalhes: [] };
+  const safeComissao = comissao || { total: 0, percentual: 0, periodo: "", detalhes: [] };
+  const safeReceitaPeriodo = receitaPeriodo || [];
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -109,9 +111,9 @@ export default function FinanceiroDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatarMoeda(faturamento.total)}</div>
+            <div className="text-2xl font-bold">{formatarMoeda(safeFaturamento.total)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Período: {faturamento.periodo}
+              Período: {safeFaturamento.periodo}
             </p>
           </CardContent>
         </Card>
@@ -122,15 +124,15 @@ export default function FinanceiroDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatarMoeda(mrr.valor)}</div>
+            <div className="text-2xl font-bold">{formatarMoeda(safeMrr.valor)}</div>
             <div className="flex items-center gap-1 mt-1">
-              {mrr.crescimento >= 0 ? (
+              {safeMrr.crescimento >= 0 ? (
                 <ArrowUpRight className="h-3 w-3 text-green-600" />
               ) : (
                 <ArrowDownRight className="h-3 w-3 text-red-600" />
               )}
               <p className="text-xs text-muted-foreground">
-                {formatarPercentual(mrr.crescimento)} este mês
+                {formatarPercentual(safeMrr.crescimento)} este mês
               </p>
             </div>
           </CardContent>
@@ -142,15 +144,15 @@ export default function FinanceiroDashboard() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatarMoeda(ticketMedio.valor)}</div>
+            <div className="text-2xl font-bold">{formatarMoeda(safeTicketMedio.valor)}</div>
             <div className="flex items-center gap-1 mt-1">
-              {ticketMedio.crescimento >= 0 ? (
+              {safeTicketMedio.crescimento >= 0 ? (
                 <ArrowUpRight className="h-3 w-3 text-green-600" />
               ) : (
                 <ArrowDownRight className="h-3 w-3 text-red-600" />
               )}
               <p className="text-xs text-muted-foreground">
-                {formatarPercentual(ticketMedio.crescimento)} este mês
+                {formatarPercentual(safeTicketMedio.crescimento)} este mês
               </p>
             </div>
           </CardContent>
@@ -162,9 +164,9 @@ export default function FinanceiroDashboard() {
             <XCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{churn.taxa.toFixed(2)}%</div>
+            <div className="text-2xl font-bold">{safeChurn.taxa.toFixed(2)}%</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {churn.quantidade} cancelamentos
+              {safeChurn.quantidade} cancelamentos
             </p>
           </CardContent>
         </Card>
@@ -179,7 +181,7 @@ export default function FinanceiroDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {receitaPeriodo.map((periodo, index) => (
+              {safeReceitaPeriodo.map((periodo, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex-1">
                     <p className="text-sm font-medium">{periodo.periodo}</p>
@@ -208,15 +210,15 @@ export default function FinanceiroDashboard() {
                 <div>
                   <p className="text-sm font-medium">Total de Comissões</p>
                   <p className="text-xs text-muted-foreground">
-                    {comissao.percentual}% sobre o faturamento
+                    {safeComissao.percentual}% sobre o faturamento
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold">{formatarMoeda(comissao.total)}</p>
+                  <p className="text-lg font-bold">{formatarMoeda(safeComissao.total)}</p>
                 </div>
               </div>
               <div className="border-t pt-4 space-y-2">
-                {comissao.detalhes.map((detalhe) => (
+                {safeComissao.detalhes.map((detalhe) => (
                   <div
                     key={detalhe.id}
                     className="flex items-center justify-between text-sm"
@@ -236,11 +238,11 @@ export default function FinanceiroDashboard() {
         <CardHeader>
           <CardTitle>Detalhes do Churn</CardTitle>
           <CardDescription>
-            Cancelamentos do período: {churn.periodo}
+            Cancelamentos do período: {safeChurn.periodo}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {churn.detalhes.length === 0 ? (
+          {safeChurn.detalhes.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">
               Nenhum cancelamento registrado
             </p>
@@ -255,7 +257,7 @@ export default function FinanceiroDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {churn.detalhes.map((detalhe) => (
+                {safeChurn.detalhes.map((detalhe) => (
                   <TableRow key={detalhe.id}>
                     <TableCell className="font-medium">
                       {detalhe.barbeariaNome}
@@ -286,7 +288,7 @@ export default function FinanceiroDashboard() {
             <CardTitle className="text-base">Receita Mensal</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatarMoeda(faturamento.mensal)}</div>
+            <div className="text-2xl font-bold">{formatarMoeda(safeFaturamento.mensal)}</div>
             <p className="text-xs text-muted-foreground mt-1">Recorrente (MRR)</p>
           </CardContent>
         </Card>
@@ -296,7 +298,7 @@ export default function FinanceiroDashboard() {
             <CardTitle className="text-base">Receita Anual Projetada</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatarMoeda(faturamento.anual)}</div>
+            <div className="text-2xl font-bold">{formatarMoeda(safeFaturamento.anual)}</div>
             <p className="text-xs text-muted-foreground mt-1">Baseado no MRR atual</p>
           </CardContent>
         </Card>
@@ -306,9 +308,9 @@ export default function FinanceiroDashboard() {
             <CardTitle className="text-base">Comissões Mensais</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatarMoeda(comissao.total)}</div>
+            <div className="text-2xl font-bold">{formatarMoeda(safeComissao.total)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {comissao.percentual}% sobre faturamento
+              {safeComissao.percentual}% sobre faturamento
             </p>
           </CardContent>
         </Card>

@@ -138,8 +138,22 @@ const falhasCobrancaIniciais: FalhaCobranca[] = [
 
 export function FinanceiroProvider({ children }: { children: ReactNode }) {
   // Usar hooks diretamente - eles devem estar disponíveis pois o provider está dentro dos outros
-  const { assinaturas = [] } = usePlanos();
-  const { barbearias = [] } = useBarbearias();
+  let assinaturas: any[] = [];
+  let barbearias: any[] = [];
+  
+  try {
+    const planosContext = usePlanos();
+    assinaturas = planosContext.assinaturas || [];
+  } catch (error) {
+    console.warn("Erro ao acessar PlanosContext:", error);
+  }
+  
+  try {
+    const barbeariasContext = useBarbearias();
+    barbearias = barbeariasContext.barbearias || [];
+  } catch (error) {
+    console.warn("Erro ao acessar BarbeariasContext:", error);
+  }
   
   const [integracoes, setIntegracoes] = useState<IntegracaoPagamento[]>(integracoesIniciais);
   const [webhooks, setWebhooks] = useState<Webhook[]>(webhooksIniciais);

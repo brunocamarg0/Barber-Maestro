@@ -1,3 +1,5 @@
+export type StatusAssinatura = "em_dia" | "atrasado" | "cancelado" | "vencido";
+
 export interface RecursoPlano {
   id: string;
   nome: string;
@@ -25,8 +27,6 @@ export interface NovoPlano {
   limiteAgendamentos: number;
   recursos: RecursoPlano[];
 }
-
-export type StatusAssinatura = "em_dia" | "atrasado" | "cancelado" | "vencido";
 
 export interface Pagamento {
   id: string;

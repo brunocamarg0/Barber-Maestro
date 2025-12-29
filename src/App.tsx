@@ -53,9 +53,10 @@ import DonoDashboard from "./pages/dono/DonoDashboard";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BarbeariasProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BarbeariasProvider>
         <PlanosProvider>
           <FinanceiroProvider>
             <UsuariosProvider>
@@ -107,8 +108,8 @@ const App = () => (
               <Route path="suporte" element={<ErrorBoundary><SuporteCliente /></ErrorBoundary>} />
               <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesCliente /></ErrorBoundary>} />
             </Route>
-            <Route path="/dono" element={<DonoLayout />}>
-              <Route index element={<DonoDashboard />} />
+            <Route path="/dono" element={<ErrorBoundary><DonoLayout /></ErrorBoundary>}>
+              <Route index element={<ErrorBoundary><DonoDashboard /></ErrorBoundary>} />
               <Route path="agenda" element={<div className="p-6"><h2 className="text-2xl font-bold">Agenda Inteligente</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
               <Route path="servicos" element={<div className="p-6"><h2 className="text-2xl font-bold">Gestão de Serviços</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
               <Route path="profissionais" element={<div className="p-6"><h2 className="text-2xl font-bold">Gestão de Profissionais</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
@@ -139,6 +140,7 @@ const App = () => (
       </BarbeariasProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

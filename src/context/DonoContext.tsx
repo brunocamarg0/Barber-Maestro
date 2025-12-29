@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useMemo } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 import {
   KPI,
   AgendamentoDono,
@@ -187,9 +187,6 @@ const configuracaoInicial: ConfiguracaoBarbearia = {
 };
 
 export function DonoProvider({ children }: { children: ReactNode }) {
-  // const { barbearias } = useBarbearias();
-  // const { assinaturas } = usePlanos();
-  
   const [kpi, setKpi] = useState<KPI>(kpiInicial);
   const [agendamentos, setAgendamentos] = useState<AgendamentoDono[]>(agendamentosIniciais);
   const [profissionais, setProfissionais] = useState<ProfissionalDono[]>(profissionaisIniciais);

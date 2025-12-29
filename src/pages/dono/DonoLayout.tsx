@@ -36,8 +36,14 @@ import { useDono } from "@/context/DonoContext";
 
 export default function DonoLayout() {
   const location = useLocation();
-  const { notificacoes } = useDono();
-  const notificacoesNaoLidas = notificacoes.filter((n) => !n.lida).length;
+  let notificacoesNaoLidas = 0;
+  
+  try {
+    const { notificacoes } = useDono();
+    notificacoesNaoLidas = notificacoes.filter((n) => !n.lida).length;
+  } catch (error) {
+    console.error("Erro ao carregar contexto do dono:", error);
+  }
 
   const menuItems = [
     {

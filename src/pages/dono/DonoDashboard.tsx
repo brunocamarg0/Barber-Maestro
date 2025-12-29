@@ -19,7 +19,39 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export default function DonoDashboard() {
-  const { kpi, agendamentos, notificacoes } = useDono();
+  let kpi, agendamentos, notificacoes;
+  
+  try {
+    const donoContext = useDono();
+    kpi = donoContext.kpi;
+    agendamentos = donoContext.agendamentos;
+    notificacoes = donoContext.notificacoes;
+  } catch (error) {
+    console.error("Erro ao carregar dados do dono:", error);
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <h3 className="text-lg font-semibold">Erro ao carregar dashboard</h3>
+          <p className="text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : "Erro desconhecido"}
+          </p>
+          <pre className="text-xs text-left bg-muted p-4 rounded max-w-2xl overflow-auto">
+            {error instanceof Error ? error.stack : String(error)}
+          </pre>
+        </div>
+      </div>
+    );
+  }
+
+  if (!kpi || !agendamentos || !notificacoes) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-muted-foreground">Carregando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {

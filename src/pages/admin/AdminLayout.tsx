@@ -19,7 +19,6 @@ import {
   LogOut,
   CreditCard,
   FileText,
-  DollarSign,
   Users,
   Activity,
   Bell,
@@ -49,11 +48,6 @@ export default function AdminLayout() {
       title: "Assinaturas",
       url: "/admin/assinaturas",
       icon: CreditCard,
-    },
-    {
-      title: "Financeiro",
-      url: "/admin/financeiro",
-      icon: DollarSign,
     },
     {
       title: "Usuários",

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BarbeariasProvider } from "@/context/BarbeariasContext";
 import { PlanosProvider } from "@/context/PlanosContext";
+import { FinanceiroProvider } from "@/context/FinanceiroContext";
 import { UsuariosProvider } from "@/context/UsuariosContext";
 import { MonitoramentoProvider } from "@/context/MonitoramentoContext";
 import { NotificacoesProvider } from "@/context/NotificacoesContext";
@@ -23,6 +24,7 @@ import DetalhesBarbearia from "./pages/admin/DetalhesBarbearia";
 import Planos from "./pages/admin/Planos";
 import Assinaturas from "./pages/admin/Assinaturas";
 import DetalhesAssinatura from "./pages/admin/DetalhesAssinatura";
+import FinanceiroDashboard from "./pages/admin/FinanceiroDashboard";
 import Usuarios from "./pages/admin/Usuarios";
 import Monitoramento from "./pages/admin/Monitoramento";
 import Notificacoes from "./pages/admin/Notificacoes";
@@ -38,7 +40,8 @@ const App = () => (
     <TooltipProvider>
       <BarbeariasProvider>
         <PlanosProvider>
-          <UsuariosProvider>
+          <FinanceiroProvider>
+            <UsuariosProvider>
               <MonitoramentoProvider>
                 <NotificacoesProvider>
                   <IntegracoesGlobaisProvider>
@@ -59,6 +62,7 @@ const App = () => (
               <Route path="planos" element={<Planos />} />
               <Route path="assinaturas" element={<Assinaturas />} />
               <Route path="assinaturas/:id" element={<DetalhesAssinatura />} />
+              <Route path="financeiro" element={<FinanceiroDashboard />} />
               <Route path="usuarios" element={<Usuarios />} />
               <Route path="monitoramento" element={<Monitoramento />} />
               <Route path="notificacoes" element={<Notificacoes />} />
@@ -78,6 +82,7 @@ const App = () => (
                 </NotificacoesProvider>
               </MonitoramentoProvider>
             </UsuariosProvider>
+          </FinanceiroProvider>
         </PlanosProvider>
       </BarbeariasProvider>
     </TooltipProvider>

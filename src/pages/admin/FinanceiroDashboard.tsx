@@ -22,19 +22,48 @@ import {
   ArrowDownRight,
   Settings,
   AlertCircle,
+  TrendingUp,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 export default function FinanceiroDashboard() {
-  const {
-    faturamento,
-    mrr,
-    ticketMedio,
-    churn,
-    comissao,
-    receitaPeriodo,
-  } = useFinanceiro();
+  let faturamento, mrr, ticketMedio, churn, comissao, receitaPeriodo;
+  
+  try {
+    const financeiro = useFinanceiro();
+    faturamento = financeiro.faturamento;
+    mrr = financeiro.mrr;
+    ticketMedio = financeiro.ticketMedio;
+    churn = financeiro.churn;
+    comissao = financeiro.comissao;
+    receitaPeriodo = financeiro.receitaPeriodo;
+  } catch (error) {
+    console.error("Erro ao carregar dados financeiros:", error);
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <h3 className="text-lg font-semibold">Erro ao carregar dados financeiros</h3>
+          <p className="text-muted-foreground">
+            {error instanceof Error ? error.message : "Erro desconhecido"}
+          </p>
+          <pre className="text-xs text-left bg-muted p-4 rounded">
+            {error instanceof Error ? error.stack : String(error)}
+          </pre>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!faturamento || !mrr || !ticketMedio || !churn || !comissao || !receitaPeriodo) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-muted-foreground">Carregando dados financeiros...</p>
+        </div>
+      </div>
+    );
+  }
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {

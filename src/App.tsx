@@ -53,8 +53,7 @@ import DonoDashboard from "./pages/dono/DonoDashboard";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
+  <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BarbeariasProvider>
         <PlanosProvider>
@@ -67,7 +66,6 @@ const App = () => (
                       <SuporteProvider>
                         <ConfiguracaoProvider>
                           <ClienteProvider>
-                            <DonoProvider>
                               <Toaster />
                               <Sonner />
                               <BrowserRouter>
@@ -108,7 +106,13 @@ const App = () => (
               <Route path="suporte" element={<ErrorBoundary><SuporteCliente /></ErrorBoundary>} />
               <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesCliente /></ErrorBoundary>} />
             </Route>
-            <Route path="/dono" element={<ErrorBoundary><DonoLayout /></ErrorBoundary>}>
+            <Route path="/dono" element={
+              <ErrorBoundary>
+                <DonoProvider>
+                  <DonoLayout />
+                </DonoProvider>
+              </ErrorBoundary>
+            }>
               <Route index element={<ErrorBoundary><DonoDashboard /></ErrorBoundary>} />
               <Route path="agenda" element={<div className="p-6"><h2 className="text-2xl font-bold">Agenda Inteligente</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
               <Route path="servicos" element={<div className="p-6"><h2 className="text-2xl font-bold">Gestão de Serviços</h2><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
@@ -126,7 +130,6 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-                            </DonoProvider>
                           </ClienteProvider>
                         </ConfiguracaoProvider>
                       </SuporteProvider>
@@ -140,7 +143,6 @@ const App = () => (
       </BarbeariasProvider>
     </TooltipProvider>
   </QueryClientProvider>
-  </ErrorBoundary>
 );
 
 export default App;

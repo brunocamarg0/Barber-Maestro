@@ -35,12 +35,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useDono } from "@/context/DonoContext";
-import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 
 function DonoLayoutContent() {
   const location = useLocation();
   const { notificacoes } = useDono();
-  const { theme, toggleTheme } = useTheme();
   const notificacoesNaoLidas = notificacoes?.filter((n) => !n.lida).length || 0;
 
   const menuItems = [
@@ -108,7 +106,7 @@ function DonoLayoutContent() {
   ];
 
   return (
-    <div className={theme === "dark" ? "dark" : "light"}>
+    <div>
       <SidebarProvider>
         <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border">
@@ -157,23 +155,6 @@ function DonoLayoutContent() {
           <Button
             variant="ghost"
             className="w-full justify-start"
-            onClick={toggleTheme}
-          >
-            {theme === "dark" ? (
-              <>
-                <Sun className="h-4 w-4 mr-2" />
-                Desabilitar Modo Escuro
-              </>
-            ) : (
-              <>
-                <Moon className="h-4 w-4 mr-2" />
-                Habilitar Modo Escuro
-              </>
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
             asChild
           >
             <Link to="/login">
@@ -189,18 +170,6 @@ function DonoLayoutContent() {
           <Separator orientation="vertical" className="mr-2 h-4" />
           <h1 className="text-lg font-semibold">Área do Dono</h1>
           <div className="ml-auto">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              title={theme === "dark" ? "Desabilitar modo escuro" : "Habilitar modo escuro"}
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
@@ -212,11 +181,5 @@ function DonoLayoutContent() {
   );
 }
 
-export default function DonoLayout() {
-  return (
-    <ThemeProvider>
-      <DonoLayoutContent />
-    </ThemeProvider>
-  );
-}
+export default DonoLayoutContent;
 

@@ -17,3 +17,5 @@ export interface ConfiguracaoPlataforma {
   configuracoesAvancadas: Record<string, any>;
 }
 
+
+

@@ -31,3 +31,5 @@ export interface LogCritico {
   contexto?: Record<string, any>;
 }
 
+
+

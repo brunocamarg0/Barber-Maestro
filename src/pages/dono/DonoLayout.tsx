@@ -28,8 +28,6 @@ import {
   FileText,
   LogOut,
   Building2,
-  Moon,
-  Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -169,8 +167,6 @@ function DonoLayoutContent() {
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <h1 className="text-lg font-semibold">Área do Dono</h1>
-          <div className="ml-auto">
-          </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
           <Outlet />
@@ -181,5 +177,7 @@ function DonoLayoutContent() {
   );
 }
 
-export default DonoLayoutContent;
+export default function DonoLayout() {
+  return <DonoLayoutContent />;
+}
 

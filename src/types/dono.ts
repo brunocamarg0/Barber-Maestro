@@ -163,3 +163,5 @@ export interface RelatorioDono {
   horariosPico: Array<{ horario: string; quantidade: number }>;
 }
 
+
+

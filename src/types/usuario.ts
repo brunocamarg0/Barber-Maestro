@@ -24,3 +24,5 @@ export interface NovoUsuario {
   permissoes?: string[];
 }
 
+
+

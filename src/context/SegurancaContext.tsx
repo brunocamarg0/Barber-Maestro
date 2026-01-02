@@ -115,3 +115,5 @@ export function useSeguranca() {
   return context;
 }
 
+
+

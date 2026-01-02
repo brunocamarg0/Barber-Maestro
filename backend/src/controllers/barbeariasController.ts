@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { calcularDataVencimento } from '../utils/token';
+import { calcularDataVencimento, gerarTokenConvite } from '../utils/token';
+import { enviarEmailConvite } from '../services/emailService';
 
 /**
  * Listar todas as barbearias
@@ -96,11 +97,11 @@ export async function buscarBarbearia(req: Request, res: Response) {
 }
 
 /**
- * Criar nova barbearia (sem dono ainda)
+ * Criar nova barbearia (sem dono ainda) e gerar convite automaticamente
  */
 export async function criarBarbearia(req: Request, res: Response) {
   try {
-    const { nome, cnpjCpf, responsavel, plano, email, telefone, endereco } = req.body;
+    const { nome, cnpjCpf, responsavel, plano, email, telefone, endereco, enviarEmail = true } = req.body;
 
     // Validações básicas
     if (!nome || !cnpjCpf || !responsavel || !plano) {
@@ -109,21 +110,75 @@ export async function criarBarbearia(req: Request, res: Response) {
 
     const dataVencimento = calcularDataVencimento(plano);
 
-    const barbearia = await prisma.barbearia.create({
-      data: {
-        nome,
-        cnpjCpf,
-        responsavel,
-        plano,
-        email,
-        telefone,
-        endereco,
-        dataVencimento,
-        status: 'em_teste',
-      },
+    // Criar barbearia e convite em uma transação
+    const resultado = await prisma.$transaction(async (tx) => {
+      // Criar barbearia
+      const barbearia = await tx.barbearia.create({
+        data: {
+          nome,
+          cnpjCpf,
+          responsavel,
+          plano,
+          email,
+          telefone,
+          endereco,
+          dataVencimento,
+          status: 'em_teste',
+        },
+      });
+
+      // Gerar convite automaticamente
+      const token = gerarTokenConvite();
+      const expiraEm = new Date();
+      expiraEm.setDate(expiraEm.getDate() + 7); // 7 dias de validade
+
+      const convite = await tx.convite.create({
+        data: {
+          token,
+          email: email || null, // Email da barbearia se fornecido
+          expiraEm,
+          barbeariaId: barbearia.id,
+        },
+      });
+
+      return { barbearia, convite };
     });
 
-    res.status(201).json(barbearia);
+    // Enviar email se solicitado e se tiver email
+    let emailEnviado = false;
+    let emailInfo = null;
+
+    if (enviarEmail && email) {
+      try {
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const linkAtivacao = `${frontendUrl}/ativar-conta?token=${resultado.convite.token}`;
+
+        emailInfo = await enviarEmailConvite({
+          email,
+          nomeBarbearia: nome,
+          nomeResponsavel: responsavel,
+          linkAtivacao,
+          expiraEm: resultado.convite.expiraEm,
+        });
+
+        emailEnviado = true;
+      } catch (emailError) {
+        console.error('Erro ao enviar email (barbearia criada mesmo assim):', emailError);
+        // Não falha a criação se o email falhar
+      }
+    }
+
+    res.status(201).json({
+      ...resultado.barbearia,
+      convite: {
+        id: resultado.convite.id,
+        token: resultado.convite.token,
+        expiraEm: resultado.convite.expiraEm,
+        linkAtivacao: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/ativar-conta?token=${resultado.convite.token}`,
+      },
+      emailEnviado,
+      emailInfo,
+    });
   } catch (error) {
     console.error('Erro ao criar barbearia:', error);
     res.status(500).json({ error: 'Erro ao criar barbearia' });

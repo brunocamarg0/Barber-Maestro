@@ -33,10 +33,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useDono } from "@/context/DonoContext";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 
 function DonoLayoutContent() {
   const location = useLocation();
   const { notificacoes } = useDono();
+  const { theme } = useTheme();
   const notificacoesNaoLidas = notificacoes?.filter((n) => !n.lida).length || 0;
 
   const menuItems = [
@@ -104,7 +106,7 @@ function DonoLayoutContent() {
   ];
 
   return (
-    <div>
+    <div className={theme === "dark" ? "dark" : "light"}>
       <SidebarProvider>
         <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border">
@@ -178,6 +180,9 @@ function DonoLayoutContent() {
 }
 
 export default function DonoLayout() {
-  return <DonoLayoutContent />;
+  return (
+    <ThemeProvider>
+      <DonoLayoutContent />
+    </ThemeProvider>
+  );
 }
-

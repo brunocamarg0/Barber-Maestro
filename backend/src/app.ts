@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import adminBarbeariasRoutes from './routes/admin/barbearias';
 import adminConvitesRoutes from './routes/admin/convites';
+import adminUsuariosRoutes from './routes/admin/usuarios';
 import ativacaoRoutes from './routes/ativacao';
 
 // Carregar variáveis de ambiente
@@ -22,9 +23,10 @@ app.get('/api/health', (req, res) => {
 // Rotas públicas (ativação de conta)
 app.use('/api', ativacaoRoutes);
 
-// Rotas admin
-app.use('/api/admin/barbearias', adminBarbeariasRoutes);
-app.use('/api/admin', adminConvitesRoutes);
+// Rotas admin - ordem importa! Rotas mais específicas primeiro
+app.use('/api/admin', adminUsuariosRoutes); // /api/admin/barbearias/:id/dono
+app.use('/api/admin', adminConvitesRoutes); // /api/admin/barbearias/:id/convite
+app.use('/api/admin/barbearias', adminBarbeariasRoutes); // /api/admin/barbearias
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3001;

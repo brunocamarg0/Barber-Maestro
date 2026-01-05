@@ -61,6 +61,7 @@ import ComunicacaoNotificacoes from "./pages/dono/ComunicacaoNotificacoes";
 import ConfiguracoesBarbearia from "./pages/dono/ConfiguracoesBarbearia";
 import RelatoriosAvancados from "./pages/dono/RelatoriosAvancados";
 import AtivarConta from "./pages/AtivarConta";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/ativar-conta" element={<AtivarConta />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />

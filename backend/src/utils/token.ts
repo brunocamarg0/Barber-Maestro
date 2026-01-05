@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 /**
  * Gera um token único e seguro para convites
@@ -37,4 +38,24 @@ export function calcularDataVencimento(plano: string): Date {
 export function validarToken(token: string): boolean {
   return token.length === 64 && /^[a-f0-9]+$/i.test(token);
 }
+
+/**
+ * Gera token JWT para autenticação
+ */
+export function gerarTokenJWT(payload: { id: string; email: string; tipo: 'dono' | 'cliente' | 'admin' }): string {
+  const secret = process.env.JWT_SECRET || 'seu-secret-super-seguro-aqui-mude-em-producao';
+  return jwt.sign(payload, secret, {
+    expiresIn: '7d', // Token expira em 7 dias
+  });
+}
+
+/**
+ * Verifica e decodifica token JWT
+ */
+export function verificarTokenJWT(token: string): { id: string; email: string; tipo: 'dono' | 'cliente' | 'admin' } {
+  const secret = process.env.JWT_SECRET || 'seu-secret-super-seguro-aqui-mude-em-producao';
+  return jwt.verify(token, secret) as { id: string; email: string; tipo: 'dono' | 'cliente' | 'admin' };
+}
+
+
 

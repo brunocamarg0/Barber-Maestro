@@ -51,7 +51,9 @@ model UsuarioDono {
   id          String     @id @default(uuid())
   nome        String
   email       String     @unique
-  senha       String     // Hash da senha
+  senha       String?    // Hash da senha (opcional se usar OAuth)
+  googleId    String?    @unique // ID do Google OAuth
+  foto        String?    // Foto do perfil Google
   ativo       Boolean    @default(true)
   emailVerificado Boolean @default(false)
   
@@ -97,13 +99,37 @@ model Servico {
   updatedAt   DateTime @updatedAt
 }
 
+// Cliente cadastrado no sistema
+model Cliente {
+  id          String        @id @default(uuid())
+  nome        String
+  email       String        @unique
+  senha       String?       // Hash da senha (opcional se usar OAuth)
+  googleId    String?       @unique // ID do Google OAuth
+  telefone    String?
+  foto        String?       // Foto do perfil Google
+  dataNascimento DateTime?
+  ativo       Boolean       @default(true)
+  emailVerificado Boolean   @default(true) // Google já verifica email
+  
+  // Relacionamentos
+  agendamentos Agendamento[]
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
 model Agendamento {
   id          String   @id @default(uuid())
-  cliente     String
+  cliente     String   // Nome do cliente (mantido para compatibilidade)
   telefone    String
   data        DateTime
   status      String   @default("pendente") // pendente, confirmado, cancelado, concluido
   observacao  String?
+  
+  // Relacionamento com cliente (opcional - pode ser agendamento sem cadastro)
+  clienteId   String?
+  clienteRel  Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
   
   servico     Servico  @relation(fields: [servicoId], references: [id], onDelete: Cascade)
   servicoId   String

@@ -157,7 +157,6 @@ const Login = () => {
   };
 
   const handleGoogleLogin = (type: 'cliente' | 'dono') => {
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
     if (type === 'cliente') {
       window.location.href = `${API_URL}/api/auth/google/cliente`;
     } else if (type === 'dono') {

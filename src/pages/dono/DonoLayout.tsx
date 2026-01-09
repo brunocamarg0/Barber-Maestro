@@ -108,7 +108,7 @@ function DonoLayoutContent() {
   return (
     <div className="light bg-background min-h-screen">
       <SidebarProvider>
-        <Sidebar className="bg-card border-r border-border">
+        <Sidebar className="bg-sidebar border-r border-sidebar-border">
         <SidebarHeader className="border-b border-sidebar-border bg-sidebar">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="bg-primary p-2 rounded-full">

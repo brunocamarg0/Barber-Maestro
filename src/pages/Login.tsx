@@ -293,6 +293,32 @@ const Login = () => {
                       </>
                     )}
                   </p>
+                  {!isRegisterMode && (
+                    <div className="pt-2 border-t">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          // Salvar dados fictícios no localStorage para o contexto funcionar
+                          localStorage.setItem("token", "demo-token-dono");
+                          localStorage.setItem("userType", "dono");
+                          localStorage.setItem("userData", JSON.stringify({
+                            id: "demo-dono-id",
+                            nome: "Wesley",
+                            email: "wesley.teste@hotmail.com",
+                            barbeariaId: "demo-barbearia-id"
+                          }));
+                          navigate("/dono", { replace: true });
+                        }}
+                      >
+                        Acessar Painel do Dono (Visualização)
+                      </Button>
+                      <p className="text-xs text-center text-muted-foreground mt-2">
+                        Modo de demonstração - sem autenticação real
+                      </p>
+                    </div>
+                  )}
                 </form>
               </CardContent>
             </Card>

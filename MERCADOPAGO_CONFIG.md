@@ -1,11 +1,22 @@
 # Configuração do Mercado Pago - BarberPro
 
-## ✅ Credenciais Configuradas
+## ✅ Credenciais Configuradas - Barber Payments
 
-Seu **Access Token de Produção** do Mercado Pago já está configurado:
+**Integração:** Checkout Transparente
+
+Seu **Access Token de TESTE** do Mercado Pago já está configurado:
 ```
-APP_USR-8198153225284103-071221-68070ac52617404b0cdf2c61202ce95c-2557085916
+TEST-d450f022-fc2f-4ae2-8629-e5f723e5cf86
 ```
+
+Seu **Access Token de PRODUÇÃO** (quando estiver pronto):
+```
+APP_USR-8486103730650159-011013-b40053edbcf5da8c865f20d2399babb9-244299462
+```
+
+⚠️ **IMPORTANTE**: 
+- Token de **TESTE** - pagamentos **NÃO** são reais (use para desenvolvimento)
+- Token de **PRODUÇÃO** - pagamentos são **REAIS** (use apenas quando estiver pronto)
 
 ## 🚀 Configuração Rápida
 
@@ -14,11 +25,19 @@ APP_USR-8198153225284103-071221-68070ac52617404b0cdf2c61202ce95c-2557085916
 Crie um arquivo `.env` na raiz do projeto:
 
 ```env
-# Mercado Pago - Access Token de Produção
-VITE_MERCADOPAGO_ACCESS_TOKEN=APP_USR-8198153225284103-071221-68070ac52617404b0cdf2c61202ce95c-2557085916
+# Mercado Pago - Barber Payments (Checkout Transparente)
+# Access Token de TESTE (não debita valores reais)
+VITE_MERCADOPAGO_ACCESS_TOKEN=TEST-d450f022-fc2f-4ae2-8629-e5f723e5cf86
+
+# Para Serverless Functions (Vercel)
+MERCADOPAGO_ACCESS_TOKEN=TEST-d450f022-fc2f-4ae2-8629-e5f723e5cf86
+
+# Para PRODUÇÃO, descomente e use:
+# VITE_MERCADOPAGO_ACCESS_TOKEN=APP_USR-8486103730650159-011013-b40053edbcf5da8c865f20d2399babb9-244299462
+# MERCADOPAGO_ACCESS_TOKEN=APP_USR-8486103730650159-011013-b40053edbcf5da8c865f20d2399babb9-244299462
 ```
 
-⚠️ **IMPORTANTE**: Este é um token de **PRODUÇÃO** - pagamentos serão **REAIS**!
+✅ **TOKEN DE TESTE**: Pagamentos **NÃO** são reais - perfeito para desenvolvimento!
 
 ### 2. **Configurar no Vercel (Deploy)**
 
@@ -26,23 +45,28 @@ VITE_MERCADOPAGO_ACCESS_TOKEN=APP_USR-8198153225284103-071221-68070ac52617404b0c
 2. Vá em **Settings** → **Environment Variables**
 3. Adicione a variável:
    - **Name**: `VITE_MERCADOPAGO_ACCESS_TOKEN`
-   - **Value**: `APP_USR-8198153225284103-071221-68070ac52617404b0cdf2c61202ce95c-2557085916`
+   - **Value**: `TEST-d450f022-fc2f-4ae2-8629-e5f723e5cf86` (TESTE)
    - **Environment**: Production, Preview, Development
    
 4. **Para Serverless Functions**, adicione também:
    - **Name**: `MERCADOPAGO_ACCESS_TOKEN`
-   - **Value**: `APP_USR-8198153225284103-071221-68070ac52617404b0cdf2c61202ce95c-2557085916`
+   - **Value**: `TEST-d450f022-fc2f-4ae2-8629-e5f723e5cf86` (TESTE)
    - **Environment**: Production, Preview, Development
+   
+⚠️ **Para PRODUÇÃO**, substitua pelos tokens de produção:
+   - `APP_USR-8486103730650159-011013-b40053edbcf5da8c865f20d2399babb9-244299462`
 
 ### 3. **Configurar Webhooks no Mercado Pago**
 
 1. Acesse: [https://www.mercadopago.com.br/developers/panel/webhooks](https://www.mercadopago.com.br/developers/panel/webhooks)
-2. Clique em **Criar Webhook**
-3. Configure:
-   - **URL**: `https://seu-dominio.vercel.app/api/pagamentos/webhook`
-   - **Eventos**: Selecione `Pagamentos`
+2. Selecione a aplicação **"Barber Payments"**
+3. Clique em **Criar Webhook**
+4. Configure:
+   - **URL**: `https://groom-guru-platform.vercel.app/api/pagamentos/webhook`
+   - **Eventos**: Selecione todos os eventos de `Pagamentos` (payment.created, payment.updated, payment.approved, etc.)
    - **Versão da API**: Use a versão mais recente
-4. Salve e copie a URL do webhook
+5. Clique em **Salvar**
+6. O Mercado Pago fará um teste automático - deve retornar **Status: 200 OK** ✅
 
 ## 💳 Métodos de Pagamento Implementados
 

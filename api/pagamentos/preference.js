@@ -46,9 +46,22 @@ export default async function handler(req, res) {
         diagnostic: {
           MERCADOPAGO_ACCESS_TOKEN_exists: !!process.env.MERCADOPAGO_ACCESS_TOKEN,
           VITE_MERCADOPAGO_ACCESS_TOKEN_exists: !!process.env.VITE_MERCADOPAGO_ACCESS_TOKEN,
-          todas_variaveis: Object.keys(process.env).filter(k => k.includes('MERCADO') || k.includes('MP'))
+          todas_variaveis_mercado: Object.keys(process.env).filter(k => k.toUpperCase().includes('MERCADO') || k.toUpperCase().includes('MP')),
+          node_env: process.env.NODE_ENV,
+          vercel_env: process.env.VERCEL_ENV,
+          todas_variaveis_disponiveis: Object.keys(process.env).length
         },
-        instructions: '1. Acesse Vercel → Settings → Environment Variables\n2. Adicione MERCADOPAGO_ACCESS_TOKEN = TEST-d450f022-fc2f-4ae2-8629-e5f723e5cf86\n3. Marque todos os ambientes (Production, Preview, Development)\n4. Faça um NOVO deploy após adicionar'
+        instructions: [
+          '1. Acesse: https://vercel.com/brunos-projects-9672b208/groom-guru-platform',
+          '2. Vá em Settings → Environment Variables',
+          '3. Adicione: MERCADOPAGO_ACCESS_TOKEN = TEST-d450f022-fc2f-4ae2-8629-e5f723e5cf86',
+          '4. Marque TODOS os ambientes: ✅ Production, ✅ Preview, ✅ Development',
+          '5. Salve',
+          '6. ⚠️ IMPORTANTE: Faça um NOVO deploy (Redeploy) após adicionar!',
+          '7. Variáveis só ficam disponíveis em novos deploys!',
+          '8. Teste novamente após o deploy terminar'
+        ],
+        test_url: 'https://groom-guru-platform.vercel.app/api/pagamentos/test-token'
       });
     }
     

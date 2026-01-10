@@ -24,14 +24,35 @@ export default async function handler(req, res) {
     }
 
     // Token seguro do Mercado Pago (use variável de ambiente no Vercel)
-    const ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.VITE_MERCADOPAGO_ACCESS_TOKEN;
+    // Tentar buscar de diferentes formas (Vercel pode usar nomes diferentes)
+    const ACCESS_TOKEN = 
+      process.env.MERCADOPAGO_ACCESS_TOKEN || 
+      process.env.VITE_MERCADOPAGO_ACCESS_TOKEN ||
+      process.env.MP_ACCESS_TOKEN ||
+      process.env.MERCADOPAGO_TOKEN;
+    
+    console.log('🔍 Verificando token...');
+    console.log('MERCADOPAGO_ACCESS_TOKEN:', process.env.MERCADOPAGO_ACCESS_TOKEN ? '✅ Configurado' : '❌ Não configurado');
+    console.log('VITE_MERCADOPAGO_ACCESS_TOKEN:', process.env.VITE_MERCADOPAGO_ACCESS_TOKEN ? '✅ Configurado' : '❌ Não configurado');
+    console.log('Todas variáveis MERCADO:', Object.keys(process.env).filter(k => k.includes('MERCADO') || k.includes('MP')));
+    
     if (!ACCESS_TOKEN) {
       console.error('❌ Token do Mercado Pago não configurado');
+      console.error('Variáveis de ambiente disponíveis:', Object.keys(process.env).filter(k => k.includes('MERCADO') || k.includes('MP') || k.includes('TOKEN')));
+      
       return res.status(500).json({ 
         success: false, 
-        error: 'Token do Mercado Pago não configurado. Configure MERCADOPAGO_ACCESS_TOKEN no Vercel' 
+        error: 'Token do Mercado Pago não configurado. Configure MERCADOPAGO_ACCESS_TOKEN no Vercel',
+        diagnostic: {
+          MERCADOPAGO_ACCESS_TOKEN_exists: !!process.env.MERCADOPAGO_ACCESS_TOKEN,
+          VITE_MERCADOPAGO_ACCESS_TOKEN_exists: !!process.env.VITE_MERCADOPAGO_ACCESS_TOKEN,
+          todas_variaveis: Object.keys(process.env).filter(k => k.includes('MERCADO') || k.includes('MP'))
+        },
+        instructions: '1. Acesse Vercel → Settings → Environment Variables\n2. Adicione MERCADOPAGO_ACCESS_TOKEN = TEST-d450f022-fc2f-4ae2-8629-e5f723e5cf86\n3. Marque todos os ambientes (Production, Preview, Development)\n4. Faça um NOVO deploy após adicionar'
       });
     }
+    
+    console.log('✅ Token encontrado! Tamanho:', ACCESS_TOKEN.length, 'Prefixo:', ACCESS_TOKEN.substring(0, 10) + '...');
 
     console.log('💳 Criando preferência de pagamento no Mercado Pago...');
     console.log('📦 Itens:', items);

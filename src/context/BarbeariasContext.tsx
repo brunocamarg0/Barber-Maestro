@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { Barbearia, NovaBarbearia, StatusBarbearia } from "@/types/barbearia";
+import { Barbearia, NovaBarbearia, StatusBarbearia, ServicoBarbearia, NovoServicoBarbearia } from "@/types/barbearia";
 
 interface BarbeariasContextType {
   barbearias: Barbearia[];
@@ -8,9 +8,20 @@ interface BarbeariasContextType {
   alterarStatus: (id: string, status: StatusBarbearia) => void;
   suspenderPorInadimplencia: (id: string) => void;
   getBarbearia: (id: string) => Barbearia | undefined;
+  adicionarServico: (barbeariaId: string, servico: NovoServicoBarbearia) => void;
+  editarServico: (barbeariaId: string, servicoId: string, dados: Partial<ServicoBarbearia>) => void;
+  removerServico: (barbeariaId: string, servicoId: string) => void;
+  toggleServicoAtivo: (barbeariaId: string, servicoId: string) => void;
 }
 
 const BarbeariasContext = createContext<BarbeariasContextType | undefined>(undefined);
+
+// Serviços padrão que toda barbearia pode ter
+const servicosPadrao: ServicoBarbearia[] = [
+  { id: "s1", tipo: "corte", nome: "Corte Masculino", duracao: 30, valor: 25, ativo: true, ordem: 1 },
+  { id: "s2", tipo: "barba", nome: "Barba", duracao: 20, valor: 15, ativo: true, ordem: 2 },
+  { id: "s3", tipo: "combo", nome: "Corte + Barba", duracao: 60, valor: 45, ativo: true, ordem: 3 },
+];
 
 // Dados mockados iniciais
 const barbeariasIniciais: Barbearia[] = [
@@ -28,6 +39,12 @@ const barbeariasIniciais: Barbearia[] = [
       conectado: true,
       dataConexao: "2024-01-15",
     },
+    servicos: [
+      ...servicosPadrao,
+      { id: "s4", tipo: "hidratacao", nome: "Hidratação Capilar", duracao: 45, valor: 35, ativo: true, ordem: 4 },
+      { id: "s5", tipo: "alisamento", nome: "Alisamento", duracao: 120, valor: 150, ativo: true, ordem: 5 },
+      { id: "s6", tipo: "progressiva", nome: "Progressiva", duracao: 180, valor: 200, ativo: false, ordem: 6 },
+    ],
     email: "joao@barbearia.com",
     telefone: "(11) 99999-9999",
   },
@@ -44,6 +61,7 @@ const barbeariasIniciais: Barbearia[] = [
       nome: "Mercado Pago",
       conectado: false,
     },
+    servicos: [...servicosPadrao],
     email: "maria@corteestilo.com",
   },
   {
@@ -60,6 +78,11 @@ const barbeariasIniciais: Barbearia[] = [
       conectado: true,
       dataConexao: "2023-11-10",
     },
+    servicos: [
+      ...servicosPadrao,
+      { id: "s7", tipo: "luzes", nome: "Luzes", duracao: 90, valor: 120, ativo: true, ordem: 4 },
+      { id: "s8", tipo: "coloring", nome: "Coloração", duracao: 120, valor: 100, ativo: true, ordem: 5 },
+    ],
   },
 ];
 
@@ -77,6 +100,7 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
         nome: "",
         conectado: false,
       },
+      servicos: [...servicosPadrao], // Inicia com serviços padrão
     };
     setBarbearias([...barbearias, barbearia]);
   };
@@ -103,6 +127,60 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
     return barbearias.find((b) => b.id === id);
   };
 
+  const adicionarServico = (barbeariaId: string, servico: NovoServicoBarbearia) => {
+    const novoServico: ServicoBarbearia = {
+      id: Date.now().toString(),
+      ...servico,
+    };
+    setBarbearias(
+      barbearias.map((b) =>
+        b.id === barbeariaId
+          ? { ...b, servicos: [...(b.servicos || []), novoServico] }
+          : b
+      )
+    );
+  };
+
+  const editarServico = (barbeariaId: string, servicoId: string, dados: Partial<ServicoBarbearia>) => {
+    setBarbearias(
+      barbearias.map((b) =>
+        b.id === barbeariaId
+          ? {
+              ...b,
+              servicos: (b.servicos || []).map((s) =>
+                s.id === servicoId ? { ...s, ...dados } : s
+              ),
+            }
+          : b
+      )
+    );
+  };
+
+  const removerServico = (barbeariaId: string, servicoId: string) => {
+    setBarbearias(
+      barbearias.map((b) =>
+        b.id === barbeariaId
+          ? { ...b, servicos: (b.servicos || []).filter((s) => s.id !== servicoId) }
+          : b
+      )
+    );
+  };
+
+  const toggleServicoAtivo = (barbeariaId: string, servicoId: string) => {
+    setBarbearias(
+      barbearias.map((b) =>
+        b.id === barbeariaId
+          ? {
+              ...b,
+              servicos: (b.servicos || []).map((s) =>
+                s.id === servicoId ? { ...s, ativo: !s.ativo } : s
+              ),
+            }
+          : b
+      )
+    );
+  };
+
   return (
     <BarbeariasContext.Provider
       value={{
@@ -112,6 +190,10 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
         alterarStatus,
         suspenderPorInadimplencia,
         getBarbearia,
+        adicionarServico,
+        editarServico,
+        removerServico,
+        toggleServicoAtivo,
       }}
     >
       {children}

@@ -8,6 +8,17 @@ export interface GatewayPagamento {
   dataConexao?: string;
 }
 
+export interface ServicoBarbearia {
+  id: string;
+  tipo: string; // TipoServico
+  nome: string;
+  descricao?: string;
+  duracao: number; // em minutos
+  valor: number;
+  ativo: boolean;
+  ordem?: number; // para ordenação na lista
+}
+
 export interface Barbearia {
   id: string;
   nome: string;
@@ -18,6 +29,7 @@ export interface Barbearia {
   dataCriacao: string;
   dataVencimento: string;
   gatewayPagamento: GatewayPagamento;
+  servicos: ServicoBarbearia[]; // Serviços disponíveis nesta barbearia
   email?: string;
   telefone?: string;
   endereco?: string;
@@ -31,5 +43,15 @@ export interface NovaBarbearia {
   email?: string;
   telefone?: string;
   endereco?: string;
+}
+
+export interface NovoServicoBarbearia {
+  tipo: string;
+  nome: string;
+  descricao?: string;
+  duracao: number;
+  valor: number;
+  ativo: boolean;
+  ordem?: number;
 }
 

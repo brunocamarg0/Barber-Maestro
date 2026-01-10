@@ -27,7 +27,7 @@ export default function EditarBarbearia() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getBarbearia, editarBarbearia } = useBarbearias();
-  const toast = useToast();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [barbearia, setBarbearia] = useState<Barbearia | undefined>();
   const [formData, setFormData] = useState<Partial<Barbearia>>({
@@ -63,7 +63,8 @@ export default function EditarBarbearia() {
         navigate("/admin");
       }
     }
-  }, [id, getBarbearia, navigate, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (!barbearia) {
     return (

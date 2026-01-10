@@ -11,7 +11,17 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, Building2, User, Calendar, CreditCard, Mail, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Building2, User, Calendar, CreditCard, Mail, Phone, MapPin, Scissors, UserPlus, Copy, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Barbearia } from "@/types/barbearia";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,18 +38,38 @@ const planoConfig: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 export default function DetalhesBarbearia() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getBarbearia } = useBarbearias();
-  const toast = useToast();
+  const { toast } = useToast();
   const [barbearia, setBarbearia] = useState<Barbearia | undefined>();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [emailConvite, setEmailConvite] = useState("");
+  const [gerandoConvite, setGerandoConvite] = useState(false);
+  const [linkConvite, setLinkConvite] = useState("");
+  const [copiado, setCopiado] = useState(false);
+  
+  // Estados para criar usuário diretamente
+  const [dialogCriarUsuarioOpen, setDialogCriarUsuarioOpen] = useState(false);
+  const [criandoUsuario, setCriandoUsuario] = useState(false);
+  const [dadosUsuario, setDadosUsuario] = useState({
+    nome: "",
+    email: "",
+    senha: "",
+    confirmarSenha: "",
+  });
+  const [usuarioDono, setUsuarioDono] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
       const data = getBarbearia(id);
       if (data) {
         setBarbearia(data);
+        // Buscar usuário dono se existir
+        buscarUsuarioDono();
       } else {
         toast({
           title: "Barbearia não encontrada",
@@ -50,6 +80,143 @@ export default function DetalhesBarbearia() {
       }
     }
   }, [id, getBarbearia, navigate, toast]);
+
+  const buscarUsuarioDono = async () => {
+    if (!id) return;
+    try {
+      const response = await fetch(`${API_URL}/api/admin/barbearias/${id}/dono`);
+      if (response.ok) {
+        const data = await response.json();
+        setUsuarioDono(data);
+      } else if (response.status !== 404) {
+        // 404 é normal se não tiver dono ainda
+        throw new Error("Erro ao buscar usuário dono");
+      }
+    } catch (error) {
+      // Silencioso - pode não ter dono ainda
+    }
+  };
+
+  const criarUsuarioDono = async () => {
+    if (!id) return;
+
+    // Validações
+    if (!dadosUsuario.nome || !dadosUsuario.email || !dadosUsuario.senha) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (dadosUsuario.senha.length < 6) {
+      toast({
+        title: "Senha inválida",
+        description: "A senha deve ter no mínimo 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (dadosUsuario.senha !== dadosUsuario.confirmarSenha) {
+      toast({
+        title: "Senhas não coincidem",
+        description: "As senhas digitadas não são iguais.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setCriandoUsuario(true);
+      const response = await fetch(`${API_URL}/api/admin/barbearias/${id}/dono`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nome: dadosUsuario.nome,
+          email: dadosUsuario.email,
+          senha: dadosUsuario.senha,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao criar usuário");
+      }
+
+      setUsuarioDono(data.usuario);
+      setDialogCriarUsuarioOpen(false);
+      setDadosUsuario({ nome: "", email: "", senha: "", confirmarSenha: "" });
+      
+      toast({
+        title: "Usuário criado com sucesso!",
+        description: `O dono ${data.usuario.nome} foi criado e já pode fazer login.`,
+      });
+
+      // Atualizar dados da barbearia
+      buscarUsuarioDono();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar usuário",
+        description: error.message || "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setCriandoUsuario(false);
+    }
+  };
+
+  const gerarConvite = async () => {
+    if (!id) return;
+
+    try {
+      setGerandoConvite(true);
+      const response = await fetch(`${API_URL}/api/admin/barbearias/${id}/convite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: emailConvite || undefined,
+          diasValidade: 7,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao gerar convite");
+      }
+
+      setLinkConvite(data.convite.urlAtivacao);
+      toast({
+        title: "Convite gerado com sucesso!",
+        description: "O link de ativação foi gerado. Copie e envie para o dono da barbearia.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao gerar convite",
+        description: error.message || "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setGerandoConvite(false);
+    }
+  };
+
+  const copiarLink = () => {
+    navigator.clipboard.writeText(linkConvite);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+    toast({
+      title: "Link copiado!",
+      description: "O link foi copiado para a área de transferência.",
+    });
+  };
 
   if (!barbearia) {
     return null;
@@ -71,12 +238,20 @@ export default function DetalhesBarbearia() {
             </p>
           </div>
         </div>
-        <Button asChild>
-          <Link to={`/admin/barbearias/${barbearia.id}/editar`}>
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to={`/admin/barbearias/${barbearia.id}/servicos`}>
+              <Scissors className="h-4 w-4 mr-2" />
+              Serviços
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to={`/admin/barbearias/${barbearia.id}/editar`}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -222,6 +397,201 @@ export default function DetalhesBarbearia() {
             )}
             {!barbearia.email && !barbearia.telefone && !barbearia.endereco && (
               <p className="text-sm text-muted-foreground">Nenhum contato cadastrado</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Usuário Dono
+            </CardTitle>
+            <CardDescription>
+              {usuarioDono 
+                ? "Usuário dono já cadastrado para esta barbearia"
+                : "Crie o usuário dono ou gere um convite"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {usuarioDono ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Nome</p>
+                  <p className="font-medium">{usuarioDono.nome}</p>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{usuarioDono.email}</p>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge variant={usuarioDono.ativo ? "default" : "secondary"}>
+                    {usuarioDono.ativo ? "Ativo" : "Inativo"}
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Dialog open={dialogCriarUsuarioOpen} onOpenChange={setDialogCriarUsuarioOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full">
+                      <User className="h-4 w-4 mr-2" />
+                      Criar Usuário Dono
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Criar Usuário Dono</DialogTitle>
+                      <DialogDescription>
+                        Crie o usuário dono diretamente. Ele poderá fazer login imediatamente.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="nomeUsuario">Nome Completo *</Label>
+                        <Input
+                          id="nomeUsuario"
+                          type="text"
+                          placeholder="Nome do dono"
+                          value={dadosUsuario.nome}
+                          onChange={(e) =>
+                            setDadosUsuario({ ...dadosUsuario, nome: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="emailUsuario">Email *</Label>
+                        <Input
+                          id="emailUsuario"
+                          type="email"
+                          placeholder="dono@barbearia.com"
+                          value={dadosUsuario.email}
+                          onChange={(e) =>
+                            setDadosUsuario({ ...dadosUsuario, email: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="senhaUsuario">Senha *</Label>
+                        <Input
+                          id="senhaUsuario"
+                          type="password"
+                          placeholder="Mínimo 6 caracteres"
+                          value={dadosUsuario.senha}
+                          onChange={(e) =>
+                            setDadosUsuario({ ...dadosUsuario, senha: e.target.value })
+                          }
+                          required
+                          minLength={6}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmarSenhaUsuario">Confirmar Senha *</Label>
+                        <Input
+                          id="confirmarSenhaUsuario"
+                          type="password"
+                          placeholder="Digite a senha novamente"
+                          value={dadosUsuario.confirmarSenha}
+                          onChange={(e) =>
+                            setDadosUsuario({ ...dadosUsuario, confirmarSenha: e.target.value })
+                          }
+                          required
+                          minLength={6}
+                        />
+                      </div>
+
+                      <Button
+                        onClick={criarUsuarioDono}
+                        disabled={criandoUsuario}
+                        className="w-full"
+                      >
+                        {criandoUsuario ? "Criando..." : "Criar Usuário"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">ou</span>
+                  </div>
+                </div>
+
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Gerar Convite
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Gerar Convite</DialogTitle>
+                      <DialogDescription>
+                        Gere um link único para o dono da barbearia criar sua conta. O link expira em 7 dias.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email (opcional)</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="dono@barbearia.com"
+                          value={emailConvite}
+                          onChange={(e) => setEmailConvite(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Se informado, o email será associado ao convite para referência
+                        </p>
+                      </div>
+
+                      {linkConvite && (
+                        <div className="space-y-2">
+                          <Label>Link de Ativação</Label>
+                          <div className="flex gap-2">
+                            <Input value={linkConvite} readOnly className="font-mono text-xs" />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={copiarLink}
+                            >
+                              {copiado ? (
+                                <Check className="h-4 w-4" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Copie este link e envie para o dono da barbearia
+                          </p>
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={gerarConvite}
+                        disabled={gerandoConvite}
+                        className="w-full"
+                      >
+                        {gerandoConvite ? "Gerando..." : linkConvite ? "Gerar Novo Convite" : "Gerar Convite"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -13,3 +13,7 @@ router.delete('/:id', barbeariasController.deletarBarbearia);
 
 export default router;
 
+
+
+
+

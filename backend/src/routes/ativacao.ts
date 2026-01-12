@@ -11,3 +11,7 @@ router.post('/ativar-conta', convitesController.ativarConta);
 
 export default router;
 
+
+
+
+

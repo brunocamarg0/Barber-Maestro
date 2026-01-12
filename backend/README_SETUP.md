@@ -127,3 +127,7 @@ npm run prisma:migrate
 - `Servico` - Serviços da barbearia
 - `Agendamento` - Agendamentos
 
+
+
+
+

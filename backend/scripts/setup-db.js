@@ -61,3 +61,7 @@ console.log('   1. npm install (se ainda não instalou)');
 console.log('   2. npm run dev (para iniciar o servidor)');
 console.log('   3. npm run prisma:studio (opcional - para ver os dados)');
 
+
+
+
+

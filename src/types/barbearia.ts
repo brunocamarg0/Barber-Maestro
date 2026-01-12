@@ -54,4 +54,3 @@ export interface NovoServicoBarbearia {
   ativo: boolean;
   ordem?: number;
 }
-

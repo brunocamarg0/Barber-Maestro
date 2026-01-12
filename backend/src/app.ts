@@ -6,6 +6,7 @@ import passport from 'passport';
 import adminBarbeariasRoutes from './routes/admin/barbearias';
 import adminConvitesRoutes from './routes/admin/convites';
 import adminUsuariosRoutes from './routes/admin/usuarios';
+import criarExemploRoutes from './routes/admin/criar-exemplo';
 import ativacaoRoutes from './routes/ativacao';
 import authRoutes from './routes/auth';
 import googleAuthRoutes from './routes/googleAuth';
@@ -52,6 +53,7 @@ app.use('/api/auth/google', googleAuthRoutes);
 app.use('/api', ativacaoRoutes);
 
 // Rotas admin - ordem importa! Rotas mais específicas primeiro
+app.use('/api/admin', criarExemploRoutes); // /api/admin/criar-exemplo
 app.use('/api/admin', adminUsuariosRoutes); // /api/admin/barbearias/:id/dono
 app.use('/api/admin', adminConvitesRoutes); // /api/admin/barbearias/:id/convite
 app.use('/api/admin/barbearias', adminBarbeariasRoutes); // /api/admin/barbearias

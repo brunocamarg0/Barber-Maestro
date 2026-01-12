@@ -17,3 +17,7 @@ router.delete('/barbearias/:barbeariaId/dono', usuariosController.deletarUsuario
 
 export default router;
 
+
+
+
+

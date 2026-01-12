@@ -11,3 +11,7 @@ router.get('/barbearias/:barbeariaId/convites', convitesController.listarConvite
 
 export default router;
 
+
+
+
+

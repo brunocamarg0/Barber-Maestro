@@ -73,3 +73,7 @@ Frontend rodará em: http://localhost:5173
 - Backend: http://localhost:3001/api/health
 - Frontend: http://localhost:5173
 
+
+
+
+

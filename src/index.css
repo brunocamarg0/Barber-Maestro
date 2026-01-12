@@ -136,3 +136,99 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Estilos específicos para o painel do dono - tema claro */
+#dono-panel [data-radix-dialog-overlay] {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(4px);
+}
+
+#dono-panel [data-radix-dialog-content] {
+  background-color: white !important;
+}
+
+#dono-panel [data-radix-dialog-content] h2,
+#dono-panel [data-radix-dialog-content] [data-radix-dialog-title] {
+  color: rgb(17, 24, 39) !important;
+}
+
+#dono-panel [data-radix-dialog-content] p,
+#dono-panel [data-radix-dialog-content] [data-radix-dialog-description] {
+  color: rgb(75, 85, 99) !important;
+}
+
+#dono-panel input,
+#dono-panel textarea {
+  background-color: white !important;
+  border-color: rgb(209, 213, 219) !important;
+  color: rgb(17, 24, 39) !important;
+}
+
+#dono-panel input::placeholder,
+#dono-panel textarea::placeholder {
+  color: rgb(107, 114, 128) !important;
+}
+
+#dono-panel label {
+  color: rgb(17, 24, 39) !important;
+}
+
+#dono-panel [data-radix-select-trigger] {
+  background-color: white !important;
+  border-color: rgb(209, 213, 219) !important;
+  color: rgb(17, 24, 39) !important;
+}
+
+#dono-panel [data-radix-select-content] {
+  background-color: white !important;
+  border-color: rgb(229, 231, 235) !important;
+  color: rgb(17, 24, 39) !important;
+}
+
+#dono-panel [data-radix-select-item] {
+  color: rgb(17, 24, 39) !important;
+}
+
+#dono-panel [data-radix-select-item][data-highlighted],
+#dono-panel [data-radix-select-item][data-state="checked"] {
+  background-color: rgb(243, 244, 246) !important;
+  color: rgb(17, 24, 39) !important;
+}
+
+#dono-panel [data-radix-alert-dialog-overlay] {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(4px);
+}
+
+#dono-panel [data-radix-alert-dialog-content] {
+  background-color: white !important;
+}
+
+#dono-panel [data-radix-alert-dialog-content] h2,
+#dono-panel [data-radix-alert-dialog-content] [data-radix-alert-dialog-title] {
+  color: rgb(17, 24, 39) !important;
+}
+
+#dono-panel [data-radix-alert-dialog-content] p,
+#dono-panel [data-radix-alert-dialog-content] [data-radix-alert-dialog-description] {
+  color: rgb(75, 85, 99) !important;
+}
+
+#dono-panel [data-radix-sheet-overlay] {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(4px);
+}
+
+#dono-panel [data-radix-sheet-content] {
+  background-color: white !important;
+}
+
+#dono-panel [data-radix-sheet-content] h2,
+#dono-panel [data-radix-sheet-content] [data-radix-sheet-title] {
+  color: rgb(17, 24, 39) !important;
+}
+
+#dono-panel [data-radix-sheet-content] p,
+#dono-panel [data-radix-sheet-content] [data-radix-sheet-description] {
+  color: rgb(75, 85, 99) !important;
+}

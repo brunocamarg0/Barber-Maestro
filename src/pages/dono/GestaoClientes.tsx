@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useDono } from "@/context/DonoContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -17,12 +18,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Crown, Search } from "lucide-react";
+import { toast } from "sonner";
 
 export default function GestaoClientes() {
-  const { clientes, marcarClienteVIP } = useDono();
+  const { clientes, marcarClienteVIP, adicionarCliente } = useDono();
   const [busca, setBusca] = useState("");
+  const [modalAberto, setModalAberto] = useState(false);
+  const [formCliente, setFormCliente] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+  });
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -38,6 +54,41 @@ export default function GestaoClientes() {
       )
     : clientes;
 
+  const handleSalvar = async () => {
+    if (!formCliente.nome.trim()) {
+      toast.error("Nome é obrigatório");
+      return;
+    }
+
+    if (!formCliente.email.trim()) {
+      toast.error("Email é obrigatório");
+      return;
+    }
+
+    if (!formCliente.telefone.trim()) {
+      toast.error("Telefone é obrigatório");
+      return;
+    }
+
+    try {
+      await adicionarCliente({
+        nome: formCliente.nome.trim(),
+        email: formCliente.email.trim(),
+        telefone: formCliente.telefone.trim(),
+      });
+
+      // Limpar formulário e fechar modal
+      setFormCliente({
+        nome: "",
+        email: "",
+        telefone: "",
+      });
+      setModalAberto(false);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao adicionar cliente");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -47,7 +98,7 @@ export default function GestaoClientes() {
             CRM simples e poderoso para gerenciar seus clientes
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setModalAberto(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Cliente
         </Button>
@@ -167,6 +218,75 @@ export default function GestaoClientes() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Modal para adicionar novo cliente */}
+      <Dialog open={modalAberto} onOpenChange={setModalAberto}>
+        <DialogContent className="bg-white text-gray-900">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Novo Cliente</DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Adicione um novo cliente ao sistema
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome" className="text-gray-900">
+                Nome *
+              </Label>
+              <Input
+                id="nome"
+                placeholder="Nome completo do cliente"
+                value={formCliente.nome}
+                onChange={(e) =>
+                  setFormCliente({ ...formCliente, nome: e.target.value })
+                }
+                className="bg-white text-gray-900 border-gray-300"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-900">
+                Email *
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="email@exemplo.com"
+                value={formCliente.email}
+                onChange={(e) =>
+                  setFormCliente({ ...formCliente, email: e.target.value })
+                }
+                className="bg-white text-gray-900 border-gray-300"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="telefone" className="text-gray-900">
+                Telefone *
+              </Label>
+              <Input
+                id="telefone"
+                placeholder="(11) 99999-9999"
+                value={formCliente.telefone}
+                onChange={(e) =>
+                  setFormCliente({ ...formCliente, telefone: e.target.value })
+                }
+                className="bg-white text-gray-900 border-gray-300"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setModalAberto(false)}
+              className="text-gray-900 border-gray-300"
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleSalvar} className="bg-blue-600 hover:bg-blue-700">
+              Salvar Cliente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -331,3 +331,58 @@ export async function loginAdmin(req: Request, res: Response) {
   }
 }
 
+/**
+ * Alterar senha do dono
+ */
+export async function alterarSenhaDono(req: Request, res: Response) {
+  try {
+    const { senhaAtual, novaSenha } = req.body;
+    const donoId = (req as any).user?.id; // Assumindo middleware de autenticação
+
+    if (!senhaAtual || !novaSenha) {
+      return res.status(400).json({ error: 'Senha atual e nova senha são obrigatórias' });
+    }
+
+    if (novaSenha.length < 6) {
+      return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres' });
+    }
+
+    // Buscar dono
+    const dono = await prisma.usuarioDono.findUnique({
+      where: { id: donoId },
+    });
+
+    if (!dono) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    if (!dono.senha) {
+      return res.status(400).json({ error: 'Esta conta não possui senha cadastrada. Use o login com Google.' });
+    }
+
+    // Verificar senha atual
+    const senhaValida = await compararSenha(senhaAtual, dono.senha);
+
+    if (!senhaValida) {
+      return res.status(401).json({ error: 'Senha atual incorreta' });
+    }
+
+    // Hash da nova senha
+    const novaSenhaHash = await hashSenha(novaSenha);
+
+    // Atualizar senha
+    await prisma.usuarioDono.update({
+      where: { id: donoId },
+      data: { senha: novaSenhaHash },
+    });
+
+    res.json({
+      sucesso: true,
+      mensagem: 'Senha alterada com sucesso!',
+    });
+  } catch (error) {
+    console.error('Erro ao alterar senha:', error);
+    res.status(500).json({ error: 'Erro ao alterar senha' });
+  }
+}
+

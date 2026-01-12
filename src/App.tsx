@@ -63,6 +63,7 @@ import RelatoriosAvancados from "./pages/dono/RelatoriosAvancados";
 import AtivarConta from "./pages/AtivarConta";
 import AuthCallback from "./pages/AuthCallback";
 import Funcionalidades from "./pages/Funcionalidades";
+import Cadastro from "./pages/Cadastro";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +88,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/ativar-conta" element={<AtivarConta />} />
             <Route path="/funcionalidades" element={<Funcionalidades />} />

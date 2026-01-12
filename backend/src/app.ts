@@ -10,6 +10,7 @@ import criarExemploRoutes from './routes/admin/criar-exemplo';
 import ativacaoRoutes from './routes/ativacao';
 import authRoutes from './routes/auth';
 import googleAuthRoutes from './routes/googleAuth';
+import solicitacoesRoutes from './routes/solicitacoes';
 import './config/passport';
 
 // Carregar variáveis de ambiente
@@ -51,6 +52,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/google', googleAuthRoutes);
 app.use('/api', ativacaoRoutes);
+app.use('/api/solicitacoes', solicitacoesRoutes);
 
 // Rotas admin - ordem importa! Rotas mais específicas primeiro
 app.use('/api/admin', criarExemploRoutes); // /api/admin/criar-exemplo

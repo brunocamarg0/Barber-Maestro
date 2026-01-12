@@ -200,6 +200,175 @@ export async function enviarEmailConvite(params: EnviarConviteParams) {
 }
 
 /**
+ * Envia email com senha temporária para o dono da barbearia
+ */
+interface EnviarSenhaParams {
+  email: string;
+  nome: string;
+  nomeBarbearia: string;
+  senha: string;
+}
+
+export async function enviarEmailSenha(params: EnviarSenhaParams) {
+  const { email, nome, nomeBarbearia, senha } = params;
+
+  const transporter = await createTransporter();
+
+  const htmlTemplate = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 30px;
+          text-align: center;
+          border-radius: 10px 10px 0 0;
+        }
+        .content {
+          background: #f9f9f9;
+          padding: 30px;
+          border-radius: 0 0 10px 10px;
+        }
+        .senha-box {
+          background: #fff;
+          border: 2px dashed #667eea;
+          padding: 20px;
+          text-align: center;
+          margin: 20px 0;
+          border-radius: 5px;
+        }
+        .senha {
+          font-size: 24px;
+          font-weight: bold;
+          color: #667eea;
+          letter-spacing: 2px;
+          font-family: monospace;
+        }
+        .button {
+          display: inline-block;
+          padding: 15px 30px;
+          background: #667eea;
+          color: white;
+          text-decoration: none;
+          border-radius: 5px;
+          margin: 20px 0;
+        }
+        .footer {
+          text-align: center;
+          margin-top: 20px;
+          color: #666;
+          font-size: 12px;
+        }
+        .warning {
+          background: #fff3cd;
+          border-left: 4px solid #ffc107;
+          padding: 15px;
+          margin: 20px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎉 Sua conta foi aprovada!</h1>
+        </div>
+        <div class="content">
+          <p>Olá <strong>${nome}</strong>,</p>
+          
+          <p>Sua solicitação de cadastro para a barbearia <strong>${nomeBarbearia}</strong> foi aprovada!</p>
+          
+          <p>Agora você pode acessar o sistema usando as credenciais abaixo:</p>
+          
+          <div class="senha-box">
+            <p style="margin: 0 0 10px 0; color: #666;">Sua senha temporária:</p>
+            <div class="senha">${senha}</div>
+          </div>
+          
+          <div class="warning">
+            <strong>⚠️ Importante:</strong> Por segurança, altere sua senha assim que fizer o primeiro login nas configurações da sua conta.
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/login" class="button">Acessar Sistema</a>
+          </div>
+          
+          <p>Use seu email (<strong>${email}</strong>) e a senha acima para fazer login.</p>
+          
+          <p>Se você não solicitou este cadastro, entre em contato conosco imediatamente.</p>
+        </div>
+        <div class="footer">
+          <p>Este é um email automático, por favor não responda.</p>
+          <p>© ${new Date().getFullYear()} Groom Guru Platform</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textTemplate = `
+    Sua conta foi aprovada!
+    
+    Olá ${nome},
+    
+    Sua solicitação de cadastro para a barbearia ${nomeBarbearia} foi aprovada!
+    
+    Agora você pode acessar o sistema usando as credenciais abaixo:
+    
+    Email: ${email}
+    Senha temporária: ${senha}
+    
+    ⚠️ Importante: Por segurança, altere sua senha assim que fizer o primeiro login nas configurações da sua conta.
+    
+    Acesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/login
+    
+    Se você não solicitou este cadastro, entre em contato conosco imediatamente.
+    
+    © ${new Date().getFullYear()} Groom Guru Platform
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM || '"Groom Guru" <noreply@groomguru.com>',
+      to: email,
+      subject: `Acesso aprovado - ${nomeBarbearia}`,
+      text: textTemplate,
+      html: htmlTemplate,
+    });
+
+    console.log('✅ Email com senha enviado:', info.messageId);
+    
+    if (info.messageId) {
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      if (previewUrl) {
+        console.log('📧 Preview do email:', previewUrl);
+      }
+    }
+
+    return {
+      sucesso: true,
+      messageId: info.messageId,
+      previewUrl: nodemailer.getTestMessageUrl ? nodemailer.getTestMessageUrl(info) : null,
+    };
+  } catch (error) {
+    console.error('Erro ao enviar email:', error);
+    throw new Error('Erro ao enviar email com senha');
+  }
+}
+
+/**
  * Gera credenciais Ethereal para desenvolvimento
  */
 export async function gerarCredenciaisEthereal() {

@@ -41,6 +41,7 @@ model Barbearia {
   convites          Convite[]
   servicos          Servico[]
   agendamentos      Agendamento[]
+  solicitacao       SolicitacaoCadastro? @relation("SolicitacaoBarbearia")
   
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -77,6 +78,30 @@ model Convite {
   // Relacionamento com barbearia
   barbeariaId String
   barbearia   Barbearia @relation(fields: [barbeariaId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Solicitação de cadastro de nova barbearia (pendente de aprovação do admin)
+model SolicitacaoCadastro {
+  id          String   @id @default(uuid())
+  nome        String   // Nome da barbearia
+  cnpjCpf     String   // CNPJ ou CPF
+  responsavel String   // Nome do responsável
+  email       String   // Email do responsável (onde será enviada a senha)
+  telefone    String?
+  endereco    String?
+  plano       String   @default("basico") // basico, premium, enterprise
+  status      String   @default("pendente") // pendente, aprovada, rejeitada
+  observacoes String?  // Observações do admin
+  
+  // Relacionamento com barbearia (após aprovação)
+  barbeariaId String?  @unique
+  barbearia   Barbearia? @relation("SolicitacaoBarbearia", fields: [barbeariaId], references: [id], onDelete: SetNull)
+  
+  aprovadaEm  DateTime?
+  aprovadaPor String?  // ID do admin que aprovou
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

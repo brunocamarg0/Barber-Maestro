@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useBarbearias } from "@/context/BarbeariasContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,8 +17,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MoreHorizontal, Eye, Edit, Power, Ban } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plus, MoreHorizontal, Eye, Edit, Power, Ban, Check, X, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StatusBarbearia } from "@/types/barbearia";
 import { useToast } from "@/hooks/use-toast";
@@ -36,9 +46,128 @@ const planoConfig: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
+interface Solicitacao {
+  id: string;
+  nome: string;
+  cnpjCpf: string;
+  responsavel: string;
+  email: string;
+  telefone?: string;
+  endereco?: string;
+  plano: string;
+  status: string;
+  createdAt: string;
+}
+
 export default function AdminDashboard() {
   const { barbearias, alterarStatus, suspenderPorInadimplencia } = useBarbearias();
   const { toast } = useToast();
+  const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
+  const [isLoadingSolicitacoes, setIsLoadingSolicitacoes] = useState(false);
+  const [selectedSolicitacao, setSelectedSolicitacao] = useState<Solicitacao | null>(null);
+  const [observacoes, setObservacoes] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    carregarSolicitacoes();
+  }, []);
+
+  const carregarSolicitacoes = async () => {
+    setIsLoadingSolicitacoes(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/solicitacoes/admin?status=pendente`);
+      if (response.ok) {
+        const data = await response.json();
+        setSolicitacoes(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar solicitações:', error);
+    } finally {
+      setIsLoadingSolicitacoes(false);
+    }
+  };
+
+  const handleAprovar = async () => {
+    if (!selectedSolicitacao) return;
+    
+    setIsProcessing(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/solicitacoes/admin/${selectedSolicitacao.id}/aprovar`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ observacoes }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao aprovar solicitação');
+      }
+
+      toast({
+        title: "Solicitação aprovada!",
+        description: "A senha foi enviada por email para o dono da barbearia.",
+      });
+
+      setSelectedSolicitacao(null);
+      setObservacoes("");
+      carregarSolicitacoes();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao aprovar",
+        description: error.message || "Ocorreu um erro ao aprovar a solicitação.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRejeitar = async () => {
+    if (!selectedSolicitacao) return;
+    
+    setIsProcessing(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/solicitacoes/admin/${selectedSolicitacao.id}/rejeitar`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ observacoes }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao rejeitar solicitação');
+      }
+
+      toast({
+        title: "Solicitação rejeitada",
+        description: "A solicitação foi rejeitada com sucesso.",
+      });
+
+      setSelectedSolicitacao(null);
+      setObservacoes("");
+      carregarSolicitacoes();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao rejeitar",
+        description: error.message || "Ocorreu um erro ao rejeitar a solicitação.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleAlterarStatus = (id: string, status: StatusBarbearia) => {
     alterarStatus(id, status);
@@ -59,6 +188,49 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Seção de Solicitações Pendentes */}
+      {solicitacoes.length > 0 && (
+        <div className="rounded-md border bg-muted/50 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-bold tracking-tight">Solicitações Pendentes</h3>
+              <p className="text-sm text-muted-foreground">
+                {solicitacoes.length} solicitação(ões) aguardando aprovação
+              </p>
+            </div>
+            <Badge variant="secondary">{solicitacoes.length}</Badge>
+          </div>
+          <div className="space-y-2">
+            {solicitacoes.map((solicitacao) => (
+              <div
+                key={solicitacao.id}
+                className="flex items-center justify-between p-3 bg-background rounded-md border"
+              >
+                <div className="flex-1">
+                  <p className="font-medium">{solicitacao.nome}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {solicitacao.responsavel} • {solicitacao.email}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Solicitado em {new Date(solicitacao.createdAt).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => setSelectedSolicitacao(solicitacao)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Detalhes
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Barbearias</h2>
@@ -189,6 +361,113 @@ export default function AdminDashboard() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Dialog de Aprovação/Rejeição */}
+      <Dialog open={!!selectedSolicitacao} onOpenChange={(open) => !open && setSelectedSolicitacao(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Solicitação de Cadastro</DialogTitle>
+            <DialogDescription>
+              Revise os dados da solicitação antes de aprovar ou rejeitar
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSolicitacao && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Nome da Barbearia</Label>
+                  <p className="font-medium">{selectedSolicitacao.nome}</p>
+                </div>
+                <div>
+                  <Label>CNPJ/CPF</Label>
+                  <p className="font-medium">{selectedSolicitacao.cnpjCpf}</p>
+                </div>
+                <div>
+                  <Label>Responsável</Label>
+                  <p className="font-medium">{selectedSolicitacao.responsavel}</p>
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <p className="font-medium">{selectedSolicitacao.email}</p>
+                </div>
+                {selectedSolicitacao.telefone && (
+                  <div>
+                    <Label>Telefone</Label>
+                    <p className="font-medium">{selectedSolicitacao.telefone}</p>
+                  </div>
+                )}
+                <div>
+                  <Label>Plano</Label>
+                  <Badge variant="outline">{planoConfig[selectedSolicitacao.plano]}</Badge>
+                </div>
+                {selectedSolicitacao.endereco && (
+                  <div className="col-span-2">
+                    <Label>Endereço</Label>
+                    <p className="font-medium">{selectedSolicitacao.endereco}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="observacoes">Observações (opcional)</Label>
+                <Input
+                  id="observacoes"
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Adicione observações sobre esta solicitação..."
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedSolicitacao(null);
+                setObservacoes("");
+              }}
+              disabled={isProcessing}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejeitar}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <X className="mr-2 h-4 w-4" />
+                  Rejeitar
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleAprovar}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Aprovar e Enviar Senha
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

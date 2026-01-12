@@ -10,6 +10,7 @@ router.post('/cliente/login', authController.loginCliente);
 // Rotas de dono
 router.post('/dono/registro', authController.registrarDono);
 router.post('/dono/login', authController.loginDono);
+router.put('/dono/alterar-senha', authController.alterarSenhaDono);
 
 // Rotas de admin
 router.post('/admin/login', authController.loginAdmin);

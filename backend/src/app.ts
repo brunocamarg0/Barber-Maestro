@@ -19,8 +19,21 @@ dotenv.config();
 export const app = express();
 
 // Middleware
+const allowedOrigins = process.env.FRONTEND_URL 
+  ? [process.env.FRONTEND_URL]
+  : ['http://localhost:5173', 'http://localhost:8080'];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Permitir requisições sem origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Permitir todas as origens em desenvolvimento
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());

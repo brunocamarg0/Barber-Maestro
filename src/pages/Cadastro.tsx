@@ -49,15 +49,37 @@ const Cadastro = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/dono/cadastro-direto`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      // Usar /api diretamente para aproveitar o proxy do Vite em desenvolvimento
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const url = `${apiUrl}/auth/dono/cadastro-direto`;
+      
+      let response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+      } catch (fetchError: any) {
+        // Erro de rede (backend não está rodando ou CORS)
+        console.error('Erro de conexão:', fetchError);
+        throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3001.');
+      }
 
-      const data = await response.json();
+      if (!response) {
+        throw new Error('Erro ao conectar com o servidor');
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        const text = await response.text();
+        console.error('Resposta do servidor:', text);
+        throw new Error('Resposta inválida do servidor. Verifique se o backend está rodando corretamente.');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao realizar cadastro');
@@ -95,7 +117,7 @@ const Cadastro = () => {
       <Navbar />
       
       <div className="flex-1 flex items-center justify-center p-4 py-16">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-3 mb-4">
               <div className="bg-primary p-3">
@@ -109,7 +131,7 @@ const Cadastro = () => {
           </div>
 
           <Card className="bg-card border-2 border-border">
-            <CardHeader>
+            <CardHeader className="text-center pb-6">
               <CardTitle className="text-foreground font-black uppercase text-xl">
                 Cadastro
               </CardTitle>
@@ -117,8 +139,8 @@ const Cadastro = () => {
                 Preencha os dados abaixo para criar sua conta
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <CardContent className="px-6 pb-6">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
                   <Label htmlFor="nomeBarbearia">Nome da Barbearia *</Label>
                   <Input
@@ -127,6 +149,7 @@ const Cadastro = () => {
                     onChange={(e) => setFormData({ ...formData, nomeBarbearia: e.target.value })}
                     placeholder="Nome Da Barbearia*"
                     required
+                    className="w-full"
                   />
                 </div>
 
@@ -143,20 +166,13 @@ const Cadastro = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="telefone">Telefone do Contato *</Label>
-                    <div className="flex gap-2">
-                      <div className="flex items-center gap-1 px-3 border border-input bg-background rounded-md">
-                        <span className="text-xl">🇧🇷</span>
-                        <span className="text-sm">+55</span>
-                      </div>
-                      <Input
-                        id="telefone"
-                        value={formData.telefone}
-                        onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                        placeholder="(11) 96123-4567"
-                        required
-                        className="flex-1"
-                      />
-                    </div>
+                    <Input
+                      id="telefone"
+                      value={formData.telefone}
+                      onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                      placeholder="(11) 96123-4567"
+                      required
+                    />
                   </div>
                 </div>
 
@@ -187,11 +203,12 @@ const Cadastro = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-2">
+                <div className="flex items-start space-x-2 pt-2">
                   <Checkbox
                     id="termos"
                     checked={aceiteTermos}
                     onCheckedChange={(checked) => setAceiteTermos(checked === true)}
+                    className="mt-1"
                   />
                   <div className="grid gap-1.5 leading-none">
                     <label
@@ -207,21 +224,23 @@ const Cadastro = () => {
                   </div>
                 </div>
 
-                <Button
-                  type="submit"
-                  variant="hero"
-                  className="w-full"
-                  disabled={isLoading || !aceiteTermos}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Cadastrando...
-                    </>
-                  ) : (
-                    "CADASTRAR"
-                  )}
-                </Button>
+                <div className="pt-4">
+                  <Button
+                    type="submit"
+                    variant="hero"
+                    className="w-full"
+                    disabled={isLoading || !aceiteTermos}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Cadastrando...
+                      </>
+                    ) : (
+                      "CADASTRAR"
+                    )}
+                  </Button>
+                </div>
 
                 <p className="text-center text-sm text-muted-foreground">
                   Já tem uma conta?{" "}

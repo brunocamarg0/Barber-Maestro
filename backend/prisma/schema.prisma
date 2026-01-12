@@ -35,6 +35,7 @@ model Barbearia {
   email             String?
   telefone          String?
   endereco          String?
+  modoConfirmacao   String   @default("hibrido") // automatico, manual, hibrido
   
   // Relacionamentos
   dono              UsuarioDono?  @relation("BarbeariaDono")
@@ -151,6 +152,8 @@ model Agendamento {
   data        DateTime
   status      String   @default("pendente") // pendente, confirmado, cancelado, recusado, concluido
   observacao  String?
+  confirmadoAutomaticamente Boolean @default(false) // Se foi confirmado automaticamente (modo híbrido)
+  dataConfirmacaoAutomatica DateTime? // Data/hora da confirmação automática (para calcular janela de 2h)
   
   // Relacionamento com cliente (opcional - pode ser agendamento sem cadastro)
   clienteId   String?

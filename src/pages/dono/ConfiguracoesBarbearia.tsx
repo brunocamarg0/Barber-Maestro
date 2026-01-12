@@ -20,7 +20,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2, Lock, CheckCircle, Clock, Settings } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ConfiguracoesBarbearia() {
   const { configuracao, atualizarConfiguracao } = useDono();
@@ -34,12 +35,40 @@ export default function ConfiguracoesBarbearia() {
   });
   const [isAlterandoSenha, setIsAlterandoSenha] = useState(false);
 
-  const handleSubmit = () => {
-    atualizarConfiguracao(formData);
-    toast({
-      title: "Configurações salvas",
-      description: "As configurações foram atualizadas com sucesso.",
-    });
+  const handleSubmit = async () => {
+    try {
+      // Atualizar configuração local
+      atualizarConfiguracao(formData);
+      
+      // Se houver mudança no modo de confirmação, atualizar no backend
+      if (formData.modoConfirmacao) {
+        const token = localStorage.getItem('token');
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const barbeariaId = configuracao.id; // Assumindo que o ID da barbearia está no configuracao
+        
+        await fetch(`${apiUrl}/agendamentos/barbearia/${barbeariaId}/configuracao`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            modoConfirmacao: formData.modoConfirmacao,
+          }),
+        });
+      }
+      
+      toast({
+        title: "Configurações salvas",
+        description: "As configurações foram atualizadas com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as configurações.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAlterarSenha = async () => {
@@ -261,6 +290,95 @@ export default function ConfiguracoesBarbearia() {
             <p className="text-xs text-muted-foreground">
               Este é o link que seus clientes usarão para agendar
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Modo de Confirmação de Agendamentos</CardTitle>
+          <CardDescription>
+            Configure como os agendamentos serão confirmados automaticamente
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="modoConfirmacao">Modo de Confirmação</Label>
+            <Select
+              value={formData.modoConfirmacao || "hibrido"}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  modoConfirmacao: value as "automatico" | "manual" | "hibrido",
+                })
+              }
+            >
+              <SelectTrigger id="modoConfirmacao">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="automatico">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <div>
+                      <div className="font-medium">Automático</div>
+                      <div className="text-xs text-muted-foreground">
+                        Agendamentos são confirmados automaticamente
+                      </div>
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="manual">
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4 text-blue-600" />
+                    <div>
+                      <div className="font-medium">Manual</div>
+                      <div className="text-xs text-muted-foreground">
+                        Você precisa confirmar cada agendamento
+                      </div>
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="hibrido">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-orange-600" />
+                    <div>
+                      <div className="font-medium">Híbrido (Recomendado)</div>
+                      <div className="text-xs text-muted-foreground">
+                        Automático, mas você pode recusar em até 2 horas
+                      </div>
+                    </div>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="bg-muted p-4 rounded-lg space-y-2">
+            <p className="text-sm font-medium">Como funciona:</p>
+            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+              {formData.modoConfirmacao === "automatico" && (
+                <>
+                  <li>Agendamentos são confirmados imediatamente</li>
+                  <li>Cliente recebe notificação automática</li>
+                  <li>Você não precisa fazer nada</li>
+                </>
+              )}
+              {formData.modoConfirmacao === "manual" && (
+                <>
+                  <li>Agendamentos ficam pendentes até você confirmar</li>
+                  <li>Você tem controle total sobre cada agendamento</li>
+                  <li>Cliente só recebe confirmação após sua aprovação</li>
+                </>
+              )}
+              {formData.modoConfirmacao === "hibrido" && (
+                <>
+                  <li>Agendamentos são confirmados automaticamente</li>
+                  <li>Cliente recebe notificação imediata</li>
+                  <li>Você pode recusar em até 2 horas após a confirmação</li>
+                  <li>Após 2 horas, não é mais possível recusar</li>
+                </>
+              )}
+            </ul>
           </div>
         </CardContent>
       </Card>

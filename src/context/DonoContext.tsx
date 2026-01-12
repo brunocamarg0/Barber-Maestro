@@ -30,6 +30,8 @@ interface DonoContextType {
   criarAgendamento: (agendamento: Omit<AgendamentoDono, "id" | "dataCriacao">) => void;
   atualizarAgendamento: (id: string, dados: Partial<AgendamentoDono>) => void;
   cancelarAgendamento: (id: string) => void;
+  confirmarAgendamento: (id: string) => Promise<void>;
+  recusarAgendamento: (id: string, motivo?: string) => Promise<void>;
   
   adicionarProfissional: (profissional: Omit<ProfissionalDono, "id" | "dataAdmissao" | "avaliacaoMedia" | "totalAvaliacoes" | "faturamentoTotal" | "faltas">) => void;
   atualizarProfissional: (id: string, dados: Partial<ProfissionalDono>) => void;
@@ -167,6 +169,7 @@ const configuracaoInicial: ConfiguracaoBarbearia = {
   id: "1",
   nome: "Barbearia do João",
   cnpjCpf: "12.345.678/0001-90",
+  modoConfirmacao: "hibrido",
   horarioFuncionamento: {
     segunda: { aberto: true, inicio: "09:00", fim: "18:00" },
     terca: { aberto: true, inicio: "09:00", fim: "18:00" },
@@ -212,6 +215,59 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   const cancelarAgendamento = (id: string) => {
     atualizarAgendamento(id, { status: "cancelado" });
+  };
+
+  const confirmarAgendamento = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      
+      const response = await fetch(`${apiUrl}/agendamentos/${id}/confirmar`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao confirmar agendamento');
+      }
+
+      const data = await response.json();
+      atualizarAgendamento(id, { status: "confirmado" });
+    } catch (error) {
+      console.error('Erro ao confirmar agendamento:', error);
+      throw error;
+    }
+  };
+
+  const recusarAgendamento = async (id: string, motivo?: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      
+      const response = await fetch(`${apiUrl}/agendamentos/${id}/recusar`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ motivo }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao recusar agendamento');
+      }
+
+      const data = await response.json();
+      atualizarAgendamento(id, { status: "recusado" });
+    } catch (error) {
+      console.error('Erro ao recusar agendamento:', error);
+      throw error;
+    }
   };
 
   // Funções de profissional
@@ -349,6 +405,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         criarAgendamento,
         atualizarAgendamento,
         cancelarAgendamento,
+        confirmarAgendamento,
+        recusarAgendamento,
         adicionarProfissional,
         atualizarProfissional,
         removerProfissional,

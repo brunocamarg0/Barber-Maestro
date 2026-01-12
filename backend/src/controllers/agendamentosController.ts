@@ -6,6 +6,11 @@ import {
 } from '../services/whatsappService';
 
 /**
+ * Tipos de modo de confirmação
+ */
+type ModoConfirmacao = 'automatico' | 'manual' | 'hibrido';
+
+/**
  * Listar agendamentos de uma barbearia
  */
 export async function listarAgendamentos(req: Request, res: Response) {
@@ -180,6 +185,13 @@ export async function recusarAgendamento(req: Request, res: Response) {
 
     const agendamento = await prisma.agendamento.findUnique({
       where: { id },
+      include: {
+        barbearia: {
+          select: {
+            modoConfirmacao: true,
+          },
+        },
+      },
     });
 
     if (!agendamento) {
@@ -192,6 +204,23 @@ export async function recusarAgendamento(req: Request, res: Response) {
 
     if (agendamento.status === 'concluido') {
       return res.status(400).json({ error: 'Não é possível recusar um agendamento já concluído' });
+    }
+
+    // Verificar janela de tempo para recusar (modo híbrido)
+    if (
+      agendamento.barbearia.modoConfirmacao === 'hibrido' &&
+      agendamento.confirmadoAutomaticamente &&
+      agendamento.dataConfirmacaoAutomatica
+    ) {
+      const agora = new Date();
+      const dataConfirmacao = new Date(agendamento.dataConfirmacaoAutomatica);
+      const horasDecorridas = (agora.getTime() - dataConfirmacao.getTime()) / (1000 * 60 * 60);
+
+      if (horasDecorridas > 2) {
+        return res.status(400).json({
+          error: 'Não é possível recusar este agendamento. A janela de 2 horas para recusar já expirou.',
+        });
+      }
     }
 
     const agendamentoCompleto = await prisma.agendamento.findUnique({
@@ -341,6 +370,135 @@ export async function concluirAgendamento(req: Request, res: Response) {
   } catch (error) {
     console.error('Erro ao concluir agendamento:', error);
     res.status(500).json({ error: 'Erro ao concluir agendamento' });
+  }
+}
+
+/**
+ * Criar novo agendamento com lógica híbrida
+ */
+export async function criarAgendamento(req: Request, res: Response) {
+  try {
+    const { barbeariaId, clienteId, servicoId, cliente, telefone, data, observacao } = req.body;
+
+    if (!barbeariaId || !servicoId || !data) {
+      return res.status(400).json({ error: 'Campos obrigatórios: barbeariaId, servicoId, data' });
+    }
+
+    // Buscar configuração da barbearia
+    const barbearia = await prisma.barbearia.findUnique({
+      where: { id: barbeariaId },
+      select: {
+        modoConfirmacao: true,
+      },
+    });
+
+    if (!barbearia) {
+      return res.status(404).json({ error: 'Barbearia não encontrada' });
+    }
+
+    const modoConfirmacao = (barbearia.modoConfirmacao || 'hibrido') as ModoConfirmacao;
+    const dataAgendamento = new Date(data);
+
+    // Determinar status inicial baseado no modo
+    let statusInicial = 'pendente';
+    let confirmadoAutomaticamente = false;
+    let dataConfirmacaoAutomatica: Date | null = null;
+
+    if (modoConfirmacao === 'automatico' || modoConfirmacao === 'hibrido') {
+      statusInicial = 'confirmado';
+      confirmadoAutomaticamente = true;
+      dataConfirmacaoAutomatica = new Date();
+    }
+
+    // Criar agendamento
+    const agendamento = await prisma.agendamento.create({
+      data: {
+        barbeariaId,
+        servicoId,
+        clienteId: clienteId || null,
+        cliente: cliente || 'Cliente não cadastrado',
+        telefone: telefone || '',
+        data: dataAgendamento,
+        status: statusInicial,
+        observacao: observacao || null,
+        confirmadoAutomaticamente,
+        dataConfirmacaoAutomatica,
+      },
+      include: {
+        clienteRel: true,
+        servico: true,
+        barbearia: true,
+      },
+    });
+
+    // Enviar notificação se foi confirmado automaticamente
+    if (statusInicial === 'confirmado') {
+      try {
+        const telefoneCliente = agendamento.clienteRel?.telefone || agendamento.telefone;
+        if (telefoneCliente) {
+          await notificarConfirmacaoAgendamento({
+            telefone: telefoneCliente,
+            nomeCliente: agendamento.clienteRel?.nome || agendamento.cliente,
+            nomeBarbearia: agendamento.barbearia.nome,
+            data: agendamento.data,
+            horario: agendamento.data.toLocaleTimeString('pt-BR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            servico: agendamento.servico.nome,
+          });
+        }
+      } catch (notifError) {
+        console.error('Erro ao enviar notificação de confirmação automática:', notifError);
+        // Não falha a criação se a notificação falhar
+      }
+    }
+
+    res.status(201).json({
+      sucesso: true,
+      mensagem: `Agendamento criado e ${statusInicial === 'confirmado' ? 'confirmado automaticamente' : 'aguardando confirmação'}`,
+      agendamento,
+    });
+  } catch (error) {
+    console.error('Erro ao criar agendamento:', error);
+    res.status(500).json({ error: 'Erro ao criar agendamento' });
+  }
+}
+
+/**
+ * Atualizar configuração de confirmação da barbearia
+ */
+export async function atualizarConfiguracaoConfirmacao(req: Request, res: Response) {
+  try {
+    const { barbeariaId } = req.params;
+    const { modoConfirmacao } = req.body;
+
+    if (!modoConfirmacao || !['automatico', 'manual', 'hibrido'].includes(modoConfirmacao)) {
+      return res.status(400).json({
+        error: 'modoConfirmacao deve ser: automatico, manual ou hibrido',
+      });
+    }
+
+    const barbearia = await prisma.barbearia.update({
+      where: { id: barbeariaId },
+      data: {
+        modoConfirmacao: modoConfirmacao as ModoConfirmacao,
+      },
+      select: {
+        id: true,
+        nome: true,
+        modoConfirmacao: true,
+      },
+    });
+
+    res.json({
+      sucesso: true,
+      mensagem: 'Configuração de confirmação atualizada',
+      barbearia,
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar configuração:', error);
+    res.status(500).json({ error: 'Erro ao atualizar configuração' });
   }
 }
 

@@ -3,6 +3,9 @@ import * as agendamentosController from '../controllers/agendamentosController';
 
 const router = Router();
 
+// Criar novo agendamento
+router.post('/', agendamentosController.criarAgendamento);
+
 // Listar agendamentos de uma barbearia
 router.get('/barbearia/:barbeariaId', agendamentosController.listarAgendamentos);
 
@@ -23,5 +26,8 @@ router.put('/:id/cancelar', agendamentosController.cancelarAgendamento);
 
 // Concluir agendamento
 router.put('/:id/concluir', agendamentosController.concluirAgendamento);
+
+// Atualizar configuração de confirmação da barbearia
+router.put('/barbearia/:barbeariaId/configuracao', agendamentosController.atualizarConfiguracaoConfirmacao);
 
 export default router;

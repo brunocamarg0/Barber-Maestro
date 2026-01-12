@@ -23,7 +23,7 @@ export interface AgendamentoDono {
   horario: string;
   duracao: number;
   valor: number;
-  status: "confirmado" | "pendente" | "cancelado" | "concluido" | "faltou";
+  status: "confirmado" | "pendente" | "cancelado" | "recusado" | "concluido" | "faltou";
   observacoes?: string;
   dataCriacao: string;
 }
@@ -133,6 +133,7 @@ export interface ConfiguracaoBarbearia {
   nome: string;
   cnpjCpf: string;
   logo?: string;
+  modoConfirmacao?: "automatico" | "manual" | "hibrido";
   horarioFuncionamento: {
     segunda: { aberto: boolean; inicio: string; fim: string };
     terca: { aberto: boolean; inicio: string; fim: string };

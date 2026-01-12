@@ -19,18 +19,20 @@ import { Input } from "@/components/ui/input";
 const Funcionalidades = () => {
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'admin' | 'dono' | 'cliente' | 'geral'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'dono' | 'cliente' | 'geral'>('all');
   const navigate = useNavigate();
+
+  // Filtrar funcionalidades de admin - não devem ser exibidas para clientes/donos
+  const publicFeatures = funcionalidades.filter(f => f.category !== 'admin');
 
   const categories = [
     { value: 'all', label: 'Todas' },
     { value: 'geral', label: 'Geral' },
-    { value: 'admin', label: 'Administrador' },
     { value: 'dono', label: 'Dono de Barbearia' },
     { value: 'cliente', label: 'Cliente' },
   ];
 
-  const filteredFeatures = funcionalidades.filter(feature => {
+  const filteredFeatures = publicFeatures.filter(feature => {
     const matchesSearch = feature.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          feature.shortDescription.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || feature.category === selectedCategory;
@@ -38,7 +40,7 @@ const Funcionalidades = () => {
   });
 
   const feature = selectedFeature 
-    ? funcionalidades.find(f => f.id === selectedFeature)
+    ? publicFeatures.find(f => f.id === selectedFeature)
     : null;
 
   const handleAccessFeature = (feature: Funcionalidade) => {

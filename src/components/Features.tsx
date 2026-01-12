@@ -16,11 +16,12 @@ import { Check } from "lucide-react";
 const Features = () => {
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
 
-  // Pegar apenas as primeiras 6 funcionalidades principais para exibir no início
-  const mainFeatures = funcionalidades.slice(0, 6);
+  // Filtrar funcionalidades que não são de admin e pegar as primeiras 6 principais
+  const publicFeatures = funcionalidades.filter(f => f.category !== 'admin');
+  const mainFeatures = publicFeatures.slice(0, 6);
 
   const feature = selectedFeature 
-    ? funcionalidades.find(f => f.id === selectedFeature)
+    ? publicFeatures.find(f => f.id === selectedFeature)
     : null;
 
   return (

@@ -101,18 +101,24 @@ export default function ConfiguracoesBarbearia() {
 
     setIsAlterandoSenha(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app';
+      // Garantir que a URL base não tenha /api no final
+      const baseUrl = (import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app').replace(/\/api\/?$/, '');
+      const API_URL = `${baseUrl}/api`;
       const token = localStorage.getItem('token');
       
       if (!token) {
         throw new Error('Token não encontrado. Faça login novamente.');
       }
 
+      const urlCompleta = `${API_URL}/auth/dono/alterar-senha`;
       console.log('🔐 Tentando alterar senha...');
-      console.log('🔐 URL:', `${API_URL}/api/auth/dono/alterar-senha`);
+      console.log('🔐 Base URL:', baseUrl);
+      console.log('🔐 API URL:', API_URL);
+      console.log('🔐 URL completa:', urlCompleta);
+      console.log('🔐 Token presente:', !!token);
       
       const response = await fetch(
-        `${API_URL}/api/auth/dono/alterar-senha`,
+        urlCompleta,
         {
           method: 'PUT',
           headers: {

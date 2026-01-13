@@ -128,7 +128,12 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Rotas públicas (autenticação e ativação de conta)
-app.use('/api/auth', authRoutes);
+// Log para debug - verificar se as rotas estão sendo registradas
+console.log('🔧 Registrando rotas de autenticação em /api/auth');
+app.use('/api/auth', (req, res, next) => {
+  console.log('🔧 Rota /api/auth chamada:', req.method, req.path);
+  next();
+}, authRoutes);
 app.use('/api/auth/google', googleAuthRoutes);
 app.use('/api', ativacaoRoutes);
 app.use('/api/solicitacoes', solicitacoesRoutes);

@@ -191,6 +191,8 @@ const configuracaoInicial: ConfiguracaoBarbearia = {
 };
 
 export function DonoProvider({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  
   // Obter barbeariaId do localStorage (salvo após login)
   const getBarbeariaIdFromStorage = (): string | null => {
     try {
@@ -256,14 +258,15 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     };
   }, [barbeariaId]);
 
-  // Carregar dados da API quando o componente montar ou barbeariaId mudar
+  // Carregar dados da API quando o componente montar, barbeariaId mudar ou rota mudar
   // Mas só se estiver em uma rota do dono (não na página inicial)
   useEffect(() => {
-    const currentPath = window.location.pathname;
+    const currentPath = location.pathname;
     const isDonoRoute = currentPath.startsWith('/dono');
     
     if (barbeariaId && isDonoRoute) {
       console.log('🔄 Carregando dados do banco para barbeariaId:', barbeariaId);
+      console.log('🔄 Rota atual:', currentPath);
       console.log('🔄 Token disponível:', !!localStorage.getItem('token'));
       carregarDados();
     } else if (isDonoRoute && !barbeariaId) {
@@ -272,36 +275,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       console.warn('⚠️ localStorage.barbearia:', localStorage.getItem('barbearia'));
       setLoading(false);
     }
-  }, [barbeariaId]);
-
-  // Listener para recarregar dados quando navegar para rota /dono
-  useEffect(() => {
-    const handleRouteChange = () => {
-      const currentPath = window.location.pathname;
-      const isDonoRoute = currentPath.startsWith('/dono');
-      
-      if (barbeariaId && isDonoRoute) {
-        console.log('🔄 Rota mudou para /dono, recarregando dados do banco...');
-        carregarDados();
-      }
-    };
-
-    // Verificar imediatamente
-    handleRouteChange();
-
-    // Escutar mudanças de rota (popstate para navegação do browser)
-    window.addEventListener('popstate', handleRouteChange);
-    
-    // Escutar mudanças de rota do React Router (usando intervalo como fallback)
-    const interval = setInterval(() => {
-      handleRouteChange();
-    }, 2000); // Verifica a cada 2 segundos
-
-    return () => {
-      window.removeEventListener('popstate', handleRouteChange);
-      clearInterval(interval);
-    };
-  }, [barbeariaId]);
+  }, [barbeariaId, location.pathname]);
 
   const carregarDados = async () => {
     if (!barbeariaId) {

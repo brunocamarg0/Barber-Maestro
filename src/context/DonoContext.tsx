@@ -361,7 +361,11 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           valor: prof.comissaoValor || 0,
         },
         ativo: prof.ativo !== undefined ? prof.ativo : true,
-        dataAdmissao: prof.dataAdmissao ? (prof.dataAdmissao.split('T')[0] || prof.dataAdmissao) : new Date().toISOString().split('T')[0],
+        dataAdmissao: prof.dataAdmissao 
+          ? (typeof prof.dataAdmissao === 'string' 
+              ? (prof.dataAdmissao.includes('T') ? prof.dataAdmissao.split('T')[0] : prof.dataAdmissao)
+              : new Date(prof.dataAdmissao).toISOString().split('T')[0])
+          : new Date().toISOString().split('T')[0],
         avaliacaoMedia: 0, // Calcular se necessário
         totalAvaliacoes: 0,
         faturamentoTotal: 0,

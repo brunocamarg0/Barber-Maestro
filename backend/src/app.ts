@@ -25,23 +25,38 @@ dotenv.config();
 
 export const app = express();
 
-// Middleware
+// Middleware CORS
 const allowedOrigins = process.env.FRONTEND_URL 
-  ? [process.env.FRONTEND_URL]
-  : ['http://localhost:5173', 'http://localhost:8080'];
+  ? [process.env.FRONTEND_URL, 'https://groom-guru-platform.vercel.app']
+  : ['http://localhost:5173', 'http://localhost:8080', 'https://groom-guru-platform.vercel.app'];
 
 app.use(cors({
   origin: (origin, callback) => {
     // Permitir requisições sem origin (mobile apps, Postman, etc)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+    // Permitir origens específicas ou todas em desenvolvimento
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(null, true); // Permitir todas as origens em desenvolvimento
+      // Em produção, permitir apenas origens conhecidas
+      // Em desenvolvimento, permitir todas
+      if (process.env.NODE_ENV === 'production') {
+        // Permitir Vercel mesmo se não estiver na lista
+        if (origin.includes('vercel.app') || origin.includes('groom-guru-platform')) {
+          callback(null, true);
+        } else {
+          callback(null, true); // Por enquanto permitir todas para debug
+        }
+      } else {
+        callback(null, true);
+      }
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
 }));
 app.use(express.json());
 

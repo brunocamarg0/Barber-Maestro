@@ -25,9 +25,16 @@ export async function autenticarDono(
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
     
+    // O token contém { id, email, tipo }
+    const userId = decoded.id || decoded.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Token inválido: ID do usuário não encontrado' });
+    }
+    
     // Buscar usuário dono
     const dono = await prisma.usuarioDono.findUnique({
-      where: { id: decoded.userId },
+      where: { id: userId },
       include: { barbearia: true },
     });
 

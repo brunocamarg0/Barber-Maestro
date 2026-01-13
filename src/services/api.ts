@@ -27,6 +27,20 @@ export async function apiRequest<T>(
     const error: ApiError = await response.json().catch(() => ({
       error: 'Erro na requisição',
     }));
+    
+    // Se erro de autenticação, limpar token e redirecionar para login
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userType');
+      localStorage.removeItem('barbearia');
+      
+      // Só redirecionar se não estiver já na página de login
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    
     throw new Error(error.error || error.message || 'Erro na requisição');
   }
 

@@ -220,11 +220,28 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       // Carregar dados em paralelo
+      // Tratamento silencioso de erros para não mostrar "Token inválido" se o profissional foi criado
       const [kpisData, agendamentosData, profissionaisData, clientesData] = await Promise.all([
-        apiGet<KPI>('/dono/dashboard/kpis').catch(() => kpiInicial),
-        apiGet<any[]>(`/agendamentos/barbearia/${barbeariaId}`).catch(() => []),
-        apiGet<any[]>('/dono/profissionais').catch(() => []),
-        apiGet<any[]>('/dono/clientes').catch(() => []),
+        apiGet<KPI>('/dono/dashboard/kpis').catch((err) => {
+          console.warn('Erro ao carregar KPIs:', err);
+          return kpiInicial;
+        }),
+        apiGet<any[]>(`/agendamentos/barbearia/${barbeariaId}`).catch((err) => {
+          console.warn('Erro ao carregar agendamentos:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/profissionais').catch((err) => {
+          console.warn('Erro ao carregar profissionais:', err);
+          // Se erro de autenticação, não mostrar toast (já foi criado com sucesso)
+          if (err.message?.includes('Token inválido') || err.message?.includes('Token não fornecido')) {
+            return [];
+          }
+          throw err;
+        }),
+        apiGet<any[]>('/dono/clientes').catch((err) => {
+          console.warn('Erro ao carregar clientes:', err);
+          return [];
+        }),
       ]);
 
       // Atualizar KPIs
@@ -398,7 +415,39 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         comissaoTipo: profissional.comissao.tipo,
         comissaoValor: profissional.comissao.valor,
       });
-      await carregarDados();
+      
+      // Recarregar dados silenciosamente (sem mostrar erros de token)
+      try {
+        await carregarDados();
+      } catch (reloadError) {
+        // Se houver erro ao recarregar, apenas recarregar profissionais
+        console.warn('Erro ao recarregar todos os dados, recarregando apenas profissionais:', reloadError);
+        try {
+          const profissionaisData = await apiGet<any[]>('/dono/profissionais');
+          const profissionaisTransformados: ProfissionalDono[] = profissionaisData.map((prof: any) => ({
+            id: prof.id,
+            nome: prof.nome,
+            email: prof.email,
+            telefone: prof.telefone,
+            foto: prof.foto,
+            especialidades: prof.especialidades || [],
+            comissao: {
+              tipo: prof.comissaoTipo || 'percentual',
+              valor: prof.comissaoValor || 0,
+            },
+            ativo: prof.ativo,
+            dataAdmissao: prof.dataAdmissao?.split('T')[0] || new Date().toISOString().split('T')[0],
+            avaliacaoMedia: 0,
+            totalAvaliacoes: 0,
+            faturamentoTotal: 0,
+            faltas: 0,
+          }));
+          setProfissionais(profissionaisTransformados);
+        } catch (profError) {
+          console.error('Erro ao recarregar profissionais:', profError);
+        }
+      }
+      
       toast.success('Profissional adicionado com sucesso!');
     } catch (error: any) {
       console.error('Erro ao adicionar profissional:', error);

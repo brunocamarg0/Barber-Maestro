@@ -15,6 +15,9 @@ prisma.$connect()
   .catch((error) => {
     console.error('❌ Erro ao conectar com banco de dados:', error);
     console.error('⚠️  Continuando sem conexão ao banco (health check ainda funcionará)');
+    console.error('🔍 Verifique se DATABASE_URL está configurada no Railway');
+    console.error('🔍 Verifique se o Supabase está ativo (não pausado)');
+    console.error('🔍 DATABASE_URL atual:', process.env.DATABASE_URL ? 'Configurada (oculta)' : 'NÃO CONFIGURADA');
     // Não encerrar o processo, apenas logar
   });
 

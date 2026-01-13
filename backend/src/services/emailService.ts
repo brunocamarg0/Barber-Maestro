@@ -62,7 +62,7 @@ interface EnviarConviteParams {
 export async function enviarEmailConvite(params: EnviarConviteParams) {
   const { email, nomeBarbearia, nomeResponsavel, linkAtivacao, expiraEm } = params;
 
-  const transporter = createTransporter();
+  const transporter = await createTransporter();
 
   const htmlTemplate = `
     <!DOCTYPE html>

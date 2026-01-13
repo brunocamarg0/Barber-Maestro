@@ -103,7 +103,7 @@ export default function ConfiguracoesBarbearia() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/dono/alterar-senha`,
+        `${import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app'}/api/auth/dono/alterar-senha`,
         {
           method: 'PUT',
           headers: {

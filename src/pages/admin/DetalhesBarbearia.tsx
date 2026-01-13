@@ -38,7 +38,7 @@ const planoConfig: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "https://groom-guru-platform-production.up.railway.app";
 
 export default function DetalhesBarbearia() {
   const { id } = useParams<{ id: string }>();

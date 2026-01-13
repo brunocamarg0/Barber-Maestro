@@ -116,13 +116,42 @@ app.use('/api/admin/barbearias', adminBarbeariasRoutes); // /api/admin/barbearia
 // Na Vercel, o app é exportado e não precisa de app.listen()
 if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
   const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
-    console.log(`📚 API Health: http://localhost:${PORT}/api/health`);
-    
-    // Configurar jobs agendados (apenas em ambiente local)
-    configurarJobs();
+  
+  // Tratamento de erros para evitar crash
+  process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught Exception:', error);
+    // Não encerrar o processo imediatamente, apenas logar
   });
+  
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    // Não encerrar o processo imediatamente, apenas logar
+  });
+  
+  try {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
+      console.log(`📚 API Health: http://localhost:${PORT}/api/health`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      
+      // Configurar jobs agendados (apenas em ambiente local)
+      try {
+        configurarJobs();
+      } catch (error) {
+        console.error('❌ Erro ao configurar jobs:', error);
+        // Não encerrar o processo se jobs falharem
+      }
+    });
+    
+    // Tratamento de erro no servidor
+    app.on('error', (error: any) => {
+      console.error('❌ Server error:', error);
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao iniciar servidor:', error);
+    process.exit(1);
+  }
 } else {
   // Em produção na Vercel, jobs agendados devem ser configurados via Vercel Cron
   console.log('✅ Running as serverless function on Vercel');
@@ -132,14 +161,24 @@ if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
  * Configura jobs agendados (cron jobs)
  */
 function configurarJobs() {
-  // Job para enviar lembretes de agendamento
-  // Executa a cada hora (no minuto 0 de cada hora)
-  // Exemplo: 00:00, 01:00, 02:00, etc.
-  cron.schedule('0 * * * *', async () => {
-    console.log('⏰ Executando job de lembretes de agendamento...');
-    await enviarLembretesAgendamento();
-  });
+  try {
+    // Job para enviar lembretes de agendamento
+    // Executa a cada hora (no minuto 0 de cada hora)
+    // Exemplo: 00:00, 01:00, 02:00, etc.
+    cron.schedule('0 * * * *', async () => {
+      try {
+        console.log('⏰ Executando job de lembretes de agendamento...');
+        await enviarLembretesAgendamento();
+      } catch (error) {
+        console.error('❌ Erro ao executar job de lembretes:', error);
+        // Não encerrar o processo se o job falhar
+      }
+    });
 
-  console.log('✅ Jobs agendados configurados:');
-  console.log('   - Lembretes de agendamento: A cada hora (minuto 0)');
+    console.log('✅ Jobs agendados configurados:');
+    console.log('   - Lembretes de agendamento: A cada hora (minuto 0)');
+  } catch (error) {
+    console.error('❌ Erro ao configurar jobs:', error);
+    // Não encerrar o processo se configuração de jobs falhar
+  }
 }

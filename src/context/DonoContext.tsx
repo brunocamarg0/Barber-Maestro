@@ -838,12 +838,12 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   };
 
   // Funções de pagamento
-  const registrarPagamento = (pagamento: Omit<PagamentoDono, "id">) => {
-    const novo: PagamentoDono = {
-      id: Date.now().toString(),
-      ...pagamento,
-    };
-    setPagamentos([...pagamentos, novo]);
+  const registrarPagamento = async (pagamento: Omit<PagamentoDono, "id">): Promise<void> => {
+    // Pagamentos são criados automaticamente quando um agendamento é confirmado/concluído
+    // Esta função pode ser usada para criar pagamentos manuais se necessário
+    console.log('💰 Registrando pagamento:', pagamento);
+    // Recarregar dados para obter o pagamento criado
+    await carregarDados(true);
   };
 
   // Funções de promoção

@@ -6,27 +6,79 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Scissors } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("owner");
   const navigate = useNavigate();
+  
+  // Estados para formulários
+  const [formData, setFormData] = useState({
+    owner: { email: "", senha: "" },
+    client: { email: "", senha: "" },
+    admin: { email: "", senha: "" },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Autenticação mockada (local) - qualquer email/senha funciona
-    setTimeout(() => {
-      setIsLoading(false);
-      // Redirecionar conforme a aba selecionada (mock)
+
+    try {
+      let endpoint = '';
+      let redirectPath = '';
+
       if (activeTab === 'owner') {
-        navigate('/dono');
-      } else if (activeTab === 'admin') {
-        navigate('/admin');
+        endpoint = '/auth/dono/login';
+        redirectPath = '/dono';
       } else if (activeTab === 'client') {
-        navigate('/client');
+        endpoint = '/auth/cliente/login';
+        redirectPath = '/client';
+      } else if (activeTab === 'admin') {
+        endpoint = '/auth/admin/login';
+        redirectPath = '/admin';
       }
-    }, 1000);
+
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData[activeTab as keyof typeof formData]),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao fazer login');
+      }
+
+      // Salvar token e dados do usuário
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userType', activeTab === 'owner' ? 'dono' : activeTab === 'client' ? 'cliente' : 'admin');
+        
+        if (data.usuario) {
+          localStorage.setItem('user', JSON.stringify(data.usuario));
+        }
+        
+        if (data.barbearia) {
+          localStorage.setItem('barbearia', JSON.stringify(data.barbearia));
+        }
+
+        toast.success('Login realizado com sucesso!');
+        navigate(redirectPath);
+      } else {
+        throw new Error('Token não recebido');
+      }
+    } catch (error: any) {
+      console.error('Erro ao fazer login:', error);
+      toast.error(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -64,6 +116,8 @@ const Login = () => {
                       id="owner-email"
                       type="email"
                       placeholder="seu@email.com"
+                      value={formData.owner.email}
+                      onChange={(e) => setFormData({ ...formData, owner: { ...formData.owner, email: e.target.value } })}
                       required
                     />
                   </div>
@@ -73,6 +127,8 @@ const Login = () => {
                       id="owner-password"
                       type="password"
                       placeholder="••••••••"
+                      value={formData.owner.senha}
+                      onChange={(e) => setFormData({ ...formData, owner: { ...formData.owner, senha: e.target.value } })}
                       required
                     />
                   </div>
@@ -86,7 +142,7 @@ const Login = () => {
                   </Button>
                   <p className="text-center text-sm text-muted-foreground">
                     Não tem uma conta?{" "}
-                    <Link to="#" className="text-primary hover:underline">
+                    <Link to="/cadastro?tipo=dono" className="text-primary hover:underline">
                       Cadastre-se
                     </Link>
                   </p>
@@ -111,6 +167,8 @@ const Login = () => {
                       id="client-email"
                       type="email"
                       placeholder="seu@email.com"
+                      value={formData.client.email}
+                      onChange={(e) => setFormData({ ...formData, client: { ...formData.client, email: e.target.value } })}
                       required
                     />
                   </div>
@@ -120,6 +178,8 @@ const Login = () => {
                       id="client-password"
                       type="password"
                       placeholder="••••••••"
+                      value={formData.client.senha}
+                      onChange={(e) => setFormData({ ...formData, client: { ...formData.client, senha: e.target.value } })}
                       required
                     />
                   </div>
@@ -133,7 +193,7 @@ const Login = () => {
                   </Button>
                   <p className="text-center text-sm text-muted-foreground">
                     Primeira vez aqui?{" "}
-                    <Link to="#" className="text-primary hover:underline">
+                    <Link to="/cadastro?tipo=cliente" className="text-primary hover:underline">
                       Criar conta
                     </Link>
                   </p>
@@ -158,6 +218,8 @@ const Login = () => {
                       id="admin-email"
                       type="email"
                       placeholder="admin@barberpro.com"
+                      value={formData.admin.email}
+                      onChange={(e) => setFormData({ ...formData, admin: { ...formData.admin, email: e.target.value } })}
                       required
                     />
                   </div>
@@ -167,6 +229,8 @@ const Login = () => {
                       id="admin-password"
                       type="password"
                       placeholder="••••••••"
+                      value={formData.admin.senha}
+                      onChange={(e) => setFormData({ ...formData, admin: { ...formData.admin, senha: e.target.value } })}
                       required
                     />
                   </div>

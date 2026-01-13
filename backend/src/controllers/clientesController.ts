@@ -137,20 +137,34 @@ export async function criarCliente(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'Já existe um cliente com este email' });
     }
 
+    // Gerar email temporário único se necessário (para desenvolvimento)
+    let emailFinal = email;
+    if (!email || email === '') {
+      emailFinal = `temp_${Date.now()}@temp.com`;
+    }
+
     const cliente = await prisma.cliente.create({
       data: {
         nome,
-        email,
+        email: emailFinal,
         telefone: telefone || null,
         foto: foto || null,
         dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
+        ativo: true,
+        emailVerificado: false,
       },
     });
 
     res.status(201).json(cliente);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao criar cliente:', error);
-    res.status(500).json({ error: 'Erro ao criar cliente' });
+    
+    // Tratar erros específicos do Prisma
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'Já existe um cliente com este email ou telefone' });
+    }
+    
+    res.status(500).json({ error: 'Erro ao criar cliente', details: error.message });
   }
 }
 

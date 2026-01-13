@@ -217,6 +217,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   const [barbeariaId, setBarbeariaId] = useState<string | null>(getBarbeariaIdFromStorage());
   const [kpi, setKpi] = useState<KPI>(kpiInicial);
   const [agendamentos, setAgendamentos] = useState<AgendamentoDono[]>([]);
+  // IMPORTANTE: Sempre inicia vazio - dados vêm APENAS do banco de dados
   const [profissionais, setProfissionais] = useState<ProfissionalDono[]>([]);
   const [clientes, setClientes] = useState<ClienteDono[]>([]);
   const [pagamentos, setPagamentos] = useState<PagamentoDono[]>([]);
@@ -263,11 +264,43 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     
     if (barbeariaId && isDonoRoute) {
       console.log('🔄 Carregando dados do banco para barbeariaId:', barbeariaId);
+      console.log('🔄 Token disponível:', !!localStorage.getItem('token'));
       carregarDados();
     } else if (isDonoRoute && !barbeariaId) {
       console.warn('⚠️ BarbeariaId não encontrado. Verifique se está logado como dono.');
+      console.warn('⚠️ localStorage.user:', localStorage.getItem('user'));
+      console.warn('⚠️ localStorage.barbearia:', localStorage.getItem('barbearia'));
       setLoading(false);
     }
+  }, [barbeariaId]);
+
+  // Listener para recarregar dados quando navegar para rota /dono
+  useEffect(() => {
+    const handleRouteChange = () => {
+      const currentPath = window.location.pathname;
+      const isDonoRoute = currentPath.startsWith('/dono');
+      
+      if (barbeariaId && isDonoRoute) {
+        console.log('🔄 Rota mudou para /dono, recarregando dados do banco...');
+        carregarDados();
+      }
+    };
+
+    // Verificar imediatamente
+    handleRouteChange();
+
+    // Escutar mudanças de rota (popstate para navegação do browser)
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Escutar mudanças de rota do React Router (usando intervalo como fallback)
+    const interval = setInterval(() => {
+      handleRouteChange();
+    }, 2000); // Verifica a cada 2 segundos
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+      clearInterval(interval);
+    };
   }, [barbeariaId]);
 
   const carregarDados = async () => {
@@ -309,9 +342,14 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       ]);
 
       console.log('✅ Dados carregados do banco:');
-      console.log('  - Profissionais:', profissionaisData?.length || 0);
-      console.log('  - Clientes:', clientesData?.length || 0);
+      console.log('  - Profissionais:', profissionaisData?.length || 0, profissionaisData);
+      console.log('  - Clientes:', clientesData?.length || 0, clientesData);
       console.log('  - Agendamentos:', agendamentosData?.length || 0);
+      
+      // IMPORTANTE: Se não houver dados, define arrays vazios (NUNCA dados mockados)
+      if (!profissionaisData || profissionaisData.length === 0) {
+        console.log('ℹ️ Nenhum profissional encontrado no banco de dados');
+      }
 
       // Atualizar KPIs (só se dados vieram do banco)
       if (kpisData) {
@@ -489,7 +527,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // Funções de profissional
   const adicionarProfissional = async (profissional: Omit<ProfissionalDono, "id" | "dataAdmissao" | "avaliacaoMedia" | "totalAvaliacoes" | "faturamentoTotal" | "faltas">) => {
     try {
-      await apiPost('/dono/profissionais', {
+      console.log('➕ Adicionando profissional ao banco de dados:', profissional.nome);
+      const resultado = await apiPost('/dono/profissionais', {
         nome: profissional.nome,
         email: profissional.email,
         telefone: profissional.telefone,
@@ -499,41 +538,16 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         comissaoValor: profissional.comissao.valor,
       });
       
-      // Recarregar dados silenciosamente (sem mostrar erros de token)
-      try {
-        await carregarDados();
-      } catch (reloadError) {
-        // Se houver erro ao recarregar, apenas recarregar profissionais
-        console.warn('Erro ao recarregar todos os dados, recarregando apenas profissionais:', reloadError);
-        try {
-          const profissionaisData = await apiGet<any[]>('/dono/profissionais');
-          const profissionaisTransformados: ProfissionalDono[] = profissionaisData.map((prof: any) => ({
-            id: prof.id,
-            nome: prof.nome,
-            email: prof.email,
-            telefone: prof.telefone,
-            foto: prof.foto,
-            especialidades: prof.especialidades || [],
-            comissao: {
-              tipo: prof.comissaoTipo || 'percentual',
-              valor: prof.comissaoValor || 0,
-            },
-            ativo: prof.ativo,
-            dataAdmissao: prof.dataAdmissao?.split('T')[0] || new Date().toISOString().split('T')[0],
-            avaliacaoMedia: 0,
-            totalAvaliacoes: 0,
-            faturamentoTotal: 0,
-            faltas: 0,
-          }));
-          setProfissionais(profissionaisTransformados);
-        } catch (profError) {
-          console.error('Erro ao recarregar profissionais:', profError);
-        }
-      }
+      console.log('✅ Profissional adicionado ao banco:', resultado);
       
+      // SEMPRE recarregar dados do banco após adicionar
+      console.log('🔄 Recarregando dados do banco após adicionar profissional...');
+      await carregarDados();
+      
+      console.log('✅ Dados recarregados do banco com sucesso');
       toast.success('Profissional adicionado com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao adicionar profissional:', error);
+      console.error('❌ Erro ao adicionar profissional:', error);
       toast.error(error.message || 'Erro ao adicionar profissional');
       throw error;
     }
@@ -541,6 +555,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   const atualizarProfissional = async (id: string, dados: Partial<ProfissionalDono>) => {
     try {
+      console.log('✏️ Atualizando profissional no banco:', id);
       const updateData: any = {};
       if (dados.nome) updateData.nome = dados.nome;
       if (dados.email !== undefined) updateData.email = dados.email;
@@ -554,21 +569,24 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       if (dados.ativo !== undefined) updateData.ativo = dados.ativo;
 
       await apiPut(`/dono/profissionais/${id}`, updateData);
+      console.log('✅ Profissional atualizado no banco, recarregando dados...');
       await carregarDados();
       toast.success('Profissional atualizado!');
     } catch (error: any) {
-      console.error('Erro ao atualizar profissional:', error);
+      console.error('❌ Erro ao atualizar profissional:', error);
       toast.error(error.message || 'Erro ao atualizar profissional');
     }
   };
 
   const removerProfissional = async (id: string) => {
     try {
+      console.log('🗑️ Removendo profissional do banco:', id);
       await apiDelete(`/dono/profissionais/${id}`);
+      console.log('✅ Profissional removido do banco, recarregando dados...');
       await carregarDados();
       toast.success('Profissional removido');
     } catch (error: any) {
-      console.error('Erro ao remover profissional:', error);
+      console.error('❌ Erro ao remover profissional:', error);
       toast.error(error.message || 'Erro ao remover profissional');
     }
   };
@@ -576,6 +594,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // Funções de cliente
   const adicionarCliente = async (cliente: Omit<ClienteDono, "id" | "dataCadastro" | "totalAgendamentos" | "ticketMedio" | "frequencia">) => {
     try {
+      console.log('➕ Adicionando cliente ao banco de dados:', cliente.nome);
       await apiPost('/dono/clientes', {
         nome: cliente.nome,
         email: cliente.email,
@@ -583,10 +602,11 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         foto: cliente.foto,
         dataNascimento: cliente.dataNascimento,
       });
+      console.log('✅ Cliente adicionado ao banco, recarregando dados...');
       await carregarDados();
       toast.success('Cliente adicionado com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao adicionar cliente:', error);
+      console.error('❌ Erro ao adicionar cliente:', error);
       toast.error(error.message || 'Erro ao adicionar cliente');
       throw error;
     }

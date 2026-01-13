@@ -115,7 +115,7 @@ app.use('/api/admin/barbearias', adminBarbeariasRoutes); // /api/admin/barbearia
 // Iniciar servidor apenas se não estiver rodando como serverless function (Vercel)
 // Na Vercel, o app é exportado e não precisa de app.listen()
 if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
-  const PORT = process.env.PORT || 3001;
+  const PORT = parseInt(process.env.PORT || '3001', 10);
   
   // Tratamento de erros para evitar crash
   process.on('uncaughtException', (error) => {
@@ -129,7 +129,7 @@ if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
   });
   
   try {
-    app.listen(PORT, '0.0.0.0', () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
       console.log(`📚 API Health: http://localhost:${PORT}/api/health`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -144,7 +144,7 @@ if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
     });
     
     // Tratamento de erro no servidor
-    app.on('error', (error: any) => {
+    server.on('error', (error: any) => {
       console.error('❌ Server error:', error);
     });
     

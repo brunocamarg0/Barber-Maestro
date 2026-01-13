@@ -309,7 +309,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     };
   }, [barbeariaId]);
 
-  const carregarDados = async () => {
+  const carregarDados = async (forcar: boolean = false) => {
     if (!barbeariaId) {
       console.warn('⚠️ Não é possível carregar dados: barbeariaId não definido');
       setLoading(false);
@@ -317,8 +317,9 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     }
 
     // Evitar múltiplas chamadas simultâneas (debounce de 1 segundo)
+    // Mas permitir forçar o carregamento (útil após criar/atualizar/deletar)
     const agora = Date.now();
-    if (agora - ultimoCarregamento < 1000) {
+    if (!forcar && agora - ultimoCarregamento < 1000) {
       console.log('⏸️ Carregamento já em andamento, aguardando...');
       return;
     }
@@ -558,7 +559,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       
       // SEMPRE recarregar dados do banco após adicionar
       console.log('🔄 Recarregando dados do banco após adicionar profissional...');
-      await carregarDados();
+      await carregarDados(true);
       
       console.log('✅ Dados recarregados do banco com sucesso');
       toast.success('Profissional adicionado com sucesso!');
@@ -586,7 +587,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
       await apiPut(`/dono/profissionais/${id}`, updateData);
       console.log('✅ Profissional atualizado no banco, recarregando dados...');
-      await carregarDados();
+      await carregarDados(true);
       toast.success('Profissional atualizado!');
     } catch (error: any) {
       console.error('❌ Erro ao atualizar profissional:', error);
@@ -599,7 +600,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       console.log('🗑️ Removendo profissional do banco:', id);
       await apiDelete(`/dono/profissionais/${id}`);
       console.log('✅ Profissional removido do banco, recarregando dados...');
-      await carregarDados();
+      await carregarDados(true);
       toast.success('Profissional removido');
     } catch (error: any) {
       console.error('❌ Erro ao remover profissional:', error);
@@ -619,7 +620,9 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         dataNascimento: cliente.dataNascimento,
       });
       console.log('✅ Cliente adicionado ao banco, recarregando dados...');
-      await carregarDados();
+      // Forçar recarregamento imediato após adicionar cliente
+      await carregarDados(true);
+      console.log('✅ Dados recarregados após adicionar cliente');
       toast.success('Cliente adicionado com sucesso!');
     } catch (error: any) {
       console.error('❌ Erro ao adicionar cliente:', error);
@@ -639,7 +642,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       if (dados.ativo !== undefined) updateData.ativo = dados.ativo;
 
       await apiPut(`/dono/clientes/${id}`, updateData);
-      await carregarDados();
+      await carregarDados(true);
       toast.success('Cliente atualizado!');
     } catch (error: any) {
       console.error('Erro ao atualizar cliente:', error);

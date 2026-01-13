@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as authController from '../controllers/authController';
+import { autenticarDono } from '../middleware/auth';
 
 const router = Router();
 
@@ -11,7 +12,8 @@ router.post('/cliente/login', authController.loginCliente);
 router.post('/dono/cadastro-direto', authController.cadastroDiretoDono);
 router.post('/dono/registro', authController.registrarDono);
 router.post('/dono/login', authController.loginDono);
-router.put('/dono/alterar-senha', authController.alterarSenhaDono);
+// Rota protegida - requer autenticação
+router.put('/dono/alterar-senha', autenticarDono, authController.alterarSenhaDono);
 
 // Rotas de admin
 router.post('/admin/login', authController.loginAdmin);

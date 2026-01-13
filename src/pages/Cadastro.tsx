@@ -97,15 +97,41 @@ const Cadastro = () => {
         redirectPath = '/client';
       }
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
+      let response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+      } catch (fetchError: any) {
+        // Erro de rede (backend não está rodando ou CORS)
+        console.error('Erro de conexão:', fetchError);
+        throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3001.');
+      }
 
-      const data = await response.json();
+      if (!response) {
+        throw new Error('Erro ao conectar com o servidor');
+      }
+
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          console.error('Erro ao parsear JSON:', jsonError);
+          const text = await response.text();
+          console.error('Resposta do servidor:', text);
+          throw new Error('Resposta inválida do servidor. Verifique se o backend está rodando corretamente.');
+        }
+      } else {
+        const text = await response.text();
+        console.error('Resposta do servidor (não JSON):', text);
+        throw new Error('Resposta inválida do servidor. Verifique se o backend está rodando corretamente.');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao realizar cadastro');

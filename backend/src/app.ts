@@ -133,12 +133,18 @@ app.use('/api/admin/barbearias', adminBarbeariasRoutes); // /api/admin/barbearia
 
 // Iniciar servidor apenas se não estiver rodando como serverless function (Vercel)
 // Na Vercel, o app é exportado e não precisa de app.listen()
+// Railway sempre define PORT, então sempre iniciar o servidor se não for Vercel
 if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
+  // Railway define PORT automaticamente, usar 3001 como fallback apenas para desenvolvimento local
   const PORT = parseInt(process.env.PORT || '3001', 10);
+  
+  console.log(`🔧 Tentando iniciar servidor na porta ${PORT}...`);
+  console.log(`🔧 PORT da env: ${process.env.PORT}`);
   
   // Tratamento de erros para evitar crash
   process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught Exception:', error);
+    console.error('❌ Stack:', error.stack);
     // Não encerrar o processo imediatamente, apenas logar
   });
   
@@ -147,36 +153,36 @@ if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
     // Não encerrar o processo imediatamente, apenas logar
   });
   
-  try {
-    const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
-      console.log(`📚 API Health: http://localhost:${PORT}/api/health`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`✅ Health check endpoint ready at /api/health`);
-      
-      // Configurar jobs agendados (apenas em ambiente local)
-      try {
-        configurarJobs();
-      } catch (error) {
-        console.error('❌ Erro ao configurar jobs:', error);
-        // Não encerrar o processo se jobs falharem
-      }
-    });
+  // Iniciar servidor imediatamente, sem try-catch que possa esconder erros
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Server is running on http://0.0.0.0:${PORT}`);
+    console.log(`✅ API Health: http://0.0.0.0:${PORT}/api/health`);
+    console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✅ Health check endpoint ready at /api/health`);
     
-    // Tratamento de erro no servidor
-    server.on('error', (error: any) => {
-      console.error('❌ Server error:', error);
-    });
-    
-    // Garantir que o servidor está escutando
-    server.on('listening', () => {
-      console.log(`✅ Server listening on port ${PORT}`);
-    });
-    
-  } catch (error) {
-    console.error('❌ Erro ao iniciar servidor:', error);
-    process.exit(1);
-  }
+    // Configurar jobs agendados (apenas em ambiente local)
+    try {
+      configurarJobs();
+    } catch (error) {
+      console.error('❌ Erro ao configurar jobs:', error);
+      // Não encerrar o processo se jobs falharem
+    }
+  });
+  
+  // Tratamento de erro no servidor
+  server.on('error', (error: any) => {
+    console.error('❌ Server error:', error);
+    console.error('❌ Error code:', error.code);
+    console.error('❌ Error message:', error.message);
+  });
+  
+  // Garantir que o servidor está escutando
+  server.on('listening', () => {
+    const address = server.address();
+    console.log(`✅ Server listening on:`, address);
+    console.log(`✅ Health check disponível em: http://0.0.0.0:${PORT}/api/health`);
+  });
+  
 } else {
   // Em produção na Vercel, jobs agendados devem ser configurados via Vercel Cron
   console.log('✅ Running as serverless function on Vercel');

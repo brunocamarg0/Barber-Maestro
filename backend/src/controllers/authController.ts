@@ -60,9 +60,41 @@ export async function registrarCliente(req: Request, res: Response) {
       token,
       usuario: cliente,
     });
-  } catch (error) {
-    console.error('Erro ao registrar cliente:', error);
-    res.status(500).json({ error: 'Erro ao registrar cliente' });
+  } catch (error: any) {
+    console.error('❌ Erro ao registrar cliente:', error);
+    console.error('❌ Stack:', error.stack);
+    console.error('❌ Código do erro:', error.code);
+    console.error('❌ Mensagem:', error.message);
+    
+    // Erros específicos do Prisma
+    if (error.code === 'P2002') {
+      // Violação de constraint única
+      const campo = error.meta?.target?.[0] || 'campo';
+      return res.status(400).json({ 
+        error: `Este ${campo} já está em uso`,
+        detalhes: error.meta 
+      });
+    }
+    
+    if (error.code === 'P2003') {
+      // Foreign key constraint
+      return res.status(400).json({ 
+        error: 'Erro de relacionamento no banco de dados',
+        detalhes: error.meta 
+      });
+    }
+    
+    if (error.message?.includes('does not exist')) {
+      return res.status(500).json({ 
+        error: 'Tabelas não criadas no banco de dados. Execute as migrações: npm run prisma:push',
+        detalhes: error.message 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Erro ao registrar cliente',
+      detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 

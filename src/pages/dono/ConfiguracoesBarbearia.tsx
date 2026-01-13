@@ -101,9 +101,18 @@ export default function ConfiguracoesBarbearia() {
 
     setIsAlterandoSenha(true);
     try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app';
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Token não encontrado. Faça login novamente.');
+      }
+
+      console.log('🔐 Tentando alterar senha...');
+      console.log('🔐 URL:', `${API_URL}/api/auth/dono/alterar-senha`);
+      
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app'}/api/auth/dono/alterar-senha`,
+        `${API_URL}/api/auth/dono/alterar-senha`,
         {
           method: 'PUT',
           headers: {
@@ -117,12 +126,21 @@ export default function ConfiguracoesBarbearia() {
         }
       );
 
+      console.log('🔐 Status da resposta:', response.status);
+      console.log('🔐 Content-Type:', response.headers.get('content-type'));
+
       // Verificar se a resposta é JSON antes de fazer parse
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        console.error('❌ Resposta não é JSON:', text);
-        throw new Error('Resposta inválida do servidor. Verifique se a rota está correta.');
+        console.error('❌ Resposta não é JSON:', text.substring(0, 200));
+        
+        // Se for 404, a rota não existe
+        if (response.status === 404) {
+          throw new Error('Rota não encontrada. Verifique se o backend está configurado corretamente.');
+        }
+        
+        throw new Error(`Resposta inválida do servidor (${response.status}). Verifique se a rota está correta.`);
       }
 
       const data = await response.json();

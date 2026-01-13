@@ -438,13 +438,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         email: cli.email || '',
         telefone: cli.telefone || '',
         foto: cli.foto,
-        dataNascimento: cli.dataNascimento ? (cli.dataNascimento.split('T')[0] || cli.dataNascimento) : undefined,
+        dataNascimento: cli.dataNascimento ? (typeof cli.dataNascimento === 'string' ? cli.dataNascimento.split('T')[0] : new Date(cli.dataNascimento).toISOString().split('T')[0]) : undefined,
         vip: false, // Adicionar campo no backend se necessário
-        totalAgendamentos: cli._count?.agendamentos || 0,
-        ultimoAgendamento: undefined, // Calcular se necessário
-        ticketMedio: 0, // Calcular se necessário
-        frequencia: 0, // Calcular se necessário
-        dataCadastro: cli.createdAt ? (cli.createdAt.split('T')[0] || cli.createdAt) : new Date().toISOString().split('T')[0],
+        totalAgendamentos: cli.totalAgendamentos || cli._count?.agendamentos || 0,
+        ultimoAgendamento: cli.ultimoAgendamento ? (typeof cli.ultimoAgendamento === 'string' ? cli.ultimoAgendamento : new Date(cli.ultimoAgendamento).toISOString()) : undefined,
+        ticketMedio: cli.ticketMedio || 0,
+        frequencia: cli.frequencia || 0,
+        dataCadastro: cli.createdAt ? (typeof cli.createdAt === 'string' ? cli.createdAt.split('T')[0] : new Date(cli.createdAt).toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
       }));
 
       console.log('✅ Clientes carregados do banco:', clientesTransformados.length);

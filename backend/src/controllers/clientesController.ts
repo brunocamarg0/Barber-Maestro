@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 
 /**
  * Listar clientes (da barbearia do dono)
+ * Inclui clientes com agendamentos E clientes criados recentemente (últimos 30 dias)
  */
 export async function listarClientes(req: AuthRequest, res: Response) {
   try {
@@ -21,12 +22,32 @@ export async function listarClientes(req: AuthRequest, res: Response) {
       distinct: ['clienteId'],
     });
 
-    const clienteIds = agendamentos
+    const clienteIdsComAgendamento = agendamentos
       .map((a) => a.clienteId)
       .filter((id): id is string => id !== null);
 
+    // Buscar também clientes criados recentemente (últimos 30 dias)
+    // Isso garante que clientes recém-criados apareçam mesmo sem agendamentos
+    const dataLimite = new Date();
+    dataLimite.setDate(dataLimite.getDate() - 30);
+
+    const clientesRecentes = await prisma.cliente.findMany({
+      where: {
+        createdAt: {
+          gte: dataLimite,
+        },
+        ativo: true,
+      },
+      select: { id: true },
+    });
+
+    const clienteIdsRecentes = clientesRecentes.map((c) => c.id);
+
+    // Combinar IDs: clientes com agendamentos + clientes recentes
+    const todosClienteIds = [...new Set([...clienteIdsComAgendamento, ...clienteIdsRecentes])];
+
     const where: any = {
-      id: { in: clienteIds },
+      id: { in: todosClienteIds },
     };
 
     if (busca && typeof busca === 'string') {
@@ -40,14 +61,60 @@ export async function listarClientes(req: AuthRequest, res: Response) {
     const clientes = await prisma.cliente.findMany({
       where,
       include: {
+        agendamentos: {
+          where: { barbeariaId },
+          select: {
+            id: true,
+            data: true,
+            servico: {
+              select: { preco: true },
+            },
+            pagamento: {
+              select: { valor: true },
+            },
+          },
+          orderBy: { data: 'desc' },
+        },
         _count: {
-          select: { agendamentos: true },
+          select: { 
+            agendamentos: {
+              where: { barbeariaId },
+            },
+          },
         },
       },
       orderBy: { nome: 'asc' },
     });
 
-    res.json(clientes);
+    // Transformar dados para incluir estatísticas
+    const clientesComEstatisticas = clientes.map((cliente) => {
+      const agendamentosBarbearia = cliente.agendamentos || [];
+      const totalAgendamentos = agendamentosBarbearia.length;
+      
+      // Calcular ticket médio baseado nos pagamentos
+      const pagamentos = agendamentosBarbearia
+        .filter((ag) => ag.pagamento)
+        .map((ag) => ag.pagamento?.valor || 0);
+      
+      const ticketMedio = pagamentos.length > 0
+        ? pagamentos.reduce((sum, val) => sum + val, 0) / pagamentos.length
+        : 0;
+
+      // Último agendamento
+      const ultimoAgendamento = agendamentosBarbearia.length > 0
+        ? agendamentosBarbearia[0].data
+        : null;
+
+      return {
+        ...cliente,
+        totalAgendamentos,
+        ticketMedio,
+        ultimoAgendamento,
+        frequencia: totalAgendamentos, // Simplificado: total de agendamentos
+      };
+    });
+
+    res.json(clientesComEstatisticas);
   } catch (error) {
     console.error('Erro ao listar clientes:', error);
     res.status(500).json({ error: 'Erro ao listar clientes' });

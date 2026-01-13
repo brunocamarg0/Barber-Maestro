@@ -12,7 +12,8 @@
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:push": "npx prisma db push",
     "prisma:studio": "npx prisma studio",
-    "postinstall": "npx prisma generate"
+    "postinstall": "npx prisma generate",
+    "criar-usuario-teste": "tsx scripts/criar-usuario-teste.ts"
   },
   "keywords": [],
   "author": "",

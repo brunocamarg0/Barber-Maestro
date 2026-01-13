@@ -87,15 +87,21 @@ app.use('/api/admin', adminUsuariosRoutes); // /api/admin/barbearias/:id/dono
 app.use('/api/admin', adminConvitesRoutes); // /api/admin/barbearias/:id/convite
 app.use('/api/admin/barbearias', adminBarbeariasRoutes); // /api/admin/barbearias
 
-// Iniciar servidor
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  console.log(`📚 API Health: http://localhost:${PORT}/api/health`);
-  
-  // Configurar jobs agendados
-  configurarJobs();
-});
+// Iniciar servidor apenas se não estiver rodando como serverless function (Vercel)
+// Na Vercel, o app é exportado e não precisa de app.listen()
+if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    console.log(`📚 API Health: http://localhost:${PORT}/api/health`);
+    
+    // Configurar jobs agendados (apenas em ambiente local)
+    configurarJobs();
+  });
+} else {
+  // Em produção na Vercel, jobs agendados devem ser configurados via Vercel Cron
+  console.log('✅ Running as serverless function on Vercel');
+}
 
 /**
  * Configura jobs agendados (cron jobs)

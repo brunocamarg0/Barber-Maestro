@@ -75,7 +75,7 @@ export default function AdminDashboard() {
   const carregarSolicitacoes = async () => {
     setIsLoadingSolicitacoes(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/solicitacoes/admin?status=pendente`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app'}/api/solicitacoes/admin?status=pendente`);
       if (response.ok) {
         const data = await response.json();
         setSolicitacoes(data);
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
     setIsProcessing(true);
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/solicitacoes/admin/${selectedSolicitacao.id}/aprovar`,
+        `${import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app'}/api/solicitacoes/admin/${selectedSolicitacao.id}/aprovar`,
         {
           method: 'POST',
           headers: {
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
     setIsProcessing(true);
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/solicitacoes/admin/${selectedSolicitacao.id}/rejeitar`,
+        `${import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app'}/api/solicitacoes/admin/${selectedSolicitacao.id}/rejeitar`,
         {
           method: 'POST',
           headers: {

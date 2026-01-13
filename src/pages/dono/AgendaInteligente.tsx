@@ -47,7 +47,7 @@ import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AgendaInteligente() {
-  const { agendamentos, profissionais, clientes, servicos: servicosContext, criarAgendamento, confirmarAgendamento, recusarAgendamento } = useDono();
+  const { agendamentos, profissionais, clientes, servicos, criarAgendamento, confirmarAgendamento, recusarAgendamento } = useDono();
   const { toast } = useToast();
   const [visualizacao, setVisualizacao] = useState<"dia" | "semana" | "mes">("dia");
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date());
@@ -66,11 +66,10 @@ export default function AgendaInteligente() {
     observacoes: "",
   });
 
-  // Obter serviços do DonoContext (do backend)
-  const { servicos: servicosContext } = useDono();
-  const servicos = useMemo(() => {
-    return servicosContext?.filter(s => s.ativo) || [];
-  }, [servicosContext]);
+  // Obter serviços ativos do banco de dados
+  const servicosAtivos = useMemo(() => {
+    return servicos.filter((s: any) => s.ativo);
+  }, [servicos]);
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -119,7 +118,7 @@ export default function AgendaInteligente() {
 
     // Duração do serviço selecionado (ou 40 minutos padrão)
     const duracaoServico = servicoId
-      ? servicos.find((s) => s.id === servicoId)?.duracao || 40
+      ? servicosAtivos.find((s: any) => s.id === servicoId)?.duracao || 40
       : 40;
 
     // Verificar conflitos com agendamentos existentes
@@ -276,7 +275,7 @@ export default function AgendaInteligente() {
     // Buscar dados do cliente, profissional e serviço
     const cliente = clientes.find(c => c.id === formNovoAgendamento.clienteId);
     const profissional = profissionais.find(p => p.id === formNovoAgendamento.profissionalId);
-    const servico = servicos.find(s => s.id === formNovoAgendamento.servicoId);
+    const servico = servicosAtivos.find((s: any) => s.id === formNovoAgendamento.servicoId);
 
     if (!cliente || !profissional || !servico) {
       toast({
@@ -955,7 +954,7 @@ export default function AgendaInteligente() {
                   <SelectValue placeholder="Selecione um serviço" />
                 </SelectTrigger>
                 <SelectContent>
-                  {servicos.map((servico) => (
+                  {servicosAtivos.map((servico: any) => (
                     <SelectItem key={servico.id} value={servico.id}>
                       {servico.nome} - {formatarMoeda(servico.valor)} ({servico.duracao}min)
                     </SelectItem>
@@ -1041,19 +1040,19 @@ export default function AgendaInteligente() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Serviço selecionado:</span>
                     <span className="font-medium">
-                      {servicos.find((s) => s.id === formNovoAgendamento.servicoId)?.nome}
+                      {servicosAtivos.find((s: any) => s.id === formNovoAgendamento.servicoId)?.nome}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Duração:</span>
                     <span className="font-medium">
-                      {servicos.find((s) => s.id === formNovoAgendamento.servicoId)?.duracao} minutos
+                      {servicosAtivos.find((s: any) => s.id === formNovoAgendamento.servicoId)?.duracao} minutos
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Valor:</span>
                     <span className="font-bold text-lg">
-                      {formatarMoeda(servicos.find((s) => s.id === formNovoAgendamento.servicoId)?.valor || 0)}
+                      {formatarMoeda(servicosAtivos.find((s: any) => s.id === formNovoAgendamento.servicoId)?.preco || servicosAtivos.find((s: any) => s.id === formNovoAgendamento.servicoId)?.valor || 0)}
                     </span>
                   </div>
                 </div>

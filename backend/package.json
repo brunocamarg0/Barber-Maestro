@@ -7,9 +7,13 @@
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "start:prod": "npm run build && node dist/app.js",
+    "prisma:generate": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev",
+    "prisma:push": "npx prisma db push",
+    "prisma:studio": "npx prisma studio",
+    "postinstall": "npx prisma generate",
+    "criar-usuario-teste": "tsx scripts/criar-usuario-teste.ts"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +28,9 @@
     "jsonwebtoken": "^9.0.2",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "express-session": "^1.18.0"
+    "express-session": "^1.18.0",
+    "prisma": "^5.20.0",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -37,7 +43,6 @@
     "@types/passport-google-oauth20": "^2.0.14",
     "@types/express-session": "^1.17.10",
     "@types/node-cron": "^3.0.11",
-    "prisma": "^5.20.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

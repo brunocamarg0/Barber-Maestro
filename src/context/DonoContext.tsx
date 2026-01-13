@@ -36,7 +36,6 @@ interface DonoContextType {
   agendamentos: AgendamentoDono[];
   profissionais: ProfissionalDono[];
   clientes: ClienteDono[];
-  servicos: any[]; // Serviços da barbearia
   pagamentos: PagamentoDono[];
   promocoes: PromocaoDono[];
   avaliacoes: AvaliacaoDono[];
@@ -59,18 +58,25 @@ interface DonoContextType {
   atualizarCliente: (id: string, dados: Partial<ClienteDono>) => Promise<void>;
   marcarClienteVIP: (id: string, vip: boolean) => void;
   
-  registrarPagamento: (pagamento: Omit<PagamentoDono, "id">) => void;
+  // Funções de serviços
+  servicos: any[];
+  adicionarServico: (servico: { nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }) => Promise<void>;
+  atualizarServico: (id: string, dados: Partial<{ nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }>) => Promise<void>;
+  removerServico: (id: string) => Promise<void>;
+  toggleServicoAtivo: (id: string) => Promise<void>;
   
-  criarPromocao: (promocao: Omit<PromocaoDono, "id">) => void;
-  atualizarPromocao: (id: string, dados: Partial<PromocaoDono>) => void;
+  registrarPagamento: (pagamento: Omit<PagamentoDono, "id">) => Promise<void>;
   
-  responderAvaliacao: (id: string, resposta: string) => void;
+  criarPromocao: (promocao: Omit<PromocaoDono, "id">) => Promise<void>;
+  atualizarPromocao: (id: string, dados: Partial<PromocaoDono>) => Promise<void>;
   
-  adicionarProduto: (produto: Omit<ProdutoDono, "id">) => void;
-  atualizarProduto: (id: string, dados: Partial<ProdutoDono>) => void;
-  atualizarEstoque: (id: string, quantidade: number) => void;
+  responderAvaliacao: (id: string, resposta: string) => Promise<void>;
   
-  marcarNotificacaoLida: (id: string) => void;
+  adicionarProduto: (produto: Omit<ProdutoDono, "id">) => Promise<void>;
+  atualizarProduto: (id: string, dados: Partial<ProdutoDono>) => Promise<void>;
+  atualizarEstoque: (id: string, quantidade: number) => Promise<void>;
+  
+  marcarNotificacaoLida: (id: string) => Promise<void>;
   
   atualizarConfiguracao: (dados: Partial<ConfiguracaoBarbearia>) => void;
   
@@ -206,11 +212,38 @@ const configuracaoInicial: ConfiguracaoBarbearia = {
 };
 
 export function DonoProvider({ children }: { children: ReactNode }) {
-  // Obter barbeariaId do token JWT
-  const [barbeariaId, setBarbeariaId] = useState<string | null>(null);
+  // Obter barbeariaId do token JWT (prioridade) ou localStorage (fallback)
+  const getBarbeariaIdFromStorage = (): string | null => {
+    // Primeiro tenta obter do token JWT
+    const tokenId = obterBarbeariaIdDoToken();
+    if (tokenId) return tokenId;
+    
+    // Fallback: tenta obter do localStorage
+    try {
+      const userStr = localStorage.getItem('user');
+      const barbeariaStr = localStorage.getItem('barbearia');
+      
+      if (barbeariaStr) {
+        const barbearia = JSON.parse(barbeariaStr);
+        return barbearia.id || null;
+      }
+      
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.barbeariaId || null;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erro ao obter barbeariaId do localStorage:', error);
+      return null;
+    }
+  };
 
+  const [barbeariaId, setBarbeariaId] = useState<string | null>(getBarbeariaIdFromStorage());
   const [kpi, setKpi] = useState<KPI>(kpiInicial);
   const [agendamentos, setAgendamentos] = useState<AgendamentoDono[]>([]);
+  // IMPORTANTE: Sempre inicia vazio - dados vêm APENAS do banco de dados
   const [profissionais, setProfissionais] = useState<ProfissionalDono[]>([]);
   const [clientes, setClientes] = useState<ClienteDono[]>([]);
   const [servicos, setServicos] = useState<any[]>([]);
@@ -221,44 +254,192 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   const [notificacoes, setNotificacoes] = useState<NotificacaoDono[]>([]);
   const [configuracao, setConfiguracao] = useState<ConfiguracaoBarbearia>(configuracaoInicial);
   const [loading, setLoading] = useState(true);
+  const [ultimoCarregamento, setUltimoCarregamento] = useState<number>(0);
 
-  // Obter barbeariaId do token quando o componente montar
+  // Atualizar barbeariaId quando localStorage mudar
   useEffect(() => {
-    const id = obterBarbeariaIdDoToken();
-    setBarbeariaId(id);
-  }, []);
+    const checkBarbeariaId = () => {
+      const newBarbeariaId = getBarbeariaIdFromStorage();
+      if (newBarbeariaId !== barbeariaId) {
+        setBarbeariaId(newBarbeariaId);
+      }
+    };
+
+    // Verificar imediatamente
+    checkBarbeariaId();
+
+    // Verificar quando localStorage mudar (evento customizado)
+    const handleStorageChange = () => {
+      checkBarbeariaId();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Verificar periodicamente (fallback)
+    const interval = setInterval(checkBarbeariaId, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [barbeariaId]);
 
   // Carregar dados da API quando o componente montar ou barbeariaId mudar
+  // Mas só se estiver em uma rota do dono (não na página inicial)
   useEffect(() => {
-    if (barbeariaId) {
+    const currentPath = window.location.pathname;
+    const isDonoRoute = currentPath.startsWith('/dono');
+    
+    if (barbeariaId && isDonoRoute) {
+      console.log('🔄 Carregando dados do banco para barbeariaId:', barbeariaId);
+      console.log('🔄 Rota atual:', currentPath);
+      console.log('🔄 Token disponível:', !!localStorage.getItem('token'));
       carregarDados();
+    } else if (isDonoRoute && !barbeariaId) {
+      console.warn('⚠️ BarbeariaId não encontrado. Verifique se está logado como dono.');
+      console.warn('⚠️ localStorage.user:', localStorage.getItem('user'));
+      console.warn('⚠️ localStorage.barbearia:', localStorage.getItem('barbearia'));
+      setLoading(false);
     }
   }, [barbeariaId]);
 
-  const carregarDados = async () => {
+  // Listener para recarregar quando navegar para /dono
+  useEffect(() => {
     if (!barbeariaId) return;
 
+    const checkRoute = () => {
+      const currentPath = window.location.pathname;
+      const isDonoRoute = currentPath.startsWith('/dono');
+      
+      if (isDonoRoute) {
+        console.log('🔄 Detectada navegação para /dono, recarregando dados...');
+        carregarDados();
+      }
+    };
+
+    // Verificar imediatamente
+    checkRoute();
+
+    // Escutar mudanças de rota
+    const handlePopState = () => {
+      setTimeout(checkRoute, 100);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Verificar periodicamente (fallback para React Router)
+    const interval = setInterval(checkRoute, 2000);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      clearInterval(interval);
+    };
+  }, [barbeariaId]);
+
+  const carregarDados = async (forcar: boolean = false) => {
+    if (!barbeariaId) {
+      console.warn('⚠️ Não é possível carregar dados: barbeariaId não definido');
+      setLoading(false);
+      return;
+    }
+
+    // Evitar múltiplas chamadas simultâneas (debounce de 1 segundo)
+    // Mas permitir forçar o carregamento (útil após criar/atualizar/deletar)
+    const agora = Date.now();
+    if (!forcar && agora - ultimoCarregamento < 1000) {
+      console.log('⏸️ Carregamento já em andamento, aguardando...');
+      return;
+    }
+    setUltimoCarregamento(agora);
+
+    console.log('📥 Iniciando carregamento de dados do banco de dados...');
+    console.log('📥 barbeariaId:', barbeariaId);
+    console.log('📥 Token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
     setLoading(true);
     try {
-      // Carregar dados em paralelo
-      const [kpisData, agendamentosData, profissionaisData, clientesData, servicosData] = await Promise.all([
-        apiGet<KPI>(`/dono/dashboard/kpis/${barbeariaId}`).catch(() => kpiInicial),
-        apiGet<any[]>(`/agendamentos/barbearia/${barbeariaId}`).catch(() => []),
-        apiGet<any[]>('/dono/profissionais').catch(() => []),
-        apiGet<any[]>('/dono/clientes').catch(() => []),
-        apiGet<any[]>('/dono/servicos').catch(() => []),
+      // Carregar dados em paralelo do BANCO DE DADOS
+      // IMPORTANTE: Sempre carrega do banco, nunca usa dados mockados
+      const [
+        kpisData,
+        agendamentosData,
+        profissionaisData,
+        clientesData,
+        servicosData,
+        pagamentosData,
+        promocoesData,
+        avaliacoesData,
+        produtosData,
+        notificacoesData,
+      ] = await Promise.all([
+        apiGet<KPI>('/dono/dashboard/kpis').catch((err) => {
+          console.warn('⚠️ Erro ao carregar KPIs do banco:', err);
+          // Retorna valores padrão se houver erro, mas não dados mockados
+          return null;
+        }),
+        apiGet<any[]>(`/agendamentos/barbearia/${barbeariaId}`).catch((err) => {
+          console.warn('⚠️ Erro ao carregar agendamentos do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/profissionais').catch((err) => {
+          console.error('❌ Erro ao carregar profissionais do banco:', err);
+          // Se erro de autenticação, retorna array vazio (não dados mockados)
+          if (err.message?.includes('Token inválido') || err.message?.includes('Token não fornecido')) {
+            console.error('❌ Token inválido ou não fornecido. Faça login novamente.');
+            return [];
+          }
+          // Em caso de erro, retorna array vazio (não dados mockados)
+          return [];
+        }),
+        apiGet<any[]>('/dono/clientes').catch((err) => {
+          console.warn('⚠️ Erro ao carregar clientes do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/servicos').catch((err) => {
+          console.warn('⚠️ Erro ao carregar serviços do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/financeiro/pagamentos').catch((err) => {
+          console.warn('⚠️ Erro ao carregar pagamentos do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/promocoes').catch((err) => {
+          console.warn('⚠️ Erro ao carregar promoções do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/avaliacoes').catch((err) => {
+          console.warn('⚠️ Erro ao carregar avaliações do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/produtos').catch((err) => {
+          console.warn('⚠️ Erro ao carregar produtos do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/notificacoes').catch((err) => {
+          console.warn('⚠️ Erro ao carregar notificações do banco:', err);
+          return [];
+        }),
       ]);
 
-      // Atualizar KPIs
+      console.log('✅ Dados carregados do banco:');
+      console.log('  - Profissionais:', profissionaisData?.length || 0, profissionaisData);
+      console.log('  - Clientes:', clientesData?.length || 0, clientesData);
+      console.log('  - Agendamentos:', agendamentosData?.length || 0);
+      
+      // IMPORTANTE: Se não houver dados, define arrays vazios (NUNCA dados mockados)
+      if (!profissionaisData || profissionaisData.length === 0) {
+        console.log('ℹ️ Nenhum profissional encontrado no banco de dados');
+      }
+
+      // Atualizar KPIs (só se dados vieram do banco)
       if (kpisData) {
         setKpi({
-          faturamentoHoje: kpisData.faturamentoMes || 0, // Ajustar conforme necessário
-          faturamentoSemana: kpisData.faturamentoMes || 0,
+          faturamentoHoje: kpisData.faturamentoHoje || 0,
+          faturamentoSemana: kpisData.faturamentoSemana || 0,
           faturamentoMes: kpisData.faturamentoMes || 0,
           agendamentosHoje: kpisData.agendamentosHoje || 0,
-          cancelamentos: 0, // Calcular se necessário
+          cancelamentos: kpisData.cancelamentos || 0,
           clientesRecorrentes: kpisData.totalClientes || 0,
-          notaMedia: 0, // Calcular se necessário
+          notaMedia: kpisData.notaMedia || 0,
         });
       }
 
@@ -283,11 +464,12 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
       setAgendamentos(agendamentosTransformados);
 
-      // Transformar profissionais da API
-      const profissionaisTransformados: ProfissionalDono[] = profissionaisData.map((prof: any) => ({
+      // Transformar profissionais da API (SEMPRE do banco de dados)
+      // Se profissionaisData for null/undefined ou array vazio, define array vazio (não dados mockados)
+      const profissionaisTransformados: ProfissionalDono[] = (profissionaisData || []).map((prof: any) => ({
         id: prof.id,
         nome: prof.nome,
-        email: prof.email,
+        email: prof.email || '',
         telefone: prof.telefone,
         foto: prof.foto,
         especialidades: prof.especialidades || [],
@@ -295,50 +477,133 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           tipo: prof.comissaoTipo || 'percentual',
           valor: prof.comissaoValor || 0,
         },
-        ativo: prof.ativo,
-        dataAdmissao: prof.dataAdmissao.split('T')[0],
+        ativo: prof.ativo !== undefined ? prof.ativo : true,
+        dataAdmissao: prof.dataAdmissao 
+          ? (typeof prof.dataAdmissao === 'string' 
+              ? (prof.dataAdmissao.includes('T') ? prof.dataAdmissao.split('T')[0] : prof.dataAdmissao)
+              : new Date(prof.dataAdmissao).toISOString().split('T')[0])
+          : new Date().toISOString().split('T')[0],
         avaliacaoMedia: 0, // Calcular se necessário
         totalAvaliacoes: 0,
         faturamentoTotal: 0,
         faltas: 0,
       }));
 
+      console.log('✅ Profissionais carregados do banco:', profissionaisTransformados.length);
       setProfissionais(profissionaisTransformados);
 
-      // Transformar clientes da API
-      const clientesTransformados: ClienteDono[] = clientesData.map((cli: any) => ({
+      // Transformar clientes da API (SEMPRE do banco de dados)
+      // Se clientesData for null/undefined ou array vazio, define array vazio (não dados mockados)
+      const clientesTransformados: ClienteDono[] = (clientesData || []).map((cli: any) => ({
         id: cli.id,
         nome: cli.nome,
-        email: cli.email,
+        email: cli.email || '',
         telefone: cli.telefone || '',
         foto: cli.foto,
-        dataNascimento: cli.dataNascimento?.split('T')[0],
+        dataNascimento: cli.dataNascimento ? (typeof cli.dataNascimento === 'string' ? cli.dataNascimento.split('T')[0] : new Date(cli.dataNascimento).toISOString().split('T')[0]) : undefined,
         vip: false, // Adicionar campo no backend se necessário
-        totalAgendamentos: cli._count?.agendamentos || 0,
-        ultimoAgendamento: undefined, // Calcular se necessário
-        ticketMedio: 0, // Calcular se necessário
-        frequencia: 0, // Calcular se necessário
-        dataCadastro: cli.createdAt.split('T')[0],
+        totalAgendamentos: cli.totalAgendamentos || cli._count?.agendamentos || 0,
+        ultimoAgendamento: cli.ultimoAgendamento ? (typeof cli.ultimoAgendamento === 'string' ? cli.ultimoAgendamento : new Date(cli.ultimoAgendamento).toISOString()) : undefined,
+        ticketMedio: cli.ticketMedio || 0,
+        frequencia: cli.frequencia || 0,
+        dataCadastro: cli.createdAt ? (typeof cli.createdAt === 'string' ? cli.createdAt.split('T')[0] : new Date(cli.createdAt).toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
       }));
 
+      console.log('✅ Clientes carregados do banco:', clientesTransformados.length);
       setClientes(clientesTransformados);
 
-      // Transformar serviços da API
-      const servicosTransformados = servicosData.map((serv: any) => ({
-        id: serv.id,
-        nome: serv.nome,
-        descricao: serv.descricao,
-        valor: serv.preco,
-        duracao: serv.duracao,
-        tipo: serv.tipo,
-        ativo: serv.ativo,
-        ordem: serv.ordem,
-      }));
+      // Carregar serviços do banco
+      console.log('✅ Serviços carregados do banco:', servicosData?.length || 0);
+      setServicos(servicosData || []);
 
-      setServicos(servicosTransformados);
+      // Transformar pagamentos da API
+      const pagamentosTransformados: PagamentoDono[] = (pagamentosData || []).map((pag: any) => ({
+        id: pag.id,
+        agendamentoId: pag.agendamentoId,
+        valor: pag.valor,
+        metodo: pag.metodo as 'pix' | 'cartao_credito' | 'cartao_debito' | 'dinheiro',
+        status: pag.status as 'pago' | 'pendente' | 'reembolsado',
+        taxaGateway: pag.taxaGateway || 0,
+        dataPagamento: pag.dataPagamento || undefined,
+        dataVencimento: pag.dataVencimento || undefined,
+      }));
+      console.log('✅ Pagamentos carregados do banco:', pagamentosTransformados.length);
+      setPagamentos(pagamentosTransformados);
+
+      // Transformar promoções da API
+      const promocoesTransformadas: PromocaoDono[] = (promocoesData || []).map((prom: any) => ({
+        id: prom.id,
+        nome: prom.nome,
+        tipo: prom.tipo as 'desconto_percentual' | 'desconto_fixo' | 'cashback' | 'pontos',
+        valor: prom.valor,
+        validoDe: prom.validoDe,
+        validoAte: prom.validoAte,
+        ativo: prom.ativo,
+        aplicavelA: prom.aplicavelA as 'todos' | 'servico' | 'horario' | 'cliente_vip',
+        servicoId: prom.servicoId || undefined,
+        horarioInicio: prom.horarioInicio || undefined,
+        horarioFim: prom.horarioFim || undefined,
+      }));
+      console.log('✅ Promoções carregadas do banco:', promocoesTransformadas.length);
+      setPromocoes(promocoesTransformadas);
+
+      // Transformar avaliações da API
+      const avaliacoesTransformadas: AvaliacaoDono[] = (avaliacoesData || []).map((av: any) => ({
+        id: av.id,
+        agendamentoId: av.agendamentoId,
+        clienteId: av.clienteId,
+        clienteNome: av.cliente?.nome || 'Cliente',
+        profissionalId: av.agendamento?.profissionais?.[0]?.profissionalId || '',
+        profissionalNome: av.agendamento?.profissionais?.[0]?.profissional?.nome || 'Não atribuído',
+        notaProfissional: av.notaProfissional,
+        notaAtendimento: av.notaAtendimento,
+        notaAmbiente: av.notaAmbiente,
+        comentario: av.comentario || undefined,
+        resposta: av.resposta || undefined,
+        data: av.createdAt,
+      }));
+      console.log('✅ Avaliações carregadas do banco:', avaliacoesTransformadas.length);
+      setAvaliacoes(avaliacoesTransformadas);
+
+      // Transformar produtos da API
+      const produtosTransformados: ProdutoDono[] = (produtosData || []).map((prod: any) => ({
+        id: prod.id,
+        nome: prod.nome,
+        descricao: prod.descricao || undefined,
+        categoria: prod.categoria as 'pomada' | 'oleo' | 'kit' | 'outro',
+        preco: prod.preco,
+        estoque: prod.estoque,
+        estoqueMinimo: prod.estoqueMinimo,
+        ativo: prod.ativo,
+        foto: prod.foto || undefined,
+      }));
+      console.log('✅ Produtos carregados do banco:', produtosTransformados.length);
+      setProdutos(produtosTransformados);
+
+      // Transformar notificações da API
+      const notificacoesTransformadas: NotificacaoDono[] = (notificacoesData || []).map((not: any) => ({
+        id: not.id,
+        tipo: not.tipo as 'agendamento' | 'pagamento' | 'avaliacao' | 'estoque' | 'sistema',
+        titulo: not.titulo,
+        mensagem: not.mensagem,
+        lida: not.lida,
+        data: not.data || not.createdAt,
+        acao: not.urlAcao ? {
+          url: not.urlAcao,
+          label: not.labelAcao || 'Ver',
+        } : undefined,
+      }));
+      console.log('✅ Notificações carregadas do banco:', notificacoesTransformadas.length);
+      setNotificacoes(notificacoesTransformadas);
+      
+      console.log('✅ Todos os dados foram carregados do banco de dados com sucesso!');
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados do painel');
+      console.error('❌ Erro ao carregar dados do banco:', error);
+      toast.error('Erro ao carregar dados do painel. Verifique sua conexão.');
+      // Em caso de erro, define arrays vazios (não dados mockados)
+      setProfissionais([]);
+      setClientes([]);
+      setAgendamentos([]);
     } finally {
       setLoading(false);
     }
@@ -425,7 +690,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // Funções de profissional
   const adicionarProfissional = async (profissional: Omit<ProfissionalDono, "id" | "dataAdmissao" | "avaliacaoMedia" | "totalAvaliacoes" | "faturamentoTotal" | "faltas">) => {
     try {
-      await apiPost('/dono/profissionais', {
+      console.log('➕ Adicionando profissional ao banco de dados:', profissional.nome);
+      const resultado = await apiPost('/dono/profissionais', {
         nome: profissional.nome,
         email: profissional.email,
         telefone: profissional.telefone,
@@ -434,10 +700,17 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         comissaoTipo: profissional.comissao.tipo,
         comissaoValor: profissional.comissao.valor,
       });
-      await carregarDados();
+      
+      console.log('✅ Profissional adicionado ao banco:', resultado);
+      
+      // SEMPRE recarregar dados do banco após adicionar
+      console.log('🔄 Recarregando dados do banco após adicionar profissional...');
+      await carregarDados(true);
+      
+      console.log('✅ Dados recarregados do banco com sucesso');
       toast.success('Profissional adicionado com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao adicionar profissional:', error);
+      console.error('❌ Erro ao adicionar profissional:', error);
       toast.error(error.message || 'Erro ao adicionar profissional');
       throw error;
     }
@@ -445,6 +718,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   const atualizarProfissional = async (id: string, dados: Partial<ProfissionalDono>) => {
     try {
+      console.log('✏️ Atualizando profissional no banco:', id);
       const updateData: any = {};
       if (dados.nome) updateData.nome = dados.nome;
       if (dados.email !== undefined) updateData.email = dados.email;
@@ -458,47 +732,46 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       if (dados.ativo !== undefined) updateData.ativo = dados.ativo;
 
       await apiPut(`/dono/profissionais/${id}`, updateData);
-      await carregarDados();
+      console.log('✅ Profissional atualizado no banco, recarregando dados...');
+      await carregarDados(true);
       toast.success('Profissional atualizado!');
     } catch (error: any) {
-      console.error('Erro ao atualizar profissional:', error);
+      console.error('❌ Erro ao atualizar profissional:', error);
       toast.error(error.message || 'Erro ao atualizar profissional');
     }
   };
 
   const removerProfissional = async (id: string) => {
     try {
+      console.log('🗑️ Removendo profissional do banco:', id);
       await apiDelete(`/dono/profissionais/${id}`);
-      await carregarDados();
+      console.log('✅ Profissional removido do banco, recarregando dados...');
+      await carregarDados(true);
       toast.success('Profissional removido');
     } catch (error: any) {
-      console.error('Erro ao remover profissional:', error);
+      console.error('❌ Erro ao remover profissional:', error);
       toast.error(error.message || 'Erro ao remover profissional');
     }
   };
 
   // Funções de cliente
   const adicionarCliente = async (cliente: Omit<ClienteDono, "id" | "dataCadastro" | "totalAgendamentos" | "ticketMedio" | "frequencia">) => {
-    if (!barbeariaId) {
-      toast.error('Barbearia não identificada');
-      throw new Error('Barbearia não identificada');
-    }
-
     try {
-      const novoCliente = await apiPost('/dono/clientes', {
+      console.log('➕ Adicionando cliente ao banco de dados:', cliente.nome);
+      await apiPost('/dono/clientes', {
         nome: cliente.nome,
         email: cliente.email,
-        telefone: cliente.telefone || '',
+        telefone: cliente.telefone,
         foto: cliente.foto,
         dataNascimento: cliente.dataNascimento,
       });
-      
-      // Recarregar dados para atualizar a lista
-      await carregarDados();
+      console.log('✅ Cliente adicionado ao banco, recarregando dados...');
+      // Forçar recarregamento imediato após adicionar cliente
+      await carregarDados(true);
+      console.log('✅ Dados recarregados após adicionar cliente');
       toast.success('Cliente adicionado com sucesso!');
-      return novoCliente;
     } catch (error: any) {
-      console.error('Erro ao adicionar cliente:', error);
+      console.error('❌ Erro ao adicionar cliente:', error);
       toast.error(error.message || 'Erro ao adicionar cliente');
       throw error;
     }
@@ -512,10 +785,11 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       if (dados.telefone) updateData.telefone = dados.telefone;
       if (dados.foto !== undefined) updateData.foto = dados.foto;
       if (dados.dataNascimento) updateData.dataNascimento = dados.dataNascimento;
-      if (dados.ativo !== undefined) updateData.ativo = dados.ativo;
+      // ativo não está no tipo ClienteDono, mas pode ser usado no backend
+      if ((dados as any).ativo !== undefined) updateData.ativo = (dados as any).ativo;
 
       await apiPut(`/dono/clientes/${id}`, updateData);
-      await carregarDados();
+      await carregarDados(true);
       toast.success('Cliente atualizado!');
     } catch (error: any) {
       console.error('Erro ao atualizar cliente:', error);
@@ -528,53 +802,183 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     toast.info('Funcionalidade VIP em desenvolvimento');
   };
 
+  // Funções de serviços
+  const adicionarServico = async (servico: { nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }) => {
+    try {
+      console.log('➕ Adicionando serviço ao banco de dados:', servico.nome);
+      await apiPost('/dono/servicos', servico);
+      console.log('✅ Serviço adicionado ao banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Serviço adicionado com sucesso!');
+    } catch (error: any) {
+      console.error('❌ Erro ao adicionar serviço:', error);
+      toast.error(error.message || 'Erro ao adicionar serviço');
+      throw error;
+    }
+  };
+
+  const atualizarServico = async (id: string, dados: Partial<{ nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }>) => {
+    try {
+      console.log('✏️ Atualizando serviço no banco:', id);
+      await apiPut(`/dono/servicos/${id}`, dados);
+      console.log('✅ Serviço atualizado no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Serviço atualizado!');
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar serviço:', error);
+      toast.error(error.message || 'Erro ao atualizar serviço');
+    }
+  };
+
+  const removerServico = async (id: string) => {
+    try {
+      console.log('🗑️ Removendo serviço do banco:', id);
+      await apiDelete(`/dono/servicos/${id}`);
+      console.log('✅ Serviço removido do banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Serviço removido');
+    } catch (error: any) {
+      console.error('❌ Erro ao remover serviço:', error);
+      toast.error(error.message || 'Erro ao remover serviço');
+    }
+  };
+
+  const toggleServicoAtivo = async (id: string) => {
+    try {
+      console.log('🔄 Alternando status do serviço:', id);
+      await apiPut(`/dono/servicos/${id}/toggle`, {});
+      console.log('✅ Status do serviço alterado, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Status do serviço alterado');
+    } catch (error: any) {
+      console.error('❌ Erro ao alterar status do serviço:', error);
+      toast.error(error.message || 'Erro ao alterar status do serviço');
+    }
+  };
+
   // Funções de pagamento
-  const registrarPagamento = (pagamento: Omit<PagamentoDono, "id">) => {
-    const novo: PagamentoDono = {
-      id: Date.now().toString(),
-      ...pagamento,
-    };
-    setPagamentos([...pagamentos, novo]);
+  const registrarPagamento = async (pagamento: Omit<PagamentoDono, "id">): Promise<void> => {
+    // Pagamentos são criados automaticamente quando um agendamento é confirmado/concluído
+    // Esta função pode ser usada para criar pagamentos manuais se necessário
+    console.log('💰 Registrando pagamento:', pagamento);
+    // Recarregar dados para obter o pagamento criado
+    await carregarDados(true);
   };
 
   // Funções de promoção
-  const criarPromocao = (promocao: Omit<PromocaoDono, "id">) => {
-    const novo: PromocaoDono = {
-      id: Date.now().toString(),
-      ...promocao,
-    };
-    setPromocoes([...promocoes, novo]);
+  const criarPromocao = async (promocao: Omit<PromocaoDono, "id">) => {
+    try {
+      console.log('🎁 Criando promoção no banco de dados:', promocao.nome);
+      await apiPost('/dono/promocoes', {
+        nome: promocao.nome,
+        tipo: promocao.tipo,
+        valor: promocao.valor,
+        validoDe: promocao.validoDe,
+        validoAte: promocao.validoAte,
+        ativo: promocao.ativo,
+        aplicavelA: promocao.aplicavelA,
+        servicoId: promocao.servicoId,
+        horarioInicio: promocao.horarioInicio,
+        horarioFim: promocao.horarioFim,
+      });
+      console.log('✅ Promoção criada no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Promoção criada com sucesso!');
+    } catch (error: any) {
+      console.error('❌ Erro ao criar promoção:', error);
+      toast.error(error.message || 'Erro ao criar promoção');
+      throw error;
+    }
   };
 
-  const atualizarPromocao = (id: string, dados: Partial<PromocaoDono>) => {
-    setPromocoes(promocoes.map((p) => (p.id === id ? { ...p, ...dados } : p)));
+  const atualizarPromocao = async (id: string, dados: Partial<PromocaoDono>) => {
+    try {
+      console.log('✏️ Atualizando promoção no banco:', id);
+      await apiPut(`/dono/promocoes/${id}`, dados);
+      console.log('✅ Promoção atualizada no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Promoção atualizada!');
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar promoção:', error);
+      toast.error(error.message || 'Erro ao atualizar promoção');
+    }
   };
 
   // Funções de avaliação
-  const responderAvaliacao = (id: string, resposta: string) => {
-    setAvaliacoes(avaliacoes.map((a) => (a.id === id ? { ...a, resposta } : a)));
+  const responderAvaliacao = async (id: string, resposta: string) => {
+    try {
+      console.log('⭐ Respondendo avaliação no banco:', id);
+      await apiPut(`/dono/avaliacoes/${id}/responder`, { resposta });
+      console.log('✅ Avaliação respondida no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Avaliação respondida!');
+    } catch (error: any) {
+      console.error('❌ Erro ao responder avaliação:', error);
+      toast.error(error.message || 'Erro ao responder avaliação');
+    }
   };
 
   // Funções de produto
-  const adicionarProduto = (produto: Omit<ProdutoDono, "id">) => {
-    const novo: ProdutoDono = {
-      id: Date.now().toString(),
-      ...produto,
-    };
-    setProdutos([...produtos, novo]);
+  const adicionarProduto = async (produto: Omit<ProdutoDono, "id">) => {
+    try {
+      console.log('📦 Adicionando produto ao banco de dados:', produto.nome);
+      await apiPost('/dono/produtos', {
+        nome: produto.nome,
+        descricao: produto.descricao,
+        categoria: produto.categoria,
+        preco: produto.preco,
+        estoque: produto.estoque,
+        estoqueMinimo: produto.estoqueMinimo,
+        ativo: produto.ativo,
+        foto: produto.foto,
+      });
+      console.log('✅ Produto adicionado ao banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Produto adicionado com sucesso!');
+    } catch (error: any) {
+      console.error('❌ Erro ao adicionar produto:', error);
+      toast.error(error.message || 'Erro ao adicionar produto');
+      throw error;
+    }
   };
 
-  const atualizarProduto = (id: string, dados: Partial<ProdutoDono>) => {
-    setProdutos(produtos.map((p) => (p.id === id ? { ...p, ...dados } : p)));
+  const atualizarProduto = async (id: string, dados: Partial<ProdutoDono>) => {
+    try {
+      console.log('✏️ Atualizando produto no banco:', id);
+      await apiPut(`/dono/produtos/${id}`, dados);
+      console.log('✅ Produto atualizado no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Produto atualizado!');
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar produto:', error);
+      toast.error(error.message || 'Erro ao atualizar produto');
+    }
   };
 
-  const atualizarEstoque = (id: string, quantidade: number) => {
-    atualizarProduto(id, { estoque: quantidade });
+  const atualizarEstoque = async (id: string, quantidade: number) => {
+    try {
+      console.log('📊 Atualizando estoque no banco:', id, quantidade);
+      await apiPut(`/dono/produtos/${id}/estoque`, { quantidade });
+      console.log('✅ Estoque atualizado no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Estoque atualizado!');
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar estoque:', error);
+      toast.error(error.message || 'Erro ao atualizar estoque');
+    }
   };
 
   // Funções de notificação
-  const marcarNotificacaoLida = (id: string) => {
-    setNotificacoes(notificacoes.map((n) => (n.id === id ? { ...n, lida: true } : n)));
+  const marcarNotificacaoLida = async (id: string) => {
+    try {
+      console.log('🔔 Marcando notificação como lida no banco:', id);
+      await apiPut(`/dono/notificacoes/${id}/lida`, {});
+      console.log('✅ Notificação marcada como lida, recarregando dados...');
+      await carregarDados(true);
+    } catch (error: any) {
+      console.error('❌ Erro ao marcar notificação como lida:', error);
+      toast.error(error.message || 'Erro ao marcar notificação como lida');
+    }
   };
 
   // Funções de configuração
@@ -611,7 +1015,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         agendamentos,
         profissionais,
         clientes,
-        servicos, // Adicionar serviços ao contexto
+        servicos,
         pagamentos,
         promocoes,
         avaliacoes,
@@ -629,6 +1033,10 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         adicionarCliente,
         atualizarCliente,
         marcarClienteVIP,
+        adicionarServico,
+        atualizarServico,
+        removerServico,
+        toggleServicoAtivo,
         registrarPagamento,
         criarPromocao,
         atualizarPromocao,

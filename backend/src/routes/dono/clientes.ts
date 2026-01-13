@@ -4,7 +4,7 @@ import { autenticarDono } from '../../middleware/auth';
 
 const router = Router();
 
-// Todas as rotas requerem autenticação de dono
+// Aplicar autenticação do dono
 router.use(autenticarDono);
 
 router.get('/', clientesController.listarClientes);

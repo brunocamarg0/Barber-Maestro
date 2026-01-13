@@ -15,47 +15,10 @@ interface UsuariosContextType {
 
 const UsuariosContext = createContext<UsuariosContextType | undefined>(undefined);
 
-const usuariosIniciais: Usuario[] = [
-  {
-    id: "1",
-    barbeariaId: "1",
-    barbeariaNome: "Barbearia do João",
-    nome: "João Silva",
-    email: "joao@barbearia.com",
-    tipo: "admin_barbearia",
-    status: "ativo",
-    ultimoLogin: new Date(Date.now() - 3600000).toISOString(),
-    dataCriacao: "2024-01-15",
-    permissoes: ["todos"],
-  },
-  {
-    id: "2",
-    barbeariaId: "1",
-    barbeariaNome: "Barbearia do João",
-    nome: "Maria Santos",
-    email: "maria@barbearia.com",
-    tipo: "gerente",
-    status: "ativo",
-    ultimoLogin: new Date(Date.now() - 7200000).toISOString(),
-    dataCriacao: "2024-01-20",
-    permissoes: ["agendamentos", "clientes"],
-  },
-  {
-    id: "3",
-    barbeariaId: "2",
-    barbeariaNome: "Corte & Estilo",
-    nome: "Carlos Oliveira",
-    email: "carlos@corteestilo.com",
-    tipo: "admin_barbearia",
-    status: "ativo",
-    dataCriacao: "2024-02-20",
-    permissoes: ["todos"],
-  },
-];
-
 export function UsuariosProvider({ children }: { children: ReactNode }) {
   const { barbearias } = useBarbearias();
-  const [usuarios, setUsuarios] = useState<Usuario[]>(usuariosIniciais);
+  // Removidos dados mockados - usuários serão carregados da API quando necessário
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
 
   const adicionarUsuario = (novoUsuario: NovoUsuario) => {
     const barbearia = barbearias.find((b) => b.id === novoUsuario.barbeariaId);

@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 
 /**
  * Listar clientes (da barbearia do dono)
+ * Inclui clientes com agendamentos E clientes criados recentemente (últimos 30 dias)
  */
 export async function listarClientes(req: AuthRequest, res: Response) {
   try {
@@ -21,12 +22,32 @@ export async function listarClientes(req: AuthRequest, res: Response) {
       distinct: ['clienteId'],
     });
 
-    const clienteIds = agendamentos
+    const clienteIdsComAgendamento = agendamentos
       .map((a) => a.clienteId)
       .filter((id): id is string => id !== null);
 
+    // Buscar também clientes criados recentemente (últimos 30 dias)
+    // Isso garante que clientes recém-criados apareçam mesmo sem agendamentos
+    const dataLimite = new Date();
+    dataLimite.setDate(dataLimite.getDate() - 30);
+
+    const clientesRecentes = await prisma.cliente.findMany({
+      where: {
+        createdAt: {
+          gte: dataLimite,
+        },
+        ativo: true,
+      },
+      select: { id: true },
+    });
+
+    const clienteIdsRecentes = clientesRecentes.map((c) => c.id);
+
+    // Combinar IDs: clientes com agendamentos + clientes recentes
+    const todosClienteIds = [...new Set([...clienteIdsComAgendamento, ...clienteIdsRecentes])];
+
     const where: any = {
-      id: { in: clienteIds },
+      id: { in: todosClienteIds },
     };
 
     if (busca && typeof busca === 'string') {
@@ -40,14 +61,60 @@ export async function listarClientes(req: AuthRequest, res: Response) {
     const clientes = await prisma.cliente.findMany({
       where,
       include: {
+        agendamentos: {
+          where: { barbeariaId },
+          select: {
+            id: true,
+            data: true,
+            servico: {
+              select: { preco: true },
+            },
+            pagamento: {
+              select: { valor: true },
+            },
+          },
+          orderBy: { data: 'desc' },
+        },
         _count: {
-          select: { agendamentos: true },
+          select: { 
+            agendamentos: {
+              where: { barbeariaId },
+            },
+          },
         },
       },
       orderBy: { nome: 'asc' },
     });
 
-    res.json(clientes);
+    // Transformar dados para incluir estatísticas
+    const clientesComEstatisticas = clientes.map((cliente) => {
+      const agendamentosBarbearia = cliente.agendamentos || [];
+      const totalAgendamentos = agendamentosBarbearia.length;
+      
+      // Calcular ticket médio baseado nos pagamentos
+      const pagamentos = agendamentosBarbearia
+        .filter((ag) => ag.pagamento)
+        .map((ag) => ag.pagamento?.valor || 0);
+      
+      const ticketMedio = pagamentos.length > 0
+        ? pagamentos.reduce((sum, val) => sum + val, 0) / pagamentos.length
+        : 0;
+
+      // Último agendamento
+      const ultimoAgendamento = agendamentosBarbearia.length > 0
+        ? agendamentosBarbearia[0].data
+        : null;
+
+      return {
+        ...cliente,
+        totalAgendamentos,
+        ticketMedio,
+        ultimoAgendamento,
+        frequencia: totalAgendamentos, // Simplificado: total de agendamentos
+      };
+    });
+
+    res.json(clientesComEstatisticas);
   } catch (error) {
     console.error('Erro ao listar clientes:', error);
     res.status(500).json({ error: 'Erro ao listar clientes' });
@@ -124,33 +191,122 @@ export async function criarCliente(req: AuthRequest, res: Response) {
   try {
     const { nome, email, telefone, foto, dataNascimento } = req.body;
 
-    if (!nome || !email) {
-      return res.status(400).json({ error: 'Nome e email são obrigatórios' });
+    // Validação de campos obrigatórios
+    if (!nome || nome.trim() === '') {
+      return res.status(400).json({ error: 'Nome é obrigatório' });
     }
 
-    // Verificar se já existe cliente com esse email
-    const clienteExistente = await prisma.cliente.findUnique({
-      where: { email },
-    });
+    // Email é opcional, mas se fornecido deve ser válido e único
+    let emailFinal: string | null = null;
+    
+    if (email && email.trim() !== '') {
+      // Validar formato de email básico
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return res.status(400).json({ error: 'Formato de email inválido' });
+      }
 
-    if (clienteExistente) {
-      return res.status(400).json({ error: 'Já existe um cliente com este email' });
+      emailFinal = email.trim().toLowerCase();
+
+      // Verificar se já existe cliente com esse email no banco de dados
+      console.log('🔍 Verificando se email existe:', emailFinal);
+      const clienteExistente = await prisma.cliente.findUnique({
+        where: { email: emailFinal },
+        select: { id: true, email: true, nome: true },
+      });
+
+      console.log('🔍 Resultado da busca:', clienteExistente ? `Encontrado: ${clienteExistente.nome}` : 'Não encontrado');
+
+      if (clienteExistente) {
+        return res.status(400).json({ 
+          error: 'Este email já está cadastrado',
+          detalhes: `O email ${emailFinal} já está associado a outro cliente`
+        });
+      }
+    } else {
+      // Gerar email temporário único se não fornecido
+      emailFinal = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}@temp.com`;
+      console.log('📧 Email não fornecido, gerando temporário:', emailFinal);
     }
 
+    // Verificar se telefone já está em uso (se fornecido)
+    if (telefone && telefone.trim() !== '') {
+      const clienteExistentePorTelefone = await prisma.cliente.findFirst({
+        where: {
+          telefone: telefone.trim(),
+        },
+        select: { id: true, telefone: true, nome: true },
+      });
+
+      if (clienteExistentePorTelefone) {
+        return res.status(400).json({ 
+          error: 'Este telefone já está cadastrado',
+          detalhes: `O telefone ${telefone} já está associado a outro cliente`
+        });
+      }
+    }
+
+    // Criar cliente
+    console.log('✅ Criando cliente:', { nome, email: emailFinal, telefone });
     const cliente = await prisma.cliente.create({
       data: {
-        nome,
-        email,
-        telefone: telefone || null,
+        nome: nome.trim(),
+        email: emailFinal!,
+        telefone: telefone?.trim() || null,
         foto: foto || null,
         dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
+        ativo: true,
+        emailVerificado: false,
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        telefone: true,
+        foto: true,
+        dataNascimento: true,
+        ativo: true,
+        createdAt: true,
       },
     });
 
+    console.log('✅ Cliente criado com sucesso:', cliente.id);
     res.status(201).json(cliente);
-  } catch (error) {
-    console.error('Erro ao criar cliente:', error);
-    res.status(500).json({ error: 'Erro ao criar cliente' });
+  } catch (error: any) {
+    console.error('❌ Erro ao criar cliente:', error);
+    console.error('❌ Stack:', error.stack);
+    console.error('❌ Código do erro:', error.code);
+    console.error('❌ Mensagem:', error.message);
+    
+    // Tratar erros específicos do Prisma
+    if (error.code === 'P2002') {
+      // Violação de constraint única
+      const campo = error.meta?.target?.[0] || 'campo';
+      return res.status(400).json({ 
+        error: `Este ${campo} já está cadastrado`,
+        detalhes: error.meta 
+      });
+    }
+    
+    if (error.code === 'P2003') {
+      // Foreign key constraint
+      return res.status(400).json({ 
+        error: 'Erro de relacionamento no banco de dados',
+        detalhes: error.meta 
+      });
+    }
+
+    if (error.message?.includes('does not exist')) {
+      return res.status(500).json({ 
+        error: 'Tabelas não criadas no banco de dados. Execute as migrações: npm run prisma:push',
+        detalhes: error.message 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Erro ao criar cliente',
+      detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 

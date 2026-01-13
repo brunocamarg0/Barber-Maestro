@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
 
 export interface ApiError {
   error: string;
@@ -27,6 +27,24 @@ export async function apiRequest<T>(
     const error: ApiError = await response.json().catch(() => ({
       error: 'Erro na requisição',
     }));
+    
+    // Se erro de autenticação, limpar token e redirecionar para login
+    // Mas só redirecionar se estiver em uma rota protegida (não na página inicial)
+    if (response.status === 401) {
+      const currentPath = window.location.pathname;
+      const isPublicRoute = currentPath === '/' || currentPath === '/login' || currentPath === '/cadastro' || currentPath.startsWith('/funcionalidades');
+      
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userType');
+      localStorage.removeItem('barbearia');
+      
+      // Só redirecionar se não estiver em rota pública e não estiver já na página de login
+      if (!isPublicRoute && !currentPath.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    
     throw new Error(error.error || error.message || 'Erro na requisição');
   }
 

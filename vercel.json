@@ -1,6 +1,8 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "functions": {
-    "api/pagamentos/*.js": {
+    "api/pagamentos/**/*.js": {
       "maxDuration": 30
     }
   },
@@ -8,6 +10,10 @@
     {
       "source": "/api/pagamentos/:path*",
       "destination": "/api/pagamentos/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -20,7 +26,7 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
+          "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",

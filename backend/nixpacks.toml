@@ -15,6 +15,13 @@ cmds = [
   "npm run build"
 ]
 
+# Executar migrações após build (apenas se necessário)
+# Descomente a linha abaixo se quiser executar migrações automaticamente no deploy
+# [phases.postbuild]
+# cmds = [
+#   "npx prisma db push"
+# ]
+
 [start]
 cmd = "npm start"
 

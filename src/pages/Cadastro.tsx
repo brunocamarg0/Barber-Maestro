@@ -109,7 +109,15 @@ const Cadastro = () => {
       } catch (fetchError: any) {
         // Erro de rede (backend não está rodando ou CORS)
         console.error('Erro de conexão:', fetchError);
-        throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3001.');
+        console.error('URL tentada:', url);
+        console.error('API_URL configurada:', API_URL);
+        console.error('VITE_API_URL:', import.meta.env.VITE_API_URL);
+        
+        // Mensagem mais específica
+        if (fetchError.message?.includes('CORS') || fetchError.message?.includes('Failed to fetch')) {
+          throw new Error(`Não foi possível conectar ao servidor. URL: ${url}. Verifique se o backend está online e se CORS está configurado.`);
+        }
+        throw new Error(`Não foi possível conectar ao servidor. URL: ${url}. Verifique se o backend está online.`);
       }
 
       if (!response) {

@@ -39,6 +39,15 @@ prisma.$connect()
     // Não encerrar o processo, apenas logar
   });
 
+// Tratamento de erros de conexão fechada (reconectar automaticamente)
+prisma.$on('error' as never, (e: any) => {
+  if (e.message?.includes('Closed') || e.message?.includes('connection')) {
+    console.warn('⚠️  Conexão com banco fechada (pode ser temporário, Prisma vai reconectar)');
+  } else {
+    console.error('❌ Erro Prisma:', e.message);
+  }
+});
+
 // Graceful shutdown
 process.on('beforeExit', async () => {
   await prisma.$disconnect();

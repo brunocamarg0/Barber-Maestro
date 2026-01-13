@@ -84,6 +84,18 @@ app.options('*', (req, res) => {
 
 app.use(express.json());
 
+// Rota de teste - DEVE SER A PRIMEIRA ROTA (antes de qualquer middleware que possa bloquear)
+// Esta rota deve responder SEMPRE, mesmo se o banco de dados estiver offline
+app.get('/api/health', (req, res) => {
+  // Não fazer log aqui para evitar spam nos logs
+  res.status(200).json({ 
+    status: 'API is running', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    port: process.env.PORT || '3001'
+  });
+});
+
 // Configuração de sessão para OAuth
 app.use(
   session({
@@ -101,16 +113,6 @@ app.use(
 // Inicializar Passport
 app.use(passport.initialize());
 app.use(passport.session());
-
-// Rota de teste - DEVE SER A PRIMEIRA ROTA
-app.get('/api/health', (req, res) => {
-  console.log('✅ Health check chamado');
-  res.status(200).json({ 
-    status: 'API is running', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
 
 // Rotas públicas (autenticação e ativação de conta)
 app.use('/api/auth', authRoutes);

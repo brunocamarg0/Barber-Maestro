@@ -13,8 +13,22 @@ import {
   RelatorioDono,
 } from "@/types/dono";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/services/api";
-import { useBarbearias } from "@/context/BarbeariasContext";
 import { toast } from "sonner";
+
+// Função para decodificar JWT e obter barbeariaId
+function obterBarbeariaIdDoToken(): string | null {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    
+    // Decodificar JWT (sem verificar assinatura, apenas para obter dados)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.barbeariaId || null;
+  } catch (error) {
+    console.error('Erro ao decodificar token:', error);
+    return null;
+  }
+}
 
 interface DonoContextType {
   // Dados
@@ -22,6 +36,7 @@ interface DonoContextType {
   agendamentos: AgendamentoDono[];
   profissionais: ProfissionalDono[];
   clientes: ClienteDono[];
+  servicos: any[]; // Serviços da barbearia
   pagamentos: PagamentoDono[];
   promocoes: PromocaoDono[];
   avaliacoes: AvaliacaoDono[];
@@ -191,14 +206,14 @@ const configuracaoInicial: ConfiguracaoBarbearia = {
 };
 
 export function DonoProvider({ children }: { children: ReactNode }) {
-  const { barbearias } = useBarbearias();
-  const barbearia = barbearias[0]; // Assumindo que o dono tem acesso à primeira barbearia
-  const barbeariaId = barbearia?.id;
+  // Obter barbeariaId do token JWT
+  const [barbeariaId, setBarbeariaId] = useState<string | null>(null);
 
   const [kpi, setKpi] = useState<KPI>(kpiInicial);
   const [agendamentos, setAgendamentos] = useState<AgendamentoDono[]>([]);
   const [profissionais, setProfissionais] = useState<ProfissionalDono[]>([]);
   const [clientes, setClientes] = useState<ClienteDono[]>([]);
+  const [servicos, setServicos] = useState<any[]>([]);
   const [pagamentos, setPagamentos] = useState<PagamentoDono[]>([]);
   const [promocoes, setPromocoes] = useState<PromocaoDono[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoDono[]>([]);
@@ -206,6 +221,12 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   const [notificacoes, setNotificacoes] = useState<NotificacaoDono[]>([]);
   const [configuracao, setConfiguracao] = useState<ConfiguracaoBarbearia>(configuracaoInicial);
   const [loading, setLoading] = useState(true);
+
+  // Obter barbeariaId do token quando o componente montar
+  useEffect(() => {
+    const id = obterBarbeariaIdDoToken();
+    setBarbeariaId(id);
+  }, []);
 
   // Carregar dados da API quando o componente montar ou barbeariaId mudar
   useEffect(() => {
@@ -220,11 +241,12 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       // Carregar dados em paralelo
-      const [kpisData, agendamentosData, profissionaisData, clientesData] = await Promise.all([
-        apiGet<KPI>('/dono/dashboard/kpis').catch(() => kpiInicial),
+      const [kpisData, agendamentosData, profissionaisData, clientesData, servicosData] = await Promise.all([
+        apiGet<KPI>(`/dono/dashboard/kpis/${barbeariaId}`).catch(() => kpiInicial),
         apiGet<any[]>(`/agendamentos/barbearia/${barbeariaId}`).catch(() => []),
         apiGet<any[]>('/dono/profissionais').catch(() => []),
         apiGet<any[]>('/dono/clientes').catch(() => []),
+        apiGet<any[]>('/dono/servicos').catch(() => []),
       ]);
 
       // Atualizar KPIs
@@ -300,6 +322,20 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       }));
 
       setClientes(clientesTransformados);
+
+      // Transformar serviços da API
+      const servicosTransformados = servicosData.map((serv: any) => ({
+        id: serv.id,
+        nome: serv.nome,
+        descricao: serv.descricao,
+        valor: serv.preco,
+        duracao: serv.duracao,
+        tipo: serv.tipo,
+        ativo: serv.ativo,
+        ordem: serv.ordem,
+      }));
+
+      setServicos(servicosTransformados);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados do painel');
@@ -443,16 +479,24 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   // Funções de cliente
   const adicionarCliente = async (cliente: Omit<ClienteDono, "id" | "dataCadastro" | "totalAgendamentos" | "ticketMedio" | "frequencia">) => {
+    if (!barbeariaId) {
+      toast.error('Barbearia não identificada');
+      throw new Error('Barbearia não identificada');
+    }
+
     try {
-      await apiPost('/dono/clientes', {
+      const novoCliente = await apiPost('/dono/clientes', {
         nome: cliente.nome,
         email: cliente.email,
-        telefone: cliente.telefone,
+        telefone: cliente.telefone || '',
         foto: cliente.foto,
         dataNascimento: cliente.dataNascimento,
       });
+      
+      // Recarregar dados para atualizar a lista
       await carregarDados();
       toast.success('Cliente adicionado com sucesso!');
+      return novoCliente;
     } catch (error: any) {
       console.error('Erro ao adicionar cliente:', error);
       toast.error(error.message || 'Erro ao adicionar cliente');
@@ -567,6 +611,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         agendamentos,
         profissionais,
         clientes,
+        servicos, // Adicionar serviços ao contexto
         pagamentos,
         promocoes,
         avaliacoes,

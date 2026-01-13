@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useDono } from "@/context/DonoContext";
-import { useBarbearias } from "@/context/BarbeariasContext";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,8 +47,7 @@ import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AgendaInteligente() {
-  const { agendamentos, profissionais, clientes, criarAgendamento, confirmarAgendamento, recusarAgendamento } = useDono();
-  const { barbearias } = useBarbearias();
+  const { agendamentos, profissionais, clientes, servicos: servicosContext, criarAgendamento, confirmarAgendamento, recusarAgendamento } = useDono();
   const { toast } = useToast();
   const [visualizacao, setVisualizacao] = useState<"dia" | "semana" | "mes">("dia");
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date());
@@ -68,11 +66,11 @@ export default function AgendaInteligente() {
     observacoes: "",
   });
 
-  // Obter serviços da primeira barbearia (mock)
+  // Obter serviços do DonoContext (do backend)
+  const { servicos: servicosContext } = useDono();
   const servicos = useMemo(() => {
-    const barbearia = barbearias[0];
-    return barbearia?.servicos?.filter(s => s.ativo) || [];
-  }, [barbearias]);
+    return servicosContext?.filter(s => s.ativo) || [];
+  }, [servicosContext]);
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {

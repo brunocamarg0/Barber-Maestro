@@ -51,18 +51,18 @@ interface DonoContextType {
   removerServico: (id: string) => Promise<void>;
   toggleServicoAtivo: (id: string) => Promise<void>;
   
-  registrarPagamento: (pagamento: Omit<PagamentoDono, "id">) => void;
+  registrarPagamento: (pagamento: Omit<PagamentoDono, "id">) => Promise<void>;
   
-  criarPromocao: (promocao: Omit<PromocaoDono, "id">) => void;
-  atualizarPromocao: (id: string, dados: Partial<PromocaoDono>) => void;
+  criarPromocao: (promocao: Omit<PromocaoDono, "id">) => Promise<void>;
+  atualizarPromocao: (id: string, dados: Partial<PromocaoDono>) => Promise<void>;
   
-  responderAvaliacao: (id: string, resposta: string) => void;
+  responderAvaliacao: (id: string, resposta: string) => Promise<void>;
   
-  adicionarProduto: (produto: Omit<ProdutoDono, "id">) => void;
-  atualizarProduto: (id: string, dados: Partial<ProdutoDono>) => void;
-  atualizarEstoque: (id: string, quantidade: number) => void;
+  adicionarProduto: (produto: Omit<ProdutoDono, "id">) => Promise<void>;
+  atualizarProduto: (id: string, dados: Partial<ProdutoDono>) => Promise<void>;
+  atualizarEstoque: (id: string, quantidade: number) => Promise<void>;
   
-  marcarNotificacaoLida: (id: string) => void;
+  marcarNotificacaoLida: (id: string) => Promise<void>;
   
   atualizarConfiguracao: (dados: Partial<ConfiguracaoBarbearia>) => void;
   
@@ -340,7 +340,18 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     try {
       // Carregar dados em paralelo do BANCO DE DADOS
       // IMPORTANTE: Sempre carrega do banco, nunca usa dados mockados
-      const [kpisData, agendamentosData, profissionaisData, clientesData, servicosData] = await Promise.all([
+      const [
+        kpisData,
+        agendamentosData,
+        profissionaisData,
+        clientesData,
+        servicosData,
+        pagamentosData,
+        promocoesData,
+        avaliacoesData,
+        produtosData,
+        notificacoesData,
+      ] = await Promise.all([
         apiGet<KPI>('/dono/dashboard/kpis').catch((err) => {
           console.warn('⚠️ Erro ao carregar KPIs do banco:', err);
           // Retorna valores padrão se houver erro, mas não dados mockados
@@ -366,6 +377,26 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         }),
         apiGet<any[]>('/dono/servicos').catch((err) => {
           console.warn('⚠️ Erro ao carregar serviços do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/financeiro/pagamentos').catch((err) => {
+          console.warn('⚠️ Erro ao carregar pagamentos do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/promocoes').catch((err) => {
+          console.warn('⚠️ Erro ao carregar promoções do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/avaliacoes').catch((err) => {
+          console.warn('⚠️ Erro ao carregar avaliações do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/produtos').catch((err) => {
+          console.warn('⚠️ Erro ao carregar produtos do banco:', err);
+          return [];
+        }),
+        apiGet<any[]>('/dono/notificacoes').catch((err) => {
+          console.warn('⚠️ Erro ao carregar notificações do banco:', err);
           return [];
         }),
       ]);
@@ -465,6 +496,86 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       // Carregar serviços do banco
       console.log('✅ Serviços carregados do banco:', servicosData?.length || 0);
       setServicos(servicosData || []);
+
+      // Transformar pagamentos da API
+      const pagamentosTransformados: PagamentoDono[] = (pagamentosData || []).map((pag: any) => ({
+        id: pag.id,
+        agendamentoId: pag.agendamentoId,
+        valor: pag.valor,
+        metodo: pag.metodo as 'pix' | 'cartao_credito' | 'cartao_debito' | 'dinheiro',
+        status: pag.status as 'pago' | 'pendente' | 'reembolsado',
+        taxaGateway: pag.taxaGateway || 0,
+        dataPagamento: pag.dataPagamento || undefined,
+        dataVencimento: pag.dataVencimento || undefined,
+      }));
+      console.log('✅ Pagamentos carregados do banco:', pagamentosTransformados.length);
+      setPagamentos(pagamentosTransformados);
+
+      // Transformar promoções da API
+      const promocoesTransformadas: PromocaoDono[] = (promocoesData || []).map((prom: any) => ({
+        id: prom.id,
+        nome: prom.nome,
+        tipo: prom.tipo as 'desconto_percentual' | 'desconto_fixo' | 'cashback' | 'pontos',
+        valor: prom.valor,
+        validoDe: prom.validoDe,
+        validoAte: prom.validoAte,
+        ativo: prom.ativo,
+        aplicavelA: prom.aplicavelA as 'todos' | 'servico' | 'horario' | 'cliente_vip',
+        servicoId: prom.servicoId || undefined,
+        horarioInicio: prom.horarioInicio || undefined,
+        horarioFim: prom.horarioFim || undefined,
+      }));
+      console.log('✅ Promoções carregadas do banco:', promocoesTransformadas.length);
+      setPromocoes(promocoesTransformadas);
+
+      // Transformar avaliações da API
+      const avaliacoesTransformadas: AvaliacaoDono[] = (avaliacoesData || []).map((av: any) => ({
+        id: av.id,
+        agendamentoId: av.agendamentoId,
+        clienteId: av.clienteId,
+        clienteNome: av.cliente?.nome || 'Cliente',
+        profissionalId: av.agendamento?.profissionais?.[0]?.profissionalId || '',
+        profissionalNome: av.agendamento?.profissionais?.[0]?.profissional?.nome || 'Não atribuído',
+        notaProfissional: av.notaProfissional,
+        notaAtendimento: av.notaAtendimento,
+        notaAmbiente: av.notaAmbiente,
+        comentario: av.comentario || undefined,
+        resposta: av.resposta || undefined,
+        data: av.createdAt,
+      }));
+      console.log('✅ Avaliações carregadas do banco:', avaliacoesTransformadas.length);
+      setAvaliacoes(avaliacoesTransformadas);
+
+      // Transformar produtos da API
+      const produtosTransformados: ProdutoDono[] = (produtosData || []).map((prod: any) => ({
+        id: prod.id,
+        nome: prod.nome,
+        descricao: prod.descricao || undefined,
+        categoria: prod.categoria as 'pomada' | 'oleo' | 'kit' | 'outro',
+        preco: prod.preco,
+        estoque: prod.estoque,
+        estoqueMinimo: prod.estoqueMinimo,
+        ativo: prod.ativo,
+        foto: prod.foto || undefined,
+      }));
+      console.log('✅ Produtos carregados do banco:', produtosTransformados.length);
+      setProdutos(produtosTransformados);
+
+      // Transformar notificações da API
+      const notificacoesTransformadas: NotificacaoDono[] = (notificacoesData || []).map((not: any) => ({
+        id: not.id,
+        tipo: not.tipo as 'agendamento' | 'pagamento' | 'avaliacao' | 'estoque' | 'sistema',
+        titulo: not.titulo,
+        mensagem: not.mensagem,
+        lida: not.lida,
+        data: not.data || not.createdAt,
+        acao: not.urlAcao ? {
+          url: not.urlAcao,
+          label: not.labelAcao || 'Ver',
+        } : undefined,
+      }));
+      console.log('✅ Notificações carregadas do banco:', notificacoesTransformadas.length);
+      setNotificacoes(notificacoesTransformadas);
       
       console.log('✅ Todos os dados foram carregados do banco de dados com sucesso!');
     } catch (error) {
@@ -736,43 +847,119 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   };
 
   // Funções de promoção
-  const criarPromocao = (promocao: Omit<PromocaoDono, "id">) => {
-    const novo: PromocaoDono = {
-      id: Date.now().toString(),
-      ...promocao,
-    };
-    setPromocoes([...promocoes, novo]);
+  const criarPromocao = async (promocao: Omit<PromocaoDono, "id">) => {
+    try {
+      console.log('🎁 Criando promoção no banco de dados:', promocao.nome);
+      await apiPost('/dono/promocoes', {
+        nome: promocao.nome,
+        tipo: promocao.tipo,
+        valor: promocao.valor,
+        validoDe: promocao.validoDe,
+        validoAte: promocao.validoAte,
+        ativo: promocao.ativo,
+        aplicavelA: promocao.aplicavelA,
+        servicoId: promocao.servicoId,
+        horarioInicio: promocao.horarioInicio,
+        horarioFim: promocao.horarioFim,
+      });
+      console.log('✅ Promoção criada no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Promoção criada com sucesso!');
+    } catch (error: any) {
+      console.error('❌ Erro ao criar promoção:', error);
+      toast.error(error.message || 'Erro ao criar promoção');
+      throw error;
+    }
   };
 
-  const atualizarPromocao = (id: string, dados: Partial<PromocaoDono>) => {
-    setPromocoes(promocoes.map((p) => (p.id === id ? { ...p, ...dados } : p)));
+  const atualizarPromocao = async (id: string, dados: Partial<PromocaoDono>) => {
+    try {
+      console.log('✏️ Atualizando promoção no banco:', id);
+      await apiPut(`/dono/promocoes/${id}`, dados);
+      console.log('✅ Promoção atualizada no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Promoção atualizada!');
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar promoção:', error);
+      toast.error(error.message || 'Erro ao atualizar promoção');
+    }
   };
 
   // Funções de avaliação
-  const responderAvaliacao = (id: string, resposta: string) => {
-    setAvaliacoes(avaliacoes.map((a) => (a.id === id ? { ...a, resposta } : a)));
+  const responderAvaliacao = async (id: string, resposta: string) => {
+    try {
+      console.log('⭐ Respondendo avaliação no banco:', id);
+      await apiPut(`/dono/avaliacoes/${id}/responder`, { resposta });
+      console.log('✅ Avaliação respondida no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Avaliação respondida!');
+    } catch (error: any) {
+      console.error('❌ Erro ao responder avaliação:', error);
+      toast.error(error.message || 'Erro ao responder avaliação');
+    }
   };
 
   // Funções de produto
-  const adicionarProduto = (produto: Omit<ProdutoDono, "id">) => {
-    const novo: ProdutoDono = {
-      id: Date.now().toString(),
-      ...produto,
-    };
-    setProdutos([...produtos, novo]);
+  const adicionarProduto = async (produto: Omit<ProdutoDono, "id">) => {
+    try {
+      console.log('📦 Adicionando produto ao banco de dados:', produto.nome);
+      await apiPost('/dono/produtos', {
+        nome: produto.nome,
+        descricao: produto.descricao,
+        categoria: produto.categoria,
+        preco: produto.preco,
+        estoque: produto.estoque,
+        estoqueMinimo: produto.estoqueMinimo,
+        ativo: produto.ativo,
+        foto: produto.foto,
+      });
+      console.log('✅ Produto adicionado ao banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Produto adicionado com sucesso!');
+    } catch (error: any) {
+      console.error('❌ Erro ao adicionar produto:', error);
+      toast.error(error.message || 'Erro ao adicionar produto');
+      throw error;
+    }
   };
 
-  const atualizarProduto = (id: string, dados: Partial<ProdutoDono>) => {
-    setProdutos(produtos.map((p) => (p.id === id ? { ...p, ...dados } : p)));
+  const atualizarProduto = async (id: string, dados: Partial<ProdutoDono>) => {
+    try {
+      console.log('✏️ Atualizando produto no banco:', id);
+      await apiPut(`/dono/produtos/${id}`, dados);
+      console.log('✅ Produto atualizado no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Produto atualizado!');
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar produto:', error);
+      toast.error(error.message || 'Erro ao atualizar produto');
+    }
   };
 
-  const atualizarEstoque = (id: string, quantidade: number) => {
-    atualizarProduto(id, { estoque: quantidade });
+  const atualizarEstoque = async (id: string, quantidade: number) => {
+    try {
+      console.log('📊 Atualizando estoque no banco:', id, quantidade);
+      await apiPut(`/dono/produtos/${id}/estoque`, { quantidade });
+      console.log('✅ Estoque atualizado no banco, recarregando dados...');
+      await carregarDados(true);
+      toast.success('Estoque atualizado!');
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar estoque:', error);
+      toast.error(error.message || 'Erro ao atualizar estoque');
+    }
   };
 
   // Funções de notificação
-  const marcarNotificacaoLida = (id: string) => {
-    setNotificacoes(notificacoes.map((n) => (n.id === id ? { ...n, lida: true } : n)));
+  const marcarNotificacaoLida = async (id: string) => {
+    try {
+      console.log('🔔 Marcando notificação como lida no banco:', id);
+      await apiPut(`/dono/notificacoes/${id}/lida`, {});
+      console.log('✅ Notificação marcada como lida, recarregando dados...');
+      await carregarDados(true);
+    } catch (error: any) {
+      console.error('❌ Erro ao marcar notificação como lida:', error);
+      toast.error(error.message || 'Erro ao marcar notificação como lida');
+    }
   };
 
   // Funções de configuração

@@ -124,47 +124,122 @@ export async function criarCliente(req: AuthRequest, res: Response) {
   try {
     const { nome, email, telefone, foto, dataNascimento } = req.body;
 
-    if (!nome || !email) {
-      return res.status(400).json({ error: 'Nome e email são obrigatórios' });
+    // Validação de campos obrigatórios
+    if (!nome || nome.trim() === '') {
+      return res.status(400).json({ error: 'Nome é obrigatório' });
     }
 
-    // Verificar se já existe cliente com esse email
-    const clienteExistente = await prisma.cliente.findUnique({
-      where: { email },
-    });
+    // Email é opcional, mas se fornecido deve ser válido e único
+    let emailFinal: string | null = null;
+    
+    if (email && email.trim() !== '') {
+      // Validar formato de email básico
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return res.status(400).json({ error: 'Formato de email inválido' });
+      }
 
-    if (clienteExistente) {
-      return res.status(400).json({ error: 'Já existe um cliente com este email' });
+      emailFinal = email.trim().toLowerCase();
+
+      // Verificar se já existe cliente com esse email no banco de dados
+      console.log('🔍 Verificando se email existe:', emailFinal);
+      const clienteExistente = await prisma.cliente.findUnique({
+        where: { email: emailFinal },
+        select: { id: true, email: true, nome: true },
+      });
+
+      console.log('🔍 Resultado da busca:', clienteExistente ? `Encontrado: ${clienteExistente.nome}` : 'Não encontrado');
+
+      if (clienteExistente) {
+        return res.status(400).json({ 
+          error: 'Este email já está cadastrado',
+          detalhes: `O email ${emailFinal} já está associado a outro cliente`
+        });
+      }
+    } else {
+      // Gerar email temporário único se não fornecido
+      emailFinal = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}@temp.com`;
+      console.log('📧 Email não fornecido, gerando temporário:', emailFinal);
     }
 
-    // Gerar email temporário único se necessário (para desenvolvimento)
-    let emailFinal = email;
-    if (!email || email === '') {
-      emailFinal = `temp_${Date.now()}@temp.com`;
+    // Verificar se telefone já está em uso (se fornecido)
+    if (telefone && telefone.trim() !== '') {
+      const clienteExistentePorTelefone = await prisma.cliente.findFirst({
+        where: {
+          telefone: telefone.trim(),
+        },
+        select: { id: true, telefone: true, nome: true },
+      });
+
+      if (clienteExistentePorTelefone) {
+        return res.status(400).json({ 
+          error: 'Este telefone já está cadastrado',
+          detalhes: `O telefone ${telefone} já está associado a outro cliente`
+        });
+      }
     }
 
+    // Criar cliente
+    console.log('✅ Criando cliente:', { nome, email: emailFinal, telefone });
     const cliente = await prisma.cliente.create({
       data: {
-        nome,
-        email: emailFinal,
-        telefone: telefone || null,
+        nome: nome.trim(),
+        email: emailFinal!,
+        telefone: telefone?.trim() || null,
         foto: foto || null,
         dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
         ativo: true,
         emailVerificado: false,
       },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        telefone: true,
+        foto: true,
+        dataNascimento: true,
+        ativo: true,
+        createdAt: true,
+      },
     });
 
+    console.log('✅ Cliente criado com sucesso:', cliente.id);
     res.status(201).json(cliente);
   } catch (error: any) {
-    console.error('Erro ao criar cliente:', error);
+    console.error('❌ Erro ao criar cliente:', error);
+    console.error('❌ Stack:', error.stack);
+    console.error('❌ Código do erro:', error.code);
+    console.error('❌ Mensagem:', error.message);
     
     // Tratar erros específicos do Prisma
     if (error.code === 'P2002') {
-      return res.status(400).json({ error: 'Já existe um cliente com este email ou telefone' });
+      // Violação de constraint única
+      const campo = error.meta?.target?.[0] || 'campo';
+      return res.status(400).json({ 
+        error: `Este ${campo} já está cadastrado`,
+        detalhes: error.meta 
+      });
     }
     
-    res.status(500).json({ error: 'Erro ao criar cliente', details: error.message });
+    if (error.code === 'P2003') {
+      // Foreign key constraint
+      return res.status(400).json({ 
+        error: 'Erro de relacionamento no banco de dados',
+        detalhes: error.meta 
+      });
+    }
+
+    if (error.message?.includes('does not exist')) {
+      return res.status(500).json({ 
+        error: 'Tabelas não criadas no banco de dados. Execute as migrações: npm run prisma:push',
+        detalhes: error.message 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Erro ao criar cliente',
+      detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 

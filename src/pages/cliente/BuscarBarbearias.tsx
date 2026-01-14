@@ -19,17 +19,32 @@ export default function BuscarBarbearias() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [busca, setBusca] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [bairro, setBairro] = useState("");
   const [buscando, setBuscando] = useState(false);
 
   useEffect(() => {
     // Carregar todas as barbearias ao montar
-    buscarBarbearias();
+    buscarBarbearias().catch((err) => {
+      console.warn('Erro ao carregar barbearias iniciais:', err);
+    });
   }, []);
 
   const handleBuscar = async () => {
     setBuscando(true);
     try {
-      await buscarBarbearias(busca || undefined);
+      await buscarBarbearias(
+        busca || undefined,
+        cidade || undefined,
+        bairro || undefined
+      );
+    } catch (error) {
+      console.error('Erro ao buscar:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível buscar barbearias. Tente novamente.",
+        variant: "destructive",
+      });
     } finally {
       setBuscando(false);
     }
@@ -59,24 +74,56 @@ export default function BuscarBarbearias() {
       {/* Barra de busca */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, cidade ou bairro..."
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    handleBuscar();
-                  }
-                }}
-                className="pl-10"
-              />
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome..."
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      handleBuscar();
+                    }
+                  }}
+                  className="pl-10"
+                />
+              </div>
+              <Button onClick={handleBuscar} disabled={buscando}>
+                {buscando ? "Buscando..." : "Buscar"}
+              </Button>
             </div>
-            <Button onClick={handleBuscar} disabled={buscando}>
-              {buscando ? "Buscando..." : "Buscar"}
-            </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cidade..."
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      handleBuscar();
+                    }
+                  }}
+                  className="pl-10"
+                />
+              </div>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Bairro..."
+                  value={bairro}
+                  onChange={(e) => setBairro(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      handleBuscar();
+                    }
+                  }}
+                  className="pl-10"
+                />
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -110,10 +157,14 @@ export default function BuscarBarbearias() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">{barbearia.nome}</CardTitle>
-                      {barbearia.endereco && (
+                      {(barbearia.endereco || barbearia.cidade || barbearia.bairro) && (
                         <CardDescription className="flex items-center gap-1 mt-1">
                           <MapPin className="h-3 w-3" />
-                          {barbearia.endereco}
+                          {[
+                            barbearia.endereco,
+                            barbearia.bairro,
+                            barbearia.cidade
+                          ].filter(Boolean).join(', ')}
                         </CardDescription>
                       )}
                     </div>

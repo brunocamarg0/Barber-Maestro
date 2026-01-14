@@ -45,7 +45,7 @@ interface ClienteContextType {
   };
   notificacoes: Array<{ id: string; titulo: string; mensagem: string; lida: boolean; data: string }>;
   barbearias: any[];
-  buscarBarbearias: (busca?: string) => Promise<void>;
+  buscarBarbearias: (busca?: string, cidade?: string, bairro?: string) => Promise<void>;
   buscarBarbeariaPorId: (id: string) => Promise<any>;
   criarAvaliacao?: (dados: any) => Promise<void>;
   realizarPagamento?: (agendamentoId: string, dados: any) => Promise<void>;
@@ -364,17 +364,35 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     return agendamentos.filter((a) => a.status === status);
   };
 
-  const buscarBarbearias = async (busca?: string) => {
+  const buscarBarbearias = async (busca?: string, cidade?: string, bairro?: string) => {
     try {
-      console.log('🔍 [CLIENTE] Buscando barbearias...', busca ? `com busca: ${busca}` : 'todas');
+      console.log('🔍 [CLIENTE] Buscando barbearias...', { busca, cidade, bairro });
       
-      const params = busca ? `?busca=${encodeURIComponent(busca)}` : '';
-      const barbeariasData = await apiGet<any[]>(`/barbearias${params}`);
+      const params = new URLSearchParams();
+      if (busca) params.append('busca', busca);
+      if (cidade) params.append('cidade', cidade);
+      if (bairro) params.append('bairro', bairro);
       
-      setBarbearias(barbeariasData);
-      console.log('✅ [CLIENTE] Barbearias encontradas:', barbeariasData.length);
+      const queryString = params.toString();
+      const endpoint = `/barbearias${queryString ? `?${queryString}` : ''}`;
+      
+      console.log('🔍 [CLIENTE] Endpoint:', endpoint);
+      const barbeariasData = await apiGet<any[]>(endpoint);
+      
+      if (Array.isArray(barbeariasData)) {
+        setBarbearias(barbeariasData);
+        console.log('✅ [CLIENTE] Barbearias encontradas:', barbeariasData.length);
+      } else {
+        console.warn('⚠️ [CLIENTE] Resposta não é um array:', barbeariasData);
+        setBarbearias([]);
+      }
     } catch (error: any) {
       console.error('❌ [CLIENTE] Erro ao buscar barbearias:', error);
+      console.error('❌ [CLIENTE] Detalhes do erro:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response,
+      });
       toast.error('Erro ao buscar barbearias');
       setBarbearias([]);
     }

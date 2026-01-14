@@ -13,33 +13,50 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
       status: 'ativa', // Apenas barbearias ativas
     };
 
-    // Busca por nome
+    // Busca geral (nome, cidade, bairro ou endereço)
     if (busca && typeof busca === 'string') {
-      where.nome = {
-        contains: busca,
+      where.OR = [
+        {
+          nome: {
+            contains: busca,
+            mode: 'insensitive',
+          },
+        },
+        {
+          cidade: {
+            contains: busca,
+            mode: 'insensitive',
+          },
+        },
+        {
+          bairro: {
+            contains: busca,
+            mode: 'insensitive',
+          },
+        },
+        {
+          endereco: {
+            contains: busca,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
+
+    // Busca específica por cidade
+    if (cidade && typeof cidade === 'string') {
+      where.cidade = {
+        contains: cidade,
         mode: 'insensitive',
       };
     }
 
-    // Busca por endereço (cidade ou bairro)
-    if (cidade || bairro) {
-      where.OR = [];
-      if (cidade) {
-        where.OR.push({
-          endereco: {
-            contains: cidade as string,
-            mode: 'insensitive',
-          },
-        });
-      }
-      if (bairro) {
-        where.OR.push({
-          endereco: {
-            contains: bairro as string,
-            mode: 'insensitive',
-          },
-        });
-      }
+    // Busca específica por bairro
+    if (bairro && typeof bairro === 'string') {
+      where.bairro = {
+        contains: bairro,
+        mode: 'insensitive',
+      };
     }
 
     const barbearias = await prisma.barbearia.findMany({
@@ -93,6 +110,9 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
       email: b.email,
       telefone: b.telefone,
       endereco: b.endereco,
+      cidade: b.cidade,
+      bairro: b.bairro,
+      cep: b.cep,
       servicos: b.servicos.map((s) => ({
         id: s.id,
         nome: s.nome,
@@ -172,6 +192,9 @@ export async function buscarBarbeariaPublica(req: Request, res: Response) {
       email: barbearia.email,
       telefone: barbearia.telefone,
       endereco: barbearia.endereco,
+      cidade: barbearia.cidade,
+      bairro: barbearia.bairro,
+      cep: barbearia.cep,
       servicos: barbearia.servicos.map((s) => ({
         id: s.id,
         nome: s.nome,

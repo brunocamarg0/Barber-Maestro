@@ -26,9 +26,12 @@ const EsqueciSenha = () => {
         ? '/auth/dono/esqueci-senha'
         : '/auth/cliente/esqueci-senha';
 
-      console.log('📧 Enviando solicitação de recuperação de senha para:', `${API_URL}${endpoint}`);
+      const fullUrl = `${API_URL}${endpoint}`;
+      console.log('📧 Enviando solicitação de recuperação de senha para:', fullUrl);
+      console.log('📧 Tipo:', tipo);
+      console.log('📧 Email:', email);
       
-      const response = await fetch(`${API_URL}${endpoint}`, {
+      const response = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

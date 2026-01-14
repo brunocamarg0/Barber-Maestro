@@ -381,7 +381,23 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       const endpoint = `/barbearias${queryString ? `?${queryString}` : ''}`;
       
       console.log('🔍 [CLIENTE] Endpoint:', endpoint);
-      const barbeariasData = await apiGet<any[]>(endpoint);
+      
+      // Fazer requisição sem token (rota pública)
+      const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [CLIENTE] Erro na resposta:', response.status, errorText);
+        throw new Error(`Erro ao buscar barbearias: ${response.status} - ${errorText}`);
+      }
+
+      const barbeariasData = await response.json();
       
       if (Array.isArray(barbeariasData)) {
         setBarbearias(barbeariasData);
@@ -395,9 +411,9 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       console.error('❌ [CLIENTE] Detalhes do erro:', {
         message: error.message,
         stack: error.stack,
-        response: error.response,
+        name: error.name,
       });
-      toast.error('Erro ao buscar barbearias');
+      toast.error(error.message || 'Erro ao buscar barbearias');
       setBarbearias([]);
     }
   };
@@ -405,11 +421,27 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   const buscarBarbeariaPorId = async (id: string) => {
     try {
       console.log('🔍 [CLIENTE] Buscando barbearia por ID:', id);
-      const barbearia = await apiGet<any>(`/barbearias/${id}`);
+      
+      // Fazer requisição sem token (rota pública)
+      const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
+      const response = await fetch(`${API_URL}/barbearias/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [CLIENTE] Erro na resposta:', response.status, errorText);
+        throw new Error(`Erro ao buscar barbearia: ${response.status} - ${errorText}`);
+      }
+
+      const barbearia = await response.json();
       return barbearia;
     } catch (error: any) {
       console.error('❌ [CLIENTE] Erro ao buscar barbearia:', error);
-      toast.error('Erro ao buscar barbearia');
+      toast.error(error.message || 'Erro ao buscar barbearia');
       throw error;
     }
   };

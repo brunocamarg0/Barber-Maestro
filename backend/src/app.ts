@@ -148,7 +148,11 @@ app.use('/api/solicitacoes', solicitacoesRoutes);
 app.use('/api/agendamentos', agendamentosRoutes);
 
 // Rotas públicas de barbearias (para clientes)
-app.use('/api/barbearias', barbeariasPublicasRoutes);
+console.log('🔧 Registrando rotas públicas de barbearias em /api/barbearias');
+app.use('/api/barbearias', (req, res, next) => {
+  console.log('🔧 Rota /api/barbearias chamada:', req.method, req.originalUrl);
+  next();
+}, barbeariasPublicasRoutes);
 
 // Rotas do dono (requerem autenticação)
 app.use('/api/dono/profissionais', donoProfissionaisRoutes);

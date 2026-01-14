@@ -7,6 +7,8 @@ import prisma from '../lib/prisma';
  */
 export async function listarBarbeariasPublicas(req: Request, res: Response) {
   try {
+    console.log('🔧 [BARBEARIAS] listarBarbeariasPublicas chamado');
+    console.log('🔧 [BARBEARIAS] Query params:', req.query);
     const { busca, cidade, bairro } = req.query;
 
     const where: any = {

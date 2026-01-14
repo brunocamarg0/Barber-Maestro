@@ -46,10 +46,17 @@ export async function listarClientes(req: AuthRequest, res: Response) {
     console.log('📋 [LISTAR CLIENTES] Total de clientes ativos no sistema:', clienteIdsAtivos.length);
     console.log('📋 [LISTAR CLIENTES] Total de IDs únicos a buscar:', todosClienteIds.length);
 
-    // Se não houver IDs, retornar array vazio (não usar [''] que não funciona)
-    const where: any = todosClienteIds.length > 0 
-      ? { id: { in: todosClienteIds } }
-      : { id: { in: [] } }; // Array vazio retorna nada, que é o comportamento esperado
+    // Construir query: sempre buscar por ativo=true E (IDs OU sem filtro de ID se não houver IDs)
+    // Isso garante que TODOS os clientes ativos sejam retornados
+    const where: any = {
+      ativo: true, // Sempre filtrar por ativo
+    };
+
+    // Se houver IDs específicos, adicionar filtro de ID
+    // Mas se não houver, ainda retornar todos os ativos
+    if (todosClienteIds.length > 0) {
+      where.id = { in: todosClienteIds };
+    }
 
     if (busca && typeof busca === 'string') {
       where.OR = [

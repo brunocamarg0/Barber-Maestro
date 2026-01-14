@@ -28,6 +28,7 @@ interface ClienteContextType {
   ) => Promise<Pagamento>;
   atualizarStatusPagamento: (id: string, status: StatusPagamento) => Promise<void>;
   getAgendamento: (id: string) => Agendamento | undefined;
+  getAgendamentosPorStatus: (status: StatusAgendamento) => Agendamento[];
   getServicosPorBarbearia: (barbeariaId: string) => Servico[];
   carregarDados: () => Promise<void>;
   atualizarPerfil: (dados: Partial<Cliente>) => Promise<void>;
@@ -414,6 +415,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         criarPagamento,
         atualizarStatusPagamento,
         getAgendamento,
+        getAgendamentosPorStatus,
         getServicosPorBarbearia,
         carregarDados,
         atualizarPerfil,

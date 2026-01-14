@@ -13,6 +13,9 @@ const createTransporter = async (): Promise<nodemailer.Transporter> => {
 
   // Se tiver variáveis de ambiente configuradas, usa SMTP real
   if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+    console.log('📧 [EMAIL] Configurando SMTP real para produção');
+    console.log('📧 [EMAIL] Host:', process.env.SMTP_HOST);
+    console.log('📧 [EMAIL] Port:', process.env.SMTP_PORT || '587');
     transporterCache = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -22,11 +25,14 @@ const createTransporter = async (): Promise<nodemailer.Transporter> => {
         pass: process.env.SMTP_PASS,
       },
     });
+    console.log('✅ [EMAIL] SMTP real configurado com sucesso');
     return transporterCache;
   }
 
   // Para desenvolvimento: Ethereal Email (fake SMTP que funciona sem configuração)
-  // Gera credenciais automaticamente
+  // ⚠️ ATENÇÃO: Ethereal Email NÃO envia emails reais, apenas para testes!
+  console.warn('⚠️ [EMAIL] SMTP não configurado - usando Ethereal Email (NÃO envia emails reais!)');
+  console.warn('⚠️ [EMAIL] Para produção, configure as variáveis: SMTP_HOST, SMTP_USER, SMTP_PASS');
   try {
     const testAccount = await nodemailer.createTestAccount();
     transporterCache = nodemailer.createTransport({
@@ -38,12 +44,14 @@ const createTransporter = async (): Promise<nodemailer.Transporter> => {
         pass: testAccount.pass,
       },
     });
-    console.log('📧 Ethereal Email configurado automaticamente');
-    console.log(`   User: ${testAccount.user}`);
-    console.log(`   Pass: ${testAccount.pass}`);
+    console.log('📧 [EMAIL] Ethereal Email configurado (apenas para testes)');
+    console.log(`📧 [EMAIL] User: ${testAccount.user}`);
+    console.log(`📧 [EMAIL] Pass: ${testAccount.pass}`);
+    console.warn('⚠️ [EMAIL] Emails enviados via Ethereal NÃO chegam na caixa de entrada real!');
+    console.warn('⚠️ [EMAIL] Acesse https://ethereal.email para ver os emails de teste');
     return transporterCache;
   } catch (error) {
-    console.error('Erro ao criar conta Ethereal:', error);
+    console.error('❌ [EMAIL] Erro ao criar conta Ethereal:', error);
     throw new Error('Não foi possível configurar o serviço de email');
   }
 };

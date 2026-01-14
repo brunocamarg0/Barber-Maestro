@@ -27,42 +27,60 @@ const EsqueciSenha = () => {
         : '/auth/cliente/esqueci-senha';
 
       const fullUrl = `${API_URL}${endpoint}`;
-      console.log('📧 Enviando solicitação de recuperação de senha para:', fullUrl);
-      console.log('📧 Tipo:', tipo);
-      console.log('📧 Email:', email);
+      console.log('📧 [ESQUECI SENHA] Enviando solicitação para:', fullUrl);
+      console.log('📧 [ESQUECI SENHA] Tipo:', tipo);
+      console.log('📧 [ESQUECI SENHA] Email:', email);
       
-      const response = await fetch(fullUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      console.log('📧 Resposta recebida:', response.status, response.statusText);
-      console.log('📧 Content-Type:', response.headers.get('content-type'));
-
-      // Verificar se a resposta é JSON antes de fazer parse
-      const contentType = response.headers.get('content-type');
-      let data;
+      // Adicionar timeout de 30 segundos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        // Se não for JSON, ler como texto para ver o erro
-        const text = await response.text();
-        console.error('❌ Resposta não é JSON:', text.substring(0, 200));
-        throw new Error(`Erro no servidor: ${response.status} ${response.statusText}`);
-      }
+      try {
+        const response = await fetch(fullUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao solicitar recuperação de senha');
-      }
+        console.log('📧 [ESQUECI SENHA] Resposta recebida:', response.status, response.statusText);
+        console.log('📧 [ESQUECI SENHA] Content-Type:', response.headers.get('content-type'));
 
-      toast.success(data.message || 'Se o email estiver cadastrado, você receberá uma nova senha por email');
-      setEmailEnviado(true);
+        // Verificar se a resposta é JSON antes de fazer parse
+        const contentType = response.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+          console.log('📧 [ESQUECI SENHA] Dados recebidos:', data);
+        } else {
+          // Se não for JSON, ler como texto para ver o erro
+          const text = await response.text();
+          console.error('❌ [ESQUECI SENHA] Resposta não é JSON:', text.substring(0, 200));
+          throw new Error(`Erro no servidor: ${response.status} ${response.statusText}`);
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao solicitar recuperação de senha');
+        }
+
+        console.log('✅ [ESQUECI SENHA] Sucesso!');
+        toast.success(data.message || 'Se o email estiver cadastrado, você receberá uma nova senha por email');
+        setEmailEnviado(true);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Tempo de espera esgotado. Tente novamente.');
+        }
+        throw fetchError;
+      }
     } catch (error: any) {
-      console.error('❌ Erro ao solicitar recuperação de senha:', error);
+      console.error('❌ [ESQUECI SENHA] Erro ao solicitar recuperação de senha:', error);
+      console.error('❌ [ESQUECI SENHA] Stack:', error.stack);
       const errorMessage = error.message || 'Erro ao solicitar recuperação de senha. Verifique se o servidor está funcionando.';
       toast.error(errorMessage);
     } finally {

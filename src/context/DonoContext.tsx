@@ -518,7 +518,20 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
       console.log('✅ [CARREGAR DADOS] Clientes carregados do banco:', clientesTransformados.length);
       console.log('✅ [CARREGAR DADOS] IDs dos clientes:', clientesTransformados.map(c => c.id));
-      setClientes(clientesTransformados);
+      
+      // Preservar clientes temporários que não vieram do banco (evitar que sumam)
+      setClientes(prev => {
+        const idsDoBanco = new Set(clientesTransformados.map(c => c.id));
+        const clientesTemporarios = prev.filter(c => !idsDoBanco.has(c.id));
+        
+        // Se houver clientes temporários, mantê-los na lista
+        if (clientesTemporarios.length > 0) {
+          console.log('⚠️ [CARREGAR DADOS] Mantendo clientes temporários:', clientesTemporarios.map(c => c.nome));
+          return [...clientesTransformados, ...clientesTemporarios];
+        }
+        
+        return clientesTransformados;
+      });
 
       // Carregar serviços do banco
       console.log('✅ Serviços carregados do banco:', servicosData?.length || 0);
@@ -830,11 +843,19 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       
       console.log('🔄 [ADICIONAR CLIENTE] Iniciando recarregamento forçado de dados...');
       
-      // Forçar recarregamento imediato após adicionar cliente (com pequeno delay para garantir que o banco commitou)
+      // Guardar ID do cliente criado para verificar depois
+      const clienteIdCriado = resultado?.id;
+      
+      // Forçar recarregamento após delay maior para garantir que o banco commitou
       setTimeout(async () => {
-        await carregarDados(true);
-        console.log('✅ [ADICIONAR CLIENTE] Dados recarregados. Total de clientes agora:', clientes.length);
-      }, 500);
+        try {
+          await carregarDados(true);
+          console.log('✅ [ADICIONAR CLIENTE] Dados recarregados');
+        } catch (error) {
+          console.error('❌ [ADICIONAR CLIENTE] Erro ao recarregar dados:', error);
+          // Em caso de erro, manter o cliente temporário na lista
+        }
+      }, 1500); // Aumentar delay para 1.5 segundos para dar tempo ao banco
       
       toast.success('Cliente adicionado com sucesso!');
     } catch (error: any) {

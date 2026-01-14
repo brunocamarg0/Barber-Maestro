@@ -37,6 +37,7 @@ export default function GestaoProfissionais() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [salvando, setSalvando] = useState(false);
   const [profissionalEditando, setProfissionalEditando] = useState<ProfissionalDono | null>(null);
   const [formData, setFormData] = useState({
     nome: "",
@@ -64,6 +65,7 @@ export default function GestaoProfissionais() {
       return;
     }
 
+    setSalvando(true);
     try {
       await adicionarProfissional({
         nome: formData.nome,
@@ -88,6 +90,8 @@ export default function GestaoProfissionais() {
       });
     } catch (error) {
       // Erro já é tratado no contexto
+    } finally {
+      setSalvando(false);
     }
   };
 
@@ -231,10 +235,16 @@ export default function GestaoProfissionais() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsDialogOpen(false)}
+                disabled={salvando}
+              >
                 Cancelar
               </Button>
-              <Button onClick={handleSubmit}>Adicionar</Button>
+              <Button onClick={handleSubmit} disabled={salvando}>
+                {salvando ? "Salvando..." : "Adicionar"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

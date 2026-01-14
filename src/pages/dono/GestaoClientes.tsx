@@ -34,6 +34,7 @@ export default function GestaoClientes() {
   const { clientes, marcarClienteVIP, adicionarCliente } = useDono();
   const [busca, setBusca] = useState("");
   const [modalAberto, setModalAberto] = useState(false);
+  const [salvando, setSalvando] = useState(false);
   const [formCliente, setFormCliente] = useState({
     nome: "",
     email: "",
@@ -70,6 +71,7 @@ export default function GestaoClientes() {
       return;
     }
 
+    setSalvando(true);
     try {
       await adicionarCliente({
         nome: formCliente.nome.trim(),
@@ -84,8 +86,18 @@ export default function GestaoClientes() {
         telefone: "",
       });
       setModalAberto(false);
+      
+      // Scroll suave até a lista de clientes após um pequeno delay
+      setTimeout(() => {
+        const listaElement = document.getElementById('lista-clientes');
+        if (listaElement) {
+          listaElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
     } catch (error: any) {
       toast.error(error.message || "Erro ao adicionar cliente");
+    } finally {
+      setSalvando(false);
     }
   };
 
@@ -159,7 +171,7 @@ export default function GestaoClientes() {
         </Card>
       </div>
 
-      <Card>
+      <Card id="lista-clientes">
         <CardHeader>
           <CardTitle>Lista de Clientes</CardTitle>
           <CardDescription>
@@ -281,8 +293,12 @@ export default function GestaoClientes() {
             >
               Cancelar
             </Button>
-            <Button onClick={handleSalvar} className="bg-blue-600 hover:bg-blue-700">
-              Salvar Cliente
+            <Button 
+              onClick={handleSalvar} 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={salvando}
+            >
+              {salvando ? "Salvando..." : "Salvar Cliente"}
             </Button>
           </DialogFooter>
         </DialogContent>

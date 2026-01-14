@@ -140,6 +140,8 @@ app.use(passport.session());
 console.log('🔧 Registrando rotas de autenticação em /api/auth');
 app.use('/api/auth', (req, res, next) => {
   console.log('🔧 Rota /api/auth chamada:', req.method, req.path);
+  console.log('🔧 URL completa:', req.originalUrl);
+  console.log('🔧 Base URL:', req.baseUrl);
   next();
 }, authRoutes);
 app.use('/api/auth/google', googleAuthRoutes);

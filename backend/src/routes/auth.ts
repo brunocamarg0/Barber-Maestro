@@ -11,7 +11,9 @@ console.log('🔧 Router de autenticação criado');
 router.post('/cliente/registro', authController.registrarCliente);
 router.post('/cliente/login', authController.loginCliente);
 router.post('/cliente/esqueci-senha', (req, res, next) => {
-  console.log('🔧 Rota /cliente/esqueci-senha chamada');
+  console.log('🔧 [AUTH ROUTER] Rota POST /cliente/esqueci-senha chamada');
+  console.log('🔧 [AUTH ROUTER] Body:', req.body);
+  console.log('🔧 [AUTH ROUTER] Path:', req.path);
   next();
 }, authController.esqueciMinhaSenhaCliente);
 
@@ -20,7 +22,9 @@ router.post('/dono/cadastro-direto', authController.cadastroDiretoDono);
 router.post('/dono/registro', authController.registrarDono);
 router.post('/dono/login', authController.loginDono);
 router.post('/dono/esqueci-senha', (req, res, next) => {
-  console.log('🔧 Rota /dono/esqueci-senha chamada');
+  console.log('🔧 [AUTH ROUTER] Rota POST /dono/esqueci-senha chamada');
+  console.log('🔧 [AUTH ROUTER] Body:', req.body);
+  console.log('🔧 [AUTH ROUTER] Path:', req.path);
   next();
 }, authController.esqueciMinhaSenhaDono);
 

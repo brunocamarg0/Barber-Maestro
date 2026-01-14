@@ -530,12 +530,18 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
       html: htmlTemplate,
     });
 
-    console.log('✅ Email de recuperação de senha enviado:', info.messageId);
+    console.log('✅ [EMAIL] Email de recuperação de senha enviado:', info.messageId);
     
+    // Se usar Ethereal (teste), mostrar link de preview
     if (info.messageId) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
-        console.log('📧 Preview do email:', previewUrl);
+        console.warn('⚠️ [EMAIL] Email enviado via Ethereal (TESTE) - NÃO chega na caixa de entrada real!');
+        console.warn('⚠️ [EMAIL] Preview do email:', previewUrl);
+        console.warn('⚠️ [EMAIL] Acesse o link acima para ver o email de teste');
+        console.warn('⚠️ [EMAIL] Para enviar emails reais, configure SMTP_HOST, SMTP_USER e SMTP_PASS no Railway');
+      } else {
+        console.log('✅ [EMAIL] Email enviado via SMTP real - deve chegar na caixa de entrada');
       }
     }
 

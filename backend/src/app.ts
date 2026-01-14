@@ -22,6 +22,7 @@ import donoAvaliacoesRoutes from './routes/dono/avaliacoes';
 import donoProdutosRoutes from './routes/dono/produtos';
 import donoNotificacoesRoutes from './routes/dono/notificacoes';
 import donoRelatoriosRoutes from './routes/dono/relatorios';
+import clientePanelRoutes from './routes/cliente/panel';
 // Carregar configuração do Passport (pode falhar se OAuth não estiver configurado)
 try {
   require('./config/passport');
@@ -156,6 +157,9 @@ app.use('/api/dono/avaliacoes', donoAvaliacoesRoutes);
 app.use('/api/dono/produtos', donoProdutosRoutes);
 app.use('/api/dono/notificacoes', donoNotificacoesRoutes);
 app.use('/api/dono/relatorios', donoRelatoriosRoutes);
+
+// Rotas do cliente (requerem autenticação)
+app.use('/api/cliente', clientePanelRoutes);
 
 // Rotas admin - ordem importa! Rotas mais específicas primeiro
 app.use('/api/admin', criarExemploRoutes); // /api/admin/criar-exemplo

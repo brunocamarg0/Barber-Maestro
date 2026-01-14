@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import {
   Agendamento,
   Cliente,
@@ -9,209 +9,338 @@ import {
   MetodoPagamento,
   StatusPagamento,
 } from "@/types/cliente";
+import { apiGet, apiPost, apiPut } from "@/services/api";
+import { toast } from "sonner";
 
 interface ClienteContextType {
   cliente: Cliente | null;
   agendamentos: Agendamento[];
   servicos: Servico[];
   pagamentos: Pagamento[];
+  loading: boolean;
   setCliente: (cliente: Cliente | null) => void;
-  criarAgendamento: (agendamento: NovoAgendamento) => Agendamento;
-  cancelarAgendamento: (id: string) => void;
+  criarAgendamento: (agendamento: NovoAgendamento) => Promise<Agendamento>;
+  cancelarAgendamento: (id: string) => Promise<void>;
   criarPagamento: (
     agendamentoId: string,
     valor: number,
     metodo: MetodoPagamento
-  ) => Pagamento;
-  atualizarStatusPagamento: (id: string, status: StatusPagamento) => void;
+  ) => Promise<Pagamento>;
+  atualizarStatusPagamento: (id: string, status: StatusPagamento) => Promise<void>;
   getAgendamento: (id: string) => Agendamento | undefined;
   getServicosPorBarbearia: (barbeariaId: string) => Servico[];
+  carregarDados: () => Promise<void>;
+  atualizarPerfil: (dados: Partial<Cliente>) => Promise<void>;
+  getProximoAgendamento: () => Agendamento | null;
+  fidelidade: {
+    pontos: number;
+    nivel: string;
+    cortesRealizados: number;
+    proximoDesconto: {
+      cortesNecessarios: number;
+      desconto: number;
+    };
+    progressoProximoNivel: number;
+  };
+  notificacoes: Array<{ id: string; titulo: string; mensagem: string; lida: boolean; data: string }>;
 }
 
 const ClienteContext = createContext<ClienteContextType | undefined>(undefined);
 
-// Mock data para serviços
-// Preços em R$ 0,01 para testes de pagamento
-const servicosMock: Servico[] = [
-  {
-    id: "1",
-    nome: "Corte Masculino",
-    descricao: "Corte moderno com acabamento profissional",
-    duracao: 30,
-    preco: 0.01, // R$ 0,01 para testes
-    barbeariaId: "1",
-    ativo: true,
-  },
-  {
-    id: "2",
-    nome: "Barba Completa",
-    descricao: "Aparar, desenhar e modelar barba",
-    duracao: 25,
-    preco: 0.01, // R$ 0,01 para testes
-    barbeariaId: "1",
-    ativo: true,
-  },
-  {
-    id: "3",
-    nome: "Corte + Barba",
-    descricao: "Pacote completo - Corte e barba",
-    duracao: 45,
-    preco: 0.01, // R$ 0,01 para testes
-    barbeariaId: "1",
-    ativo: true,
-  },
-  {
-    id: "4",
-    nome: "Sobrancelha",
-    descricao: "Design e modelagem de sobrancelhas",
-    duracao: 15,
-    preco: 0.01, // R$ 0,01 para testes
-    barbeariaId: "1",
-    ativo: true,
-  },
-  {
-    id: "5",
-    nome: "Relaxamento Capilar",
-    descricao: "Tratamento completo para cabelos",
-    duracao: 60,
-    preco: 0.01, // R$ 0,01 para testes
-    barbeariaId: "1",
-    ativo: true,
-  },
-];
-
-// Mock data para cliente
-const clienteMock: Cliente = {
-  id: "1",
-  nome: "João Silva",
-  email: "joao@example.com",
-  telefone: "(11) 98765-4321",
-  cpf: "123.456.789-00",
-  dataNascimento: "1990-01-15",
-  createdAt: new Date().toISOString(),
-};
-
-// Mock data para agendamentos
-const agendamentosMock: Agendamento[] = [
-  {
-    id: "1",
-    clienteId: "1",
-    barbeariaId: "1",
-    servicoId: "3",
-    servico: servicosMock[2],
-    data: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    hora: "14:00",
-    status: "confirmado",
-    observacoes: "Primeira vez nesta barbearia",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    clienteId: "1",
-    barbeariaId: "1",
-    servicoId: "1",
-    servico: servicosMock[0],
-    data: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    hora: "10:00",
-    status: "concluido",
-    createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-// Mock data para pagamentos
-const pagamentosMock: Pagamento[] = [
-  {
-    id: "1",
-    agendamentoId: "2",
-    valor: 0.01, // R$ 0,01 para testes
-    metodo: "cartao_credito",
-    status: "aprovado",
-    createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 export function ClienteProvider({ children }: { children: ReactNode }) {
-  const [cliente, setCliente] = useState<Cliente | null>(clienteMock);
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>(agendamentosMock);
-  const [servicos] = useState<Servico[]>(servicosMock);
-  const [pagamentos, setPagamentos] = useState<Pagamento[]>(pagamentosMock);
+  const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notificacoes, setNotificacoes] = useState<any[]>([]);
+  const [fidelidade, setFidelidade] = useState({
+    pontos: 0,
+    nivel: 'Bronze',
+    cortesRealizados: 0,
+    proximoDesconto: {
+      cortesNecessarios: 5,
+      desconto: 10,
+    },
+    progressoProximoNivel: 0,
+  });
 
-  const criarAgendamento = (novoAgendamento: NovoAgendamento): Agendamento => {
-    const servico = servicos.find((s) => s.id === novoAgendamento.servicoId);
-    if (!servico) {
-      throw new Error("Serviço não encontrado");
+  // Carregar dados do cliente do localStorage e do banco
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    const userType = localStorage.getItem('userType');
+    
+    if (userStr && userType === 'cliente') {
+      try {
+        const userData = JSON.parse(userStr);
+        setCliente({
+          id: userData.id,
+          nome: userData.nome,
+          email: userData.email,
+          telefone: userData.telefone || undefined,
+          dataNascimento: userData.dataNascimento || undefined,
+          createdAt: userData.createdAt || new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error('Erro ao parsear dados do cliente:', error);
+      }
     }
+  }, []);
 
-    const agendamento: Agendamento = {
-      id: Date.now().toString(),
-      ...novoAgendamento,
-      servico,
-      clienteId: cliente?.id || "1",
-      status: "pagamento_pendente",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  // Carregar dados da API quando estiver na rota /cliente
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    const isClienteRoute = currentPath.startsWith('/cliente');
+    const token = localStorage.getItem('token');
+    const userType = localStorage.getItem('userType');
+    
+    if (isClienteRoute && token && userType === 'cliente') {
+      console.log('🔄 Carregando dados do cliente do banco...');
+      carregarDados();
+    } else if (isClienteRoute && !token) {
+      console.warn('⚠️ Token não encontrado. Redirecionando para login...');
+      window.location.href = '/login';
+    }
+  }, []);
 
-    setAgendamentos([...agendamentos, agendamento]);
-    return agendamento;
+  const carregarDados = async () => {
+    try {
+      setLoading(true);
+      console.log('📥 [CLIENTE] Carregando dados do banco...');
+
+      // Carregar perfil do cliente
+      const perfil = await apiGet<Cliente>('/cliente/perfil').catch((err) => {
+        console.warn('⚠️ Erro ao carregar perfil:', err);
+        return null;
+      });
+
+      if (perfil) {
+        setCliente(perfil);
+        localStorage.setItem('user', JSON.stringify(perfil));
+      }
+
+      // Carregar agendamentos
+      const agendamentosData = await apiGet<any[]>('/cliente/agendamentos').catch((err) => {
+        console.warn('⚠️ Erro ao carregar agendamentos:', err);
+        return [];
+      });
+
+      // Transformar agendamentos do banco para o formato do frontend
+      const agendamentosFormatados: Agendamento[] = agendamentosData.map((a: any) => ({
+        id: a.id,
+        clienteId: a.clienteId,
+        barbeariaId: a.barbeariaId,
+        servicoId: a.servicoId,
+        servico: {
+          id: a.servico.id,
+          nome: a.servico.nome,
+          descricao: a.servico.descricao || undefined,
+          duracao: a.servico.duracao,
+          preco: a.servico.preco,
+          barbeariaId: a.servico.barbeariaId,
+          ativo: a.servico.ativo,
+        },
+        data: a.data ? new Date(a.data).toISOString().split('T')[0] : '',
+        hora: a.horario || a.hora || '',
+        status: a.status as StatusAgendamento,
+        observacoes: a.observacao || a.observacoes || undefined,
+        createdAt: a.createdAt || new Date().toISOString(),
+        updatedAt: a.updatedAt || new Date().toISOString(),
+      }));
+
+      setAgendamentos(agendamentosFormatados);
+
+      // Carregar pagamentos dos agendamentos
+      const pagamentosData: Pagamento[] = agendamentosData
+        .filter((a: any) => a.pagamento)
+        .map((a: any) => ({
+          id: a.pagamento.id,
+          agendamentoId: a.id,
+          valor: a.pagamento.valor,
+          metodo: a.pagamento.metodo as MetodoPagamento,
+          status: a.pagamento.status as StatusPagamento,
+          createdAt: a.pagamento.createdAt || new Date().toISOString(),
+          updatedAt: a.pagamento.updatedAt || new Date().toISOString(),
+        }));
+
+      setPagamentos(pagamentosData);
+
+      // Calcular pontos de fidelidade baseado em agendamentos concluídos
+      const agendamentosConcluidos = agendamentosFormatados.filter(
+        (a) => a.status === 'concluido'
+      ).length;
+      
+      const pontos = agendamentosConcluidos * 10;
+      const nivel = agendamentosConcluidos >= 10 ? 'Ouro' : agendamentosConcluidos >= 5 ? 'Prata' : 'Bronze';
+      const proximoCorte = agendamentosConcluidos % 5;
+      const cortesNecessarios = 5 - proximoCorte;
+      
+      setFidelidade({
+        pontos,
+        nivel,
+        cortesRealizados: agendamentosConcluidos,
+        proximoDesconto: {
+          cortesNecessarios: cortesNecessarios === 0 ? 5 : cortesNecessarios,
+          desconto: nivel === 'Ouro' ? 15 : nivel === 'Prata' ? 10 : 5,
+        },
+        progressoProximoNivel: (proximoCorte / 5) * 100,
+      });
+
+      console.log('✅ [CLIENTE] Dados carregados:', {
+        perfil: !!perfil,
+        agendamentos: agendamentosFormatados.length,
+        pagamentos: pagamentosData.length,
+        fidelidade: {
+          pontos,
+          nivel,
+          cortesRealizados: agendamentosConcluidos,
+        },
+      });
+    } catch (error: any) {
+      console.error('❌ [CLIENTE] Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados do cliente');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const cancelarAgendamento = (id: string) => {
-    setAgendamentos(
-      agendamentos.map((a) =>
-        a.id === id ? { ...a, status: "cancelado" as StatusAgendamento, updatedAt: new Date().toISOString() } : a
-      )
-    );
+  const atualizarPerfil = async (dados: Partial<Cliente>) => {
+    try {
+      const perfilAtualizado = await apiPut<Cliente>('/cliente/perfil', dados);
+      setCliente(perfilAtualizado);
+      localStorage.setItem('user', JSON.stringify(perfilAtualizado));
+      toast.success('Perfil atualizado com sucesso!');
+    } catch (error: any) {
+      console.error('Erro ao atualizar perfil:', error);
+      toast.error(error.message || 'Erro ao atualizar perfil');
+      throw error;
+    }
   };
 
-  const criarPagamento = (
+  const criarAgendamento = async (novoAgendamento: NovoAgendamento): Promise<Agendamento> => {
+    try {
+      console.log('➕ [CLIENTE] Criando agendamento:', novoAgendamento);
+      
+      const agendamentoData = await apiPost<any>('/cliente/agendamentos', {
+        barbeariaId: novoAgendamento.barbeariaId,
+        servicoId: novoAgendamento.servicoId,
+        data: novoAgendamento.data,
+        horario: novoAgendamento.hora,
+        observacoes: novoAgendamento.observacoes,
+      });
+
+      // Transformar resposta para o formato do frontend
+      const agendamento: Agendamento = {
+        id: agendamentoData.id,
+        clienteId: agendamentoData.clienteId,
+        barbeariaId: agendamentoData.barbeariaId,
+        servicoId: agendamentoData.servicoId,
+        servico: {
+          id: agendamentoData.servico.id,
+          nome: agendamentoData.servico.nome,
+          descricao: agendamentoData.servico.descricao || undefined,
+          duracao: agendamentoData.servico.duracao,
+          preco: agendamentoData.servico.preco,
+          barbeariaId: agendamentoData.servico.barbeariaId,
+          ativo: agendamentoData.servico.ativo,
+        },
+        data: agendamentoData.data ? new Date(agendamentoData.data).toISOString().split('T')[0] : '',
+        hora: agendamentoData.horario || agendamentoData.hora || '',
+        status: agendamentoData.status as StatusAgendamento,
+        observacoes: agendamentoData.observacao || agendamentoData.observacoes || undefined,
+        createdAt: agendamentoData.createdAt || new Date().toISOString(),
+        updatedAt: agendamentoData.updatedAt || new Date().toISOString(),
+      };
+
+      setAgendamentos([...agendamentos, agendamento]);
+      toast.success('Agendamento criado com sucesso!');
+      
+      return agendamento;
+    } catch (error: any) {
+      console.error('Erro ao criar agendamento:', error);
+      toast.error(error.message || 'Erro ao criar agendamento');
+      throw error;
+    }
+  };
+
+  const cancelarAgendamento = async (id: string) => {
+    try {
+      await apiPut(`/cliente/agendamentos/${id}/cancelar`, {});
+      
+      setAgendamentos(
+        agendamentos.map((a) =>
+          a.id === id ? { ...a, status: 'cancelado' as StatusAgendamento, updatedAt: new Date().toISOString() } : a
+        )
+      );
+      
+      toast.success('Agendamento cancelado com sucesso!');
+    } catch (error: any) {
+      console.error('Erro ao cancelar agendamento:', error);
+      toast.error(error.message || 'Erro ao cancelar agendamento');
+      throw error;
+    }
+  };
+
+  const criarPagamento = async (
     agendamentoId: string,
     valor: number,
     metodo: MetodoPagamento
-  ): Pagamento => {
-    const pagamento: Pagamento = {
-      id: Date.now().toString(),
-      agendamentoId,
-      valor,
-      metodo,
-      status: metodo === "pix" || metodo === "boleto" ? "pendente" : "processando",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  ): Promise<Pagamento> => {
+    try {
+      // TODO: Implementar criação de pagamento via API
+      // Por enquanto, criar localmente
+      const pagamento: Pagamento = {
+        id: Date.now().toString(),
+        agendamentoId,
+        valor,
+        metodo,
+        status: metodo === "pix" || metodo === "boleto" ? "pendente" : "processando",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    setPagamentos([...pagamentos, pagamento]);
+      setPagamentos([...pagamentos, pagamento]);
 
-    // Atualizar status do agendamento
-    setAgendamentos(
-      agendamentos.map((a) =>
-        a.id === agendamentoId
-          ? { ...a, status: "confirmado" as StatusAgendamento, updatedAt: new Date().toISOString() }
-          : a
-      )
-    );
-
-    return pagamento;
-  };
-
-  const atualizarStatusPagamento = (id: string, status: StatusPagamento) => {
-    setPagamentos(
-      pagamentos.map((p) =>
-        p.id === id ? { ...p, status, updatedAt: new Date().toISOString() } : p
-      )
-    );
-
-    const pagamento = pagamentos.find((p) => p.id === id);
-    if (pagamento && status === "aprovado") {
+      // Atualizar status do agendamento
       setAgendamentos(
         agendamentos.map((a) =>
-          a.id === pagamento.agendamentoId
+          a.id === agendamentoId
             ? { ...a, status: "confirmado" as StatusAgendamento, updatedAt: new Date().toISOString() }
             : a
         )
       );
+
+      toast.success('Pagamento criado com sucesso!');
+      return pagamento;
+    } catch (error: any) {
+      console.error('Erro ao criar pagamento:', error);
+      toast.error(error.message || 'Erro ao criar pagamento');
+      throw error;
+    }
+  };
+
+  const atualizarStatusPagamento = async (id: string, status: StatusPagamento) => {
+    try {
+      setPagamentos(
+        pagamentos.map((p) =>
+          p.id === id ? { ...p, status, updatedAt: new Date().toISOString() } : p
+        )
+      );
+
+      const pagamento = pagamentos.find((p) => p.id === id);
+      if (pagamento && status === "aprovado") {
+        setAgendamentos(
+          agendamentos.map((a) =>
+            a.id === pagamento.agendamentoId
+              ? { ...a, status: "confirmado" as StatusAgendamento, updatedAt: new Date().toISOString() }
+              : a
+          )
+        );
+      }
+    } catch (error: any) {
+      console.error('Erro ao atualizar status do pagamento:', error);
+      toast.error(error.message || 'Erro ao atualizar status do pagamento');
+      throw error;
     }
   };
 
@@ -223,6 +352,22 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     return servicos.filter((s) => s.barbeariaId === barbeariaId && s.ativo);
   };
 
+  const getProximoAgendamento = (): Agendamento | null => {
+    const agora = new Date();
+    const agendamentosFuturos = agendamentos
+      .filter((a) => {
+        const dataAgendamento = new Date(`${a.data}T${a.hora}`);
+        return dataAgendamento > agora && a.status !== 'cancelado';
+      })
+      .sort((a, b) => {
+        const dataA = new Date(`${a.data}T${a.hora}`);
+        const dataB = new Date(`${b.data}T${b.hora}`);
+        return dataA.getTime() - dataB.getTime();
+      });
+
+    return agendamentosFuturos[0] || null;
+  };
+
   return (
     <ClienteContext.Provider
       value={{
@@ -230,6 +375,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         agendamentos,
         servicos,
         pagamentos,
+        loading,
         setCliente,
         criarAgendamento,
         cancelarAgendamento,
@@ -237,6 +383,11 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         atualizarStatusPagamento,
         getAgendamento,
         getServicosPorBarbearia,
+        carregarDados,
+        atualizarPerfil,
+        getProximoAgendamento,
+        fidelidade,
+        notificacoes,
       }}
     >
       {children}
@@ -251,4 +402,3 @@ export function useCliente() {
   }
   return context;
 }
-

@@ -219,7 +219,7 @@ export async function criarCliente(req: AuthRequest, res: Response) {
       // Verificar se já existe cliente com esse email no banco de dados
       console.log('🔍 Verificando se email existe:', emailFinal);
       const clienteExistente = await prisma.cliente.findUnique({
-        where: { email: emailFinal },
+        where: { email: emailFinal! },
         select: { id: true, email: true, nome: true },
       });
 

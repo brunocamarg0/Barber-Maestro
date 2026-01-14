@@ -24,14 +24,6 @@ export async function listarPromocoes(req: AuthRequest, res: Response) {
 
     const promocoes = await prisma.promocao.findMany({
       where,
-      include: {
-        servico: {
-          select: {
-            id: true,
-            nome: true,
-          },
-        },
-      },
       orderBy: { createdAt: 'desc' },
     });
 

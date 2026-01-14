@@ -642,21 +642,22 @@ export async function esqueciMinhaSenhaDono(req: Request, res: Response) {
 
     console.log('✅ Nova senha gerada para dono:', dono.email);
 
-    // Enviar email com a nova senha
-    try {
-      await enviarEmailRecuperacaoSenha({
-        email: dono.email,
-        nome: dono.nome,
-        senhaNova,
-        tipo: 'dono',
-        nomeBarbearia: dono.barbearia?.nome,
-      });
+    // Enviar email com a nova senha (não bloqueante)
+    enviarEmailRecuperacaoSenha({
+      email: dono.email,
+      nome: dono.nome,
+      senhaNova,
+      tipo: 'dono',
+      nomeBarbearia: dono.barbearia?.nome,
+    }).then(() => {
       console.log('✅ Email de recuperação enviado para:', dono.email);
-    } catch (emailError) {
+    }).catch((emailError) => {
       console.error('❌ Erro ao enviar email de recuperação:', emailError);
       // Não falhar a operação se o email falhar, mas logar o erro
-    }
+    });
 
+    // Retornar resposta imediatamente, sem esperar o email
+    console.log('✅ Retornando resposta de sucesso');
     return res.status(200).json({ 
       message: 'Se o email estiver cadastrado, você receberá uma nova senha por email' 
     });
@@ -721,20 +722,21 @@ export async function esqueciMinhaSenhaCliente(req: Request, res: Response) {
 
     console.log('✅ Nova senha gerada para cliente:', cliente.email);
 
-    // Enviar email com a nova senha
-    try {
-      await enviarEmailRecuperacaoSenha({
-        email: cliente.email,
-        nome: cliente.nome,
-        senhaNova,
-        tipo: 'cliente',
-      });
+    // Enviar email com a nova senha (não bloqueante)
+    enviarEmailRecuperacaoSenha({
+      email: cliente.email,
+      nome: cliente.nome,
+      senhaNova,
+      tipo: 'cliente',
+    }).then(() => {
       console.log('✅ Email de recuperação enviado para:', cliente.email);
-    } catch (emailError) {
+    }).catch((emailError) => {
       console.error('❌ Erro ao enviar email de recuperação:', emailError);
       // Não falhar a operação se o email falhar, mas logar o erro
-    }
+    });
 
+    // Retornar resposta imediatamente, sem esperar o email
+    console.log('✅ Retornando resposta de sucesso');
     return res.status(200).json({ 
       message: 'Se o email estiver cadastrado, você receberá uma nova senha por email' 
     });

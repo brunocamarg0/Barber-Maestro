@@ -357,6 +357,10 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     return servicos.filter((s) => s.barbeariaId === barbeariaId && s.ativo);
   };
 
+  const getAgendamentosPorStatus = (status: StatusAgendamento): Agendamento[] => {
+    return agendamentos.filter((a) => a.status === status);
+  };
+
   const buscarBarbearias = async (busca?: string) => {
     try {
       console.log('🔍 [CLIENTE] Buscando barbearias...', busca ? `com busca: ${busca}` : 'todas');

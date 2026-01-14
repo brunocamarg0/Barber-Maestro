@@ -587,9 +587,12 @@ export async function alterarSenhaDono(req: Request, res: Response) {
  */
 export async function esqueciMinhaSenhaDono(req: Request, res: Response) {
   try {
+    console.log('🔐 esqueciMinhaSenhaDono: Requisição recebida');
+    console.log('🔐 Body:', req.body);
     const { email } = req.body;
 
     if (!email) {
+      console.log('❌ Email não fornecido');
       return res.status(400).json({ error: 'Email é obrigatório' });
     }
 
@@ -670,9 +673,12 @@ export async function esqueciMinhaSenhaDono(req: Request, res: Response) {
  */
 export async function esqueciMinhaSenhaCliente(req: Request, res: Response) {
   try {
+    console.log('🔐 esqueciMinhaSenhaCliente: Requisição recebida');
+    console.log('🔐 Body:', req.body);
     const { email } = req.body;
 
     if (!email) {
+      console.log('❌ Email não fornecido');
       return res.status(400).json({ error: 'Email é obrigatório' });
     }
 

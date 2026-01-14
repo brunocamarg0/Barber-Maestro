@@ -10,13 +10,19 @@ console.log('🔧 Router de autenticação criado');
 // Rotas de cliente
 router.post('/cliente/registro', authController.registrarCliente);
 router.post('/cliente/login', authController.loginCliente);
-router.post('/cliente/esqueci-senha', authController.esqueciMinhaSenhaCliente);
+router.post('/cliente/esqueci-senha', (req, res, next) => {
+  console.log('🔧 Rota /cliente/esqueci-senha chamada');
+  next();
+}, authController.esqueciMinhaSenhaCliente);
 
 // Rotas de dono
 router.post('/dono/cadastro-direto', authController.cadastroDiretoDono);
 router.post('/dono/registro', authController.registrarDono);
 router.post('/dono/login', authController.loginDono);
-router.post('/dono/esqueci-senha', authController.esqueciMinhaSenhaDono);
+router.post('/dono/esqueci-senha', (req, res, next) => {
+  console.log('🔧 Rota /dono/esqueci-senha chamada');
+  next();
+}, authController.esqueciMinhaSenhaDono);
 
 // Rota protegida - requer autenticação
 // IMPORTANTE: A ordem importa! Rotas mais específicas primeiro

@@ -40,7 +40,8 @@ import {
   CheckCircle,
   XCircle,
   Filter,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, addDays, subDays, startOfMonth, endOfMonth, eachWeekOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -301,6 +302,7 @@ export default function AgendaInteligente() {
       return;
     }
 
+    setIsLoading(true);
     try {
       // Criar agendamento
       await criarAgendamento({
@@ -340,6 +342,8 @@ export default function AgendaInteligente() {
     } catch (error) {
       // Erro já foi tratado no DonoContext com toast
       console.error('Erro ao criar agendamento:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -1076,8 +1080,21 @@ export default function AgendaInteligente() {
             >
               Cancelar
             </Button>
-            <Button onClick={handleCriarAgendamento}>
-              Criar Agendamento
+            <Button 
+              onClick={handleCriarAgendamento}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Agendamento
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

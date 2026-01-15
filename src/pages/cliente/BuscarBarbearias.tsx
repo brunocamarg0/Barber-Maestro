@@ -98,9 +98,23 @@ export default function BuscarBarbearias() {
                   className="pl-10"
                 />
               </div>
-              <Button onClick={handleBuscar} disabled={buscando}>
+              <Button onClick={handleBuscar} disabled={buscando} variant="default">
+                <Search className="h-4 w-4 mr-2" />
                 {buscando ? "Buscando..." : "Buscar"}
               </Button>
+              {(busca || cidade || bairro) && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setBusca("");
+                    setCidade("");
+                    setBairro("");
+                    buscarBarbearias(undefined, undefined, undefined);
+                  }}
+                >
+                  Limpar
+                </Button>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <div className="relative">

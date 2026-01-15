@@ -33,13 +33,13 @@ try {
   console.error('⚠️  Erro ao carregar Passport (OAuth pode não estar configurado):', error);
   // Continuar mesmo se Passport falhar
 }
+// Carregar variáveis de ambiente PRIMEIRO (antes de qualquer import que use process.env)
+dotenv.config();
+
 import * as cron from 'node-cron';
 import { enviarLembretesAgendamento } from './jobs/lembretesAgendamento';
-// Importar emailService para inicializar logs do EmailJS
+// Importar emailService para inicializar logs do Resend/EmailJS
 import './services/emailService';
-
-// Carregar variáveis de ambiente
-dotenv.config();
 
 // Log de inicialização
 console.log('🔧 Inicializando aplicação...');

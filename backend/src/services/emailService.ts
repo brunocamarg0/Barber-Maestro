@@ -1,7 +1,39 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 // Cache para transporter
 let transporterCache: nodemailer.Transporter | null = null;
+
+// Configuração do Resend (solução mais simples e confiável)
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+
+// Verifica se Resend está configurado
+const isResendConfigured = (): boolean => {
+  return !!RESEND_API_KEY;
+};
+
+// Inicializar Resend se estiver configurado
+let resendClient: Resend | null = null;
+console.log('🔍 [EMAIL SERVICE] Verificando Resend na inicialização...');
+console.log('   RESEND_API_KEY presente:', !!RESEND_API_KEY);
+console.log('   RESEND_API_KEY valor:', RESEND_API_KEY ? `${RESEND_API_KEY.substring(0, 10)}...` : 'NÃO CONFIGURADO');
+
+if (isResendConfigured()) {
+  try {
+    resendClient = new Resend(RESEND_API_KEY);
+    console.log('✅ [EMAIL] Resend configurado e pronto para uso');
+    console.log(`   API Key: ${RESEND_API_KEY.substring(0, 10)}...`);
+  } catch (error) {
+    console.error('❌ [EMAIL] Erro ao inicializar Resend:', error);
+    resendClient = null;
+  }
+} else {
+  console.log('⚠️ [EMAIL] Resend não configurado');
+  console.log('   Para usar Resend, configure a variável:');
+  console.log('   - RESEND_API_KEY');
+  console.log('   Veja: IMPLEMENTAR_RESEND.md');
+  console.log('   O sistema usará nodemailer (SMTP) como fallback');
+}
 
 // Configuração do transporter de email
 // Para desenvolvimento, pode usar Ethereal Email (fake SMTP) ou configurar SMTP real
@@ -425,9 +457,197 @@ interface EnviarRecuperacaoSenhaParams {
   nomeBarbearia?: string;
 }
 
+/**
+ * Envia email usando Resend (solução mais simples e confiável)
+ */
+async function enviarEmailViaResend(params: EnviarRecuperacaoSenhaParams): Promise<boolean> {
+  if (!isResendConfigured() || !resendClient) {
+    return false;
+  }
+
+  try {
+    console.log('📧 [EMAIL] Tentando enviar via Resend...');
+    
+    const { email, nome, senhaNova, tipo, nomeBarbearia } = params;
+    
+    console.log('📧 [EMAIL] Enviando para:', email);
+    console.log('📧 [EMAIL] Nome:', nome);
+    console.log('📧 [EMAIL] Tipo:', tipo);
+    
+    const titulo = tipo === 'dono' 
+      ? `Recuperação de Senha - ${nomeBarbearia || 'Groom Guru'}`
+      : 'Recuperação de Senha - Groom Guru';
+
+    // HTML do email
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+          }
+          .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+          }
+          .content {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          }
+          .senha-box {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 5px;
+          }
+          .senha {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 3px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+          }
+          .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 12px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🔐 Recuperação de Senha</h1>
+          </div>
+          <div class="content">
+            <p>Olá <strong>${nome}</strong>,</p>
+            
+            <p>Recebemos uma solicitação de recuperação de senha para sua conta${tipo === 'dono' && nomeBarbearia ? ` na barbearia <strong>${nomeBarbearia}</strong>` : ''}.</p>
+            
+            <p>Sua nova senha foi gerada automaticamente. Use as credenciais abaixo para fazer login:</p>
+            
+            <div class="senha-box">
+              <p style="margin: 0 0 10px 0; color: #666;">Sua nova senha:</p>
+              <div class="senha">${senhaNova}</div>
+            </div>
+            
+            <div class="info">
+              <strong>ℹ️ Informação:</strong> Esta senha é sua nova senha oficial. Você pode mantê-la ou alterá-la nas configurações da sua conta quando desejar.
+            </div>
+            
+            <p>Use seu email (<strong>${email}</strong>) e a senha acima para fazer login.</p>
+            
+            <p><strong>⚠️ Importante:</strong> Se você não solicitou esta recuperação de senha, entre em contato conosco imediatamente.</p>
+          </div>
+          <div class="footer">
+            <p>Este é um email automático, por favor não responda.</p>
+            <p>© ${new Date().getFullYear()} Groom Guru Platform</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Texto simples (fallback)
+    const textContent = `
+Recuperação de Senha
+
+Olá ${nome},
+
+Recebemos uma solicitação de recuperação de senha para sua conta${tipo === 'dono' && nomeBarbearia ? ` na barbearia ${nomeBarbearia}` : ''}.
+
+Sua nova senha foi gerada automaticamente: ${senhaNova}
+
+ℹ️ Informação: Esta senha é sua nova senha oficial. Você pode mantê-la ou alterá-la nas configurações da sua conta quando desejar.
+
+Acesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/${tipo === 'dono' ? 'dono' : 'cliente'}/login
+
+⚠️ Importante: Se você não solicitou esta recuperação de senha, entre em contato conosco imediatamente.
+
+© ${new Date().getFullYear()} Groom Guru Platform
+    `;
+
+    // Enviar via Resend
+    const { data, error } = await resendClient.emails.send({
+      from: process.env.EMAIL_FROM || 'Groom Guru <onboarding@resend.dev>',
+      to: email,
+      subject: titulo,
+      html: htmlContent,
+      text: textContent,
+    });
+
+    if (error) {
+      console.error('❌ [EMAIL] Erro ao enviar via Resend:', error);
+      return false;
+    }
+
+    console.log('✅ [EMAIL] Email enviado via Resend com sucesso!');
+    console.log('✅ [EMAIL] Email ID:', data?.id);
+    
+    return true;
+  } catch (error: any) {
+    console.error('❌ [EMAIL] Erro ao enviar via Resend:');
+    console.error('❌ [EMAIL] Tipo do erro:', error?.constructor?.name);
+    console.error('❌ [EMAIL] Mensagem:', error?.message);
+    console.error('❌ [EMAIL] Stack:', error?.stack);
+    console.error('❌ [EMAIL] Erro completo:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+    console.error('❌ [EMAIL] Tentando fallback para nodemailer...');
+    return false;
+  }
+}
+
 export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenhaParams) {
   const { email, nome, senhaNova, tipo, nomeBarbearia } = params;
 
+  console.log('📧 [EMAIL] Iniciando envio de email de recuperação de senha...');
+  console.log('📧 [EMAIL] Verificando Resend...');
+  console.log('   RESEND_API_KEY presente:', !!process.env.RESEND_API_KEY);
+  console.log('   resendClient presente:', !!resendClient);
+  console.log('   isResendConfigured():', isResendConfigured());
+
+  // Tentar Resend primeiro (mais simples e confiável)
+  console.log('📧 [EMAIL] Tentando enviar via Resend primeiro...');
+  const resendEnviado = await enviarEmailViaResend(params);
+  if (resendEnviado) {
+    console.log('✅ [EMAIL] Email enviado com sucesso via Resend!');
+    return {
+      sucesso: true,
+      messageId: 'resend',
+      previewUrl: null,
+      metodo: 'resend',
+    };
+  }
+  console.log('⚠️ [EMAIL] Resend não funcionou, tentando EmailJS...');
+
+  // Se Resend não estiver configurado ou falhar, usar nodemailer
+  console.log('📧 [EMAIL] Usando nodemailer como fallback...');
   const transporter = await createTransporter();
 
   const titulo = tipo === 'dono' 
@@ -587,6 +807,7 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
       sucesso: true,
       messageId: info.messageId,
       previewUrl: nodemailer.getTestMessageUrl ? nodemailer.getTestMessageUrl(info) : null,
+      metodo: 'nodemailer',
     };
   } catch (error: any) {
     console.error('❌ [EMAIL] Erro ao enviar email de recuperação:', error);

@@ -24,6 +24,7 @@ import donoNotificacoesRoutes from './routes/dono/notificacoes';
 import donoRelatoriosRoutes from './routes/dono/relatorios';
 import clientePanelRoutes from './routes/cliente/panel';
 import barbeariasPublicasRoutes from './routes/barbeariasPublicas';
+import emergencyRoutes from './routes/emergency';
 // Carregar configuração do Passport (pode falhar se OAuth não estiver configurado)
 try {
   require('./config/passport');
@@ -34,6 +35,8 @@ try {
 }
 import * as cron from 'node-cron';
 import { enviarLembretesAgendamento } from './jobs/lembretesAgendamento';
+// Importar emailService para inicializar logs do EmailJS
+import './services/emailService';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -44,6 +47,36 @@ console.log('🔧 NODE_ENV:', process.env.NODE_ENV);
 console.log('🔧 PORT:', process.env.PORT);
 console.log('🔧 VERCEL:', process.env.VERCEL);
 console.log('🔧 VERCEL_ENV:', process.env.VERCEL_ENV);
+
+// Verificar configuração do Resend
+console.log('🔍 [EMAIL] Verificando configuração do Resend...');
+console.log('   RESEND_API_KEY presente:', !!process.env.RESEND_API_KEY);
+console.log('   RESEND_API_KEY valor:', process.env.RESEND_API_KEY ? `${process.env.RESEND_API_KEY.substring(0, 10)}...` : 'NÃO CONFIGURADO');
+
+const resendConfigurado = !!process.env.RESEND_API_KEY;
+if (resendConfigurado) {
+  console.log('✅ [EMAIL] Resend configurado e pronto para uso');
+  console.log('   - API Key:', process.env.RESEND_API_KEY?.substring(0, 15) + '...');
+  console.log('   📧 Resend será usado como método principal de envio de emails');
+} else {
+  console.warn('⚠️ [EMAIL] Resend não configurado - usando nodemailer como fallback');
+  console.warn('   Para configurar Resend, adicione no Railway:');
+  console.warn('   - RESEND_API_KEY=re_xxxxx');
+  console.warn('   Veja: IMPLEMENTAR_RESEND.md para instruções completas');
+}
+
+// Verificar configuração de SMTP
+const smtpConfigurado = !!(
+  process.env.SMTP_HOST &&
+  process.env.SMTP_USER &&
+  process.env.SMTP_PASS
+);
+if (smtpConfigurado) {
+  console.log('✅ [EMAIL] SMTP configurado como fallback');
+  console.log('   - Host:', process.env.SMTP_HOST);
+} else {
+  console.warn('⚠️ [EMAIL] SMTP não configurado - usando Ethereal Email (apenas testes)');
+}
 
 export const app = express();
 
@@ -172,6 +205,11 @@ app.use('/api/dono/relatorios', donoRelatoriosRoutes);
 
 // Rotas do cliente (requerem autenticação)
 app.use('/api/cliente', clientePanelRoutes);
+
+// ⚠️ ROTA DE EMERGÊNCIA - Para resetar senha sem email
+// Remover após resolver problema de email
+console.log('🚨 [EMERGENCY] Rota de emergência registrada em /api/emergency/reset-password');
+app.use('/api/emergency', emergencyRoutes);
 
 // Rotas admin - ordem importa! Rotas mais específicas primeiro
 app.use('/api/admin', criarExemploRoutes); // /api/admin/criar-exemplo

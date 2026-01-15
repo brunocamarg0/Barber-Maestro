@@ -663,17 +663,25 @@ Acesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/${tipo === 'dono'
 export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenhaParams) {
   const { email, nome, senhaNova, tipo, nomeBarbearia } = params;
 
-  console.log('📧 [EMAIL] Iniciando envio de email de recuperação de senha...');
-  console.log('📧 [EMAIL] Verificando Resend...');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('📧 [EMAIL] INICIANDO ENVIO DE EMAIL DE RECUPERAÇÃO DE SENHA');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('📧 [EMAIL] Email de destino:', email);
+  console.log('📧 [EMAIL] Nome:', nome);
+  console.log('📧 [EMAIL] Tipo de conta:', tipo);
+  console.log('📧 [EMAIL] Domínio do email:', email.split('@')[1] || 'desconhecido');
+  console.log('');
+
+  // Tentar Resend primeiro (mais simples e confiável)
+  console.log('📧 [EMAIL] ETAPA 1: Tentando enviar via Resend...');
   console.log('   RESEND_API_KEY presente:', !!process.env.RESEND_API_KEY);
   console.log('   resendClient presente:', !!resendClient);
   console.log('   isResendConfigured():', isResendConfigured());
-
-  // Tentar Resend primeiro (mais simples e confiável)
-  console.log('📧 [EMAIL] Tentando enviar via Resend primeiro...');
+  
   const resendEnviado = await enviarEmailViaResend(params);
   if (resendEnviado) {
     console.log('✅ [EMAIL] Email enviado com sucesso via Resend!');
+    console.log('═══════════════════════════════════════════════════════');
     return {
       sucesso: true,
       messageId: 'resend',
@@ -681,15 +689,30 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
       metodo: 'resend',
     };
   }
-  console.log('⚠️ [EMAIL] Resend não funcionou, tentando nodemailer (SMTP) como fallback...');
-
-  // Se Resend não estiver configurado ou falhar, usar nodemailer
-  console.log('📧 [EMAIL] Usando nodemailer (SMTP) como fallback...');
+  
+  console.log('');
+  console.log('⚠️ [EMAIL] Resend não funcionou, tentando SMTP como fallback...');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('📧 [EMAIL] ETAPA 2: Usando nodemailer (SMTP) como fallback...');
   console.log('📧 [EMAIL] Verificando configuração SMTP...');
   console.log('   SMTP_HOST:', process.env.SMTP_HOST || 'NÃO CONFIGURADO');
+  console.log('   SMTP_PORT:', process.env.SMTP_PORT || '587 (padrão)');
   console.log('   SMTP_USER:', process.env.SMTP_USER ? `${process.env.SMTP_USER.substring(0, 5)}...` : 'NÃO CONFIGURADO');
+  console.log('   SMTP_PASS:', process.env.SMTP_PASS ? '***CONFIGURADO***' : 'NÃO CONFIGURADO');
+  console.log('');
   
-  const transporter = await createTransporter();
+  // IMPORTANTE: Sempre tentar SMTP, mesmo que não esteja configurado
+  // O createTransporter criará Ethereal se SMTP não estiver configurado
+  // Mas vamos garantir que funcione para TODOS os domínios
+  let transporter: nodemailer.Transporter;
+  try {
+    transporter = await createTransporter();
+  } catch (transporterError: any) {
+    console.error('❌ [EMAIL] Erro ao criar transporter:', transporterError);
+    console.error('❌ [EMAIL] Tentando criar transporter novamente...');
+    // Tentar novamente
+    transporter = await createTransporter();
+  }
 
   const titulo = tipo === 'dono' 
     ? `Recuperação de Senha - ${nomeBarbearia || 'Groom Guru'}`
@@ -829,20 +852,31 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
       html: htmlTemplate,
     });
 
-    console.log('✅ [EMAIL] Email de recuperação de senha enviado:', info.messageId);
+    console.log('✅ [EMAIL] Email de recuperação de senha enviado via SMTP!');
+    console.log('✅ [EMAIL] Message ID:', info.messageId);
+    console.log('✅ [EMAIL] Email de destino:', email);
+    console.log('✅ [EMAIL] Domínio:', email.split('@')[1] || 'desconhecido');
     
     // Se usar Ethereal (teste), mostrar link de preview
     if (info.messageId) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
-        console.warn('⚠️ [EMAIL] Email enviado via Ethereal (TESTE) - NÃO chega na caixa de entrada real!');
+        console.warn('');
+        console.warn('⚠️ [EMAIL] ⚠️ ATENÇÃO: Email enviado via Ethereal (TESTE) ⚠️');
+        console.warn('⚠️ [EMAIL] Este email NÃO chega na caixa de entrada real!');
         console.warn('⚠️ [EMAIL] Preview do email:', previewUrl);
         console.warn('⚠️ [EMAIL] Acesse o link acima para ver o email de teste');
         console.warn('⚠️ [EMAIL] Para enviar emails reais, configure SMTP_HOST, SMTP_USER e SMTP_PASS no Railway');
+        console.warn('');
       } else {
         console.log('✅ [EMAIL] Email enviado via SMTP real - deve chegar na caixa de entrada');
+        console.log('✅ [EMAIL] Verifique a caixa de entrada e spam do email:', email);
       }
     }
+    
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('✅ [EMAIL] ENVIO CONCLUÍDO COM SUCESSO!');
+    console.log('═══════════════════════════════════════════════════════');
 
     return {
       sucesso: true,
@@ -851,11 +885,17 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
       metodo: 'nodemailer',
     };
   } catch (error: any) {
-    console.error('❌ [EMAIL] Erro ao enviar email de recuperação:', error);
+    console.error('');
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('❌ [EMAIL] ERRO AO ENVIAR EMAIL DE RECUPERAÇÃO DE SENHA');
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('❌ [EMAIL] Email de destino:', email);
+    console.error('❌ [EMAIL] Domínio:', email.split('@')[1] || 'desconhecido');
+    console.error('❌ [EMAIL] Tipo de conta:', tipo);
     console.error('❌ [EMAIL] Código do erro:', error.code);
     console.error('❌ [EMAIL] Mensagem:', error.message);
-    console.error('❌ [EMAIL] Email de destino:', email);
-    console.error('❌ [EMAIL] Tipo de conta:', tipo);
+    console.error('❌ [EMAIL] Stack:', error.stack);
+    console.error('');
     
     // Mensagens de erro mais específicas
     if (error.code === 'ETIMEDOUT') {
@@ -865,18 +905,30 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
       console.error('   - Servidor SMTP pode estar indisponível');
       console.error('   - Credenciais podem estar incorretas');
       console.error('   - Porta pode estar bloqueada');
-      console.error('❌ [EMAIL] Recomendação: Use SendGrid ou Mailgun para produção');
-      console.error('❌ [EMAIL] OU configure SMTP_HOST, SMTP_USER e SMTP_PASS no Railway');
-      throw new Error('Timeout ao conectar ao servidor de email. Configure SMTP no Railway ou use SendGrid/Mailgun.');
+      console.error('   - Firewall pode estar bloqueando');
+      console.error('');
+      console.error('✅ [EMAIL] SOLUÇÕES:');
+      console.error('   1. Configure SMTP_HOST, SMTP_USER e SMTP_PASS no Railway');
+      console.error('   2. Use SendGrid ou Mailgun para produção (recomendado)');
+      console.error('   3. Verifique se o servidor SMTP está acessível');
+      console.error('');
+      throw new Error(`Timeout ao conectar ao servidor de email para ${email}. Configure SMTP no Railway ou use SendGrid/Mailgun.`);
     } else if (error.code === 'EAUTH') {
       console.error('❌ [EMAIL] Erro de autenticação SMTP');
-      throw new Error('Erro de autenticação no servidor de email. Verifique SMTP_USER e SMTP_PASS.');
+      console.error('✅ [EMAIL] SOLUÇÃO: Verifique SMTP_USER e SMTP_PASS no Railway');
+      console.error('');
+      throw new Error(`Erro de autenticação no servidor de email para ${email}. Verifique SMTP_USER e SMTP_PASS.`);
     } else if (error.code === 'ECONNREFUSED') {
       console.error('❌ [EMAIL] Conexão recusada pelo servidor SMTP');
-      throw new Error('Conexão recusada pelo servidor de email. Verifique SMTP_HOST e SMTP_PORT.');
+      console.error('✅ [EMAIL] SOLUÇÃO: Verifique SMTP_HOST e SMTP_PORT no Railway');
+      console.error('');
+      throw new Error(`Conexão recusada pelo servidor de email para ${email}. Verifique SMTP_HOST e SMTP_PORT.`);
     }
     
-    throw new Error(`Erro ao enviar email de recuperação de senha: ${error.message || 'Erro desconhecido'}`);
+    console.error('❌ [EMAIL] Erro desconhecido - verifique os logs acima');
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('');
+    throw new Error(`Erro ao enviar email de recuperação de senha para ${email}: ${error.message || 'Erro desconhecido'}`);
   }
 }
 

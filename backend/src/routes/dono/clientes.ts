@@ -8,8 +8,8 @@ const router = Router();
 router.use(autenticarDono);
 
 router.get('/', clientesController.listarClientes);
-router.get('/:id', clientesController.buscarCliente);
 router.post('/', clientesController.criarCliente);
+router.get('/:id', clientesController.buscarCliente);
 router.put('/:id', clientesController.atualizarCliente);
 router.delete('/:id', clientesController.deletarCliente);
 

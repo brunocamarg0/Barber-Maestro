@@ -314,7 +314,7 @@ export default function AgendaInteligente() {
         data: formNovoAgendamento.data,
         horario: formNovoAgendamento.horario,
         duracao: servico.duracao,
-        valor: servico.valor,
+        valor: servico.preco || servico.valor || 0,
         status: "confirmado", // Novo agendamento criado pelo dono é confirmado automaticamente
         observacoes: formNovoAgendamento.observacoes || undefined,
       });
@@ -956,7 +956,7 @@ export default function AgendaInteligente() {
                 <SelectContent>
                   {servicosAtivos.map((servico: any) => (
                     <SelectItem key={servico.id} value={servico.id}>
-                      {servico.nome} - {formatarMoeda(servico.valor)} ({servico.duracao}min)
+                      {servico.nome} - {formatarMoeda(servico.preco || servico.valor || 0)} ({servico.duracao}min)
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -369,7 +369,15 @@ export async function atualizarCliente(req: AuthRequest, res: Response) {
  */
 export async function deletarCliente(req: AuthRequest, res: Response) {
   try {
+    console.log('🔍 deletarCliente chamado - ID:', req.params.id);
+    console.log('🔍 Method:', req.method);
+    console.log('🔍 URL:', req.originalUrl);
+    
     const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: 'ID do cliente é obrigatório' });
+    }
 
     const cliente = await prisma.cliente.findUnique({
       where: { id },

@@ -625,6 +625,8 @@ Acesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/${tipo === 'dono'
       console.error('❌ [EMAIL] Status Code:', error?.statusCode);
       console.error('❌ [EMAIL] Mensagem:', error?.message);
       console.error('❌ [EMAIL] Nome do erro:', error?.name);
+      console.error('❌ [EMAIL] Email de destino:', email);
+      console.error('❌ [EMAIL] Tentando fallback para nodemailer (SMTP)...');
       
       // Se o erro for de domínio não verificado, sugerir usar o domínio padrão
       if (error?.statusCode === 403 && error?.message?.includes('domain is not verified')) {
@@ -632,6 +634,12 @@ Acesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/${tipo === 'dono'
         console.error('⚠️ [EMAIL] Solução: Use o domínio padrão do Resend (onboarding@resend.dev)');
         console.error('⚠️ [EMAIL] Ou verifique seu domínio em: https://resend.com/domains');
         console.error('⚠️ [EMAIL] Remova a variável EMAIL_FROM do Railway se estiver configurada com domínio não verificado');
+      }
+      
+      // Se o erro for de email inválido ou bloqueado, ainda tentar fallback
+      // O Resend pode bloquear alguns domínios, mas o SMTP pode funcionar
+      if (error?.statusCode === 422 || error?.statusCode === 400) {
+        console.error('⚠️ [EMAIL] Email pode estar bloqueado no Resend, tentando SMTP...');
       }
       
       return false;
@@ -673,10 +681,14 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
       metodo: 'resend',
     };
   }
-  console.log('⚠️ [EMAIL] Resend não funcionou, tentando EmailJS...');
+  console.log('⚠️ [EMAIL] Resend não funcionou, tentando nodemailer (SMTP) como fallback...');
 
   // Se Resend não estiver configurado ou falhar, usar nodemailer
-  console.log('📧 [EMAIL] Usando nodemailer como fallback...');
+  console.log('📧 [EMAIL] Usando nodemailer (SMTP) como fallback...');
+  console.log('📧 [EMAIL] Verificando configuração SMTP...');
+  console.log('   SMTP_HOST:', process.env.SMTP_HOST || 'NÃO CONFIGURADO');
+  console.log('   SMTP_USER:', process.env.SMTP_USER ? `${process.env.SMTP_USER.substring(0, 5)}...` : 'NÃO CONFIGURADO');
+  
   const transporter = await createTransporter();
 
   const titulo = tipo === 'dono' 
@@ -842,6 +854,8 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
     console.error('❌ [EMAIL] Erro ao enviar email de recuperação:', error);
     console.error('❌ [EMAIL] Código do erro:', error.code);
     console.error('❌ [EMAIL] Mensagem:', error.message);
+    console.error('❌ [EMAIL] Email de destino:', email);
+    console.error('❌ [EMAIL] Tipo de conta:', tipo);
     
     // Mensagens de erro mais específicas
     if (error.code === 'ETIMEDOUT') {
@@ -852,7 +866,8 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
       console.error('   - Credenciais podem estar incorretas');
       console.error('   - Porta pode estar bloqueada');
       console.error('❌ [EMAIL] Recomendação: Use SendGrid ou Mailgun para produção');
-      throw new Error('Timeout ao conectar ao servidor de email. Tente usar SendGrid ou Mailgun.');
+      console.error('❌ [EMAIL] OU configure SMTP_HOST, SMTP_USER e SMTP_PASS no Railway');
+      throw new Error('Timeout ao conectar ao servidor de email. Configure SMTP no Railway ou use SendGrid/Mailgun.');
     } else if (error.code === 'EAUTH') {
       console.error('❌ [EMAIL] Erro de autenticação SMTP');
       throw new Error('Erro de autenticação no servidor de email. Verifique SMTP_USER e SMTP_PASS.');

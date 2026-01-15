@@ -189,6 +189,16 @@ export async function listarAgendamentos(req: Request, res: Response) {
             nome: true,
           },
         },
+        profissionais: {
+          include: {
+            profissional: {
+              select: {
+                id: true,
+                nome: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         data: 'asc',
@@ -215,6 +225,16 @@ export async function buscarAgendamento(req: Request, res: Response) {
         clienteRel: true,
         servico: true,
         barbearia: true,
+        profissionais: {
+          include: {
+            profissional: {
+              select: {
+                id: true,
+                nome: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -721,6 +741,16 @@ export async function listarAgendamentosPendentes(req: Request, res: Response) {
             nome: true,
             preco: true,
             duracao: true,
+          },
+        },
+        profissionais: {
+          include: {
+            profissional: {
+              select: {
+                id: true,
+                nome: true,
+              },
+            },
           },
         },
       },

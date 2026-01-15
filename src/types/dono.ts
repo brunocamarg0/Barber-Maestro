@@ -8,6 +8,10 @@ export interface KPI {
   cancelamentos: number;
   clientesRecorrentes: number;
   notaMedia: number;
+  totalAvaliacoes?: number;
+  variacaoHoje?: number;
+  variacaoSemana?: number;
+  variacaoMes?: number;
 }
 
 export interface AgendamentoDono {
@@ -133,6 +137,12 @@ export interface ConfiguracaoBarbearia {
   nome: string;
   cnpjCpf: string;
   logo?: string;
+  endereco?: string;
+  cidade?: string;
+  bairro?: string;
+  cep?: string;
+  telefone?: string;
+  email?: string;
   modoConfirmacao?: "automatico" | "manual" | "hibrido";
   horarioFuncionamento: {
     segunda: { aberto: boolean; inicio: string; fim: string };

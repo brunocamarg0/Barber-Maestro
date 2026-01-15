@@ -74,12 +74,18 @@ export default function DonoDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatarMoeda(kpi.faturamentoHoje)}</div>
-            <div className="flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3 text-green-600" />
-              <p className="text-xs text-muted-foreground">
-                +12% vs ontem
-              </p>
-            </div>
+            {kpi.variacaoHoje !== undefined && kpi.variacaoHoje !== 0 && (
+              <div className="flex items-center gap-1 mt-1">
+                {kpi.variacaoHoje > 0 ? (
+                  <TrendingUp className="h-3 w-3 text-green-600" />
+                ) : (
+                  <TrendingUp className="h-3 w-3 text-red-600 rotate-180" />
+                )}
+                <p className={`text-xs ${kpi.variacaoHoje > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {kpi.variacaoHoje > 0 ? '+' : ''}{kpi.variacaoHoje.toFixed(1)}% vs ontem
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -116,12 +122,14 @@ export default function DonoDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{kpi.notaMedia.toFixed(1)}</div>
-            <div className="flex items-center gap-1 mt-1">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <p className="text-xs text-muted-foreground">
-                Baseado em {120} avaliações
-              </p>
-            </div>
+            {kpi.totalAvaliacoes !== undefined && kpi.totalAvaliacoes > 0 && (
+              <div className="flex items-center gap-1 mt-1">
+                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                <p className="text-xs text-muted-foreground">
+                  Baseado em {kpi.totalAvaliacoes} {kpi.totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -134,12 +142,18 @@ export default function DonoDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatarMoeda(kpi.faturamentoSemana)}</div>
-            <div className="flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3 text-green-600" />
-              <p className="text-xs text-muted-foreground">
-                +8% vs semana passada
-              </p>
-            </div>
+            {kpi.variacaoSemana !== undefined && kpi.variacaoSemana !== 0 && (
+              <div className="flex items-center gap-1 mt-1">
+                {kpi.variacaoSemana > 0 ? (
+                  <TrendingUp className="h-3 w-3 text-green-600" />
+                ) : (
+                  <TrendingUp className="h-3 w-3 text-red-600 rotate-180" />
+                )}
+                <p className={`text-xs ${kpi.variacaoSemana > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {kpi.variacaoSemana > 0 ? '+' : ''}{kpi.variacaoSemana.toFixed(1)}% vs semana passada
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -149,12 +163,18 @@ export default function DonoDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatarMoeda(kpi.faturamentoMes)}</div>
-            <div className="flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3 text-green-600" />
-              <p className="text-xs text-muted-foreground">
-                +15% vs mês passado
-              </p>
-            </div>
+            {kpi.variacaoMes !== undefined && kpi.variacaoMes !== 0 && (
+              <div className="flex items-center gap-1 mt-1">
+                {kpi.variacaoMes > 0 ? (
+                  <TrendingUp className="h-3 w-3 text-green-600" />
+                ) : (
+                  <TrendingUp className="h-3 w-3 text-red-600 rotate-180" />
+                )}
+                <p className={`text-xs ${kpi.variacaoMes > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {kpi.variacaoMes > 0 ? '+' : ''}{kpi.variacaoMes.toFixed(1)}% vs mês passado
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

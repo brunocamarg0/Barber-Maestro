@@ -85,15 +85,19 @@ interface DonoContextType {
 
 const DonoContext = createContext<DonoContextType | undefined>(undefined);
 
-// Dados mockados iniciais
+// Dados iniciais (serão substituídos pelos dados reais do banco)
 const kpiInicial: KPI = {
-  faturamentoHoje: 450.00,
-  faturamentoSemana: 3200.00,
-  faturamentoMes: 12500.00,
-  agendamentosHoje: 12,
-  cancelamentos: 2,
-  clientesRecorrentes: 45,
-  notaMedia: 4.8,
+  faturamentoHoje: 0,
+  faturamentoSemana: 0,
+  faturamentoMes: 0,
+  agendamentosHoje: 0,
+  cancelamentos: 0,
+  clientesRecorrentes: 0,
+  notaMedia: 0,
+  totalAvaliacoes: 0,
+  variacaoHoje: 0,
+  variacaoSemana: 0,
+  variacaoMes: 0,
 };
 
 const profissionaisIniciais: ProfissionalDono[] = [
@@ -294,7 +298,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       console.log('🔄 Carregando dados do banco para barbeariaId:', barbeariaId);
       console.log('🔄 Rota atual:', currentPath);
       console.log('🔄 Token disponível:', !!localStorage.getItem('token'));
-      carregarDados();
+      // Forçar carregamento imediato ao entrar no painel
+      carregarDados(true);
     } else if (isDonoRoute && !barbeariaId) {
       console.warn('⚠️ BarbeariaId não encontrado. Verifique se está logado como dono.');
       console.warn('⚠️ localStorage.user:', localStorage.getItem('user'));
@@ -313,7 +318,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       
       if (isDonoRoute) {
         console.log('🔄 Detectada navegação para /dono, recarregando dados...');
-        carregarDados();
+        // Forçar carregamento ao navegar para o painel
+        carregarDados(true);
       }
     };
 
@@ -377,6 +383,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         avaliacoesData,
         produtosData,
         notificacoesData,
+        configuracaoData,
       ] = await Promise.all([
         apiGet<KPI>('/dono/dashboard/kpis').catch((err) => {
           console.warn('⚠️ Erro ao carregar KPIs do banco:', err);
@@ -425,6 +432,10 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           console.warn('⚠️ Erro ao carregar notificações do banco:', err);
           return [];
         }),
+        apiGet<any>('/dono/configuracao').catch((err) => {
+          console.warn('⚠️ Erro ao carregar configuração do banco:', err);
+          return null;
+        }),
       ]);
 
       console.log('✅ Dados carregados do banco:');
@@ -445,8 +456,12 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           faturamentoMes: kpisData.faturamentoMes || 0,
           agendamentosHoje: kpisData.agendamentosHoje || 0,
           cancelamentos: kpisData.cancelamentos || 0,
-          clientesRecorrentes: kpisData.totalClientes || 0,
+          clientesRecorrentes: kpisData.clientesRecorrentes || kpisData.totalClientes || 0,
           notaMedia: kpisData.notaMedia || 0,
+          totalAvaliacoes: kpisData.totalAvaliacoes || 0,
+          variacaoHoje: kpisData.variacaoHoje || 0,
+          variacaoSemana: kpisData.variacaoSemana || 0,
+          variacaoMes: kpisData.variacaoMes || 0,
         });
       }
 
@@ -616,6 +631,27 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       }));
       console.log('✅ Notificações carregadas do banco:', notificacoesTransformadas.length);
       setNotificacoes(notificacoesTransformadas);
+
+      // Atualizar configuração da barbearia
+      if (configuracaoData) {
+        setConfiguracao({
+          id: configuracaoData.id || configuracao.id,
+          nome: configuracaoData.nome || configuracao.nome,
+          cnpjCpf: configuracaoData.cnpjCpf || configuracao.cnpjCpf,
+          email: configuracaoData.email || configuracao.email,
+          telefone: configuracaoData.telefone || configuracao.telefone,
+          endereco: configuracaoData.endereco || configuracao.endereco,
+          cidade: configuracaoData.cidade || configuracao.cidade,
+          bairro: configuracaoData.bairro || configuracao.bairro,
+          cep: configuracaoData.cep || configuracao.cep,
+          modoConfirmacao: configuracaoData.modoConfirmacao || configuracao.modoConfirmacao || 'hibrido',
+          horarioFuncionamento: configuracao.horarioFuncionamento,
+          politicaCancelamento: configuracao.politicaCancelamento,
+          linkAgendamento: configuracao.linkAgendamento,
+          paginaPublica: configuracao.paginaPublica,
+        });
+        console.log('✅ Configuração carregada do banco:', configuracaoData);
+      }
       
       // Atualizar estado com os dados carregados
       const totalClientes = clientesTransformados.length;

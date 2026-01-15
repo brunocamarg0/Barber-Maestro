@@ -100,14 +100,9 @@ export async function appleCallbackDono(req: Request, res: Response) {
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=barbearia_has_owner`);
     }
 
-    // Buscar ou criar dono
-    let dono = await prisma.usuarioDono.findFirst({
-      where: {
-        OR: [
-          { appleId },
-          { email },
-        ],
-      },
+    // Buscar ou criar dono (Dono não suporta Apple OAuth, apenas email)
+    let dono = await prisma.usuarioDono.findUnique({
+      where: { email },
     });
 
     if (!dono) {
@@ -116,7 +111,6 @@ export async function appleCallbackDono(req: Request, res: Response) {
         data: {
           nome,
           email,
-          appleId,
           foto,
           barbeariaId,
           emailVerificado: true,
@@ -125,12 +119,11 @@ export async function appleCallbackDono(req: Request, res: Response) {
       });
     } else if (dono.barbeariaId !== barbeariaId) {
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=email_already_used`);
-    } else if (!dono.appleId) {
-      // Atualizar dono existente com Apple ID
+    } else {
+      // Atualizar dono existente
       dono = await prisma.usuarioDono.update({
         where: { id: dono.id },
         data: {
-          appleId,
           foto: foto || dono.foto,
           emailVerificado: true,
         },

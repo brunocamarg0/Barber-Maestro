@@ -407,8 +407,6 @@ export async function loginDono(req: Request, res: Response) {
     if (!dono.senha) {
       let provider = 'OAuth';
       if (dono.googleId) provider = 'Google';
-      else if (dono.facebookId) provider = 'Facebook';
-      else if (dono.appleId) provider = 'Apple';
       return res.status(401).json({ error: `Esta conta foi criada com ${provider}. Use o login com ${provider}.` });
     }
 

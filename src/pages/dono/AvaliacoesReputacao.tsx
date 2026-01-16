@@ -28,7 +28,7 @@ export default function AvaliacoesReputacao() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Avaliações & Reputação</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Avaliações & Reputação</h2>
         <p className="text-muted-foreground">
           Gerencie avaliações e comentários dos clientes
         </p>

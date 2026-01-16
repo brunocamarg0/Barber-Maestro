@@ -170,7 +170,7 @@ export default function ComissoesBarbeiros() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Comissões dos Barbeiros</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Comissões dos Barbeiros</h2>
           <p className="text-muted-foreground">
             Gerencie os pagamentos de comissão aos profissionais
           </p>
@@ -266,7 +266,7 @@ export default function ComissoesBarbeiros() {
         <TabsContent value="resumo">
           <Card>
             <CardHeader>
-              <CardTitle>Resumo de Comissões por Profissional</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-gray-100">Resumo de Comissões por Profissional</CardTitle>
               <CardDescription>
                 {meses[mes - 1]} de {ano}
               </CardDescription>
@@ -359,7 +359,7 @@ export default function ComissoesBarbeiros() {
         <TabsContent value="detalhes">
           <Card>
             <CardHeader>
-              <CardTitle>Detalhes de Comissões</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-gray-100">Detalhes de Comissões</CardTitle>
               <CardDescription>
                 {profissionalSelecionado
                   ? `Comissões de ${profissionais.find(p => p.id === profissionalSelecionado)?.nome} - ${meses[mes - 1]} de ${ano}`

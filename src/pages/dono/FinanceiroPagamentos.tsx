@@ -44,7 +44,7 @@ export default function FinanceiroPagamentos() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Financeiro & Pagamentos</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Financeiro & Pagamentos</h2>
           <p className="text-muted-foreground">
             Controle financeiro completo da sua barbearia
           </p>

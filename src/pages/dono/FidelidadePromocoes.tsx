@@ -26,7 +26,7 @@ export default function FidelidadePromocoes() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Fidelidade & Promoções</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Fidelidade & Promoções</h2>
           <p className="text-muted-foreground">
             Gerencie programas de fidelidade e promoções
           </p>

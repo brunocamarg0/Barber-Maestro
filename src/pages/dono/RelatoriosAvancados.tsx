@@ -43,7 +43,7 @@ export default function RelatoriosAvancados() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Relatórios Avançados</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Relatórios Avançados</h2>
         <p className="text-muted-foreground">
           Análises detalhadas do seu negócio
         </p>

@@ -16,8 +16,14 @@ export async function registrarCliente(req: Request, res: Response) {
     }
 
     // Verificar se email já está em uso
+    // Usar select explícito para evitar problemas com colunas OAuth que podem não existir
     const emailExistente = await prisma.cliente.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        nome: true,
+      },
     });
 
     if (emailExistente) {
@@ -113,6 +119,17 @@ export async function loginCliente(req: Request, res: Response) {
     // Buscar cliente
     const cliente = await prisma.cliente.findUnique({
       where: { email },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        senha: true,
+        ativo: true,
+        emailVerificado: true,
+        googleId: true,
+        facebookId: true,
+        appleId: true,
+      },
     });
 
     if (!cliente) {
@@ -692,6 +709,17 @@ export async function esqueciMinhaSenhaCliente(req: Request, res: Response) {
     // Buscar cliente pelo email
     const cliente = await prisma.cliente.findUnique({
       where: { email },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        senha: true,
+        ativo: true,
+        emailVerificado: true,
+        googleId: true,
+        facebookId: true,
+        appleId: true,
+      },
     });
 
     // Por segurança, sempre retornar sucesso mesmo se o email não existir

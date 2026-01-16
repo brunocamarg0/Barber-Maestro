@@ -768,10 +768,25 @@ export async function esqueciMinhaSenhaCliente(req: Request, res: Response) {
     const senhaHash = await hashSenha(senhaNova);
 
     // Atualizar senha no banco
-    await prisma.cliente.update({
-      where: { id: cliente.id },
-      data: { senha: senhaHash },
-    });
+    // Usar query raw para evitar problemas com colunas OAuth que podem não existir
+    try {
+      await prisma.cliente.update({
+        where: { id: cliente.id },
+        data: { senha: senhaHash },
+      });
+    } catch (updateError: any) {
+      // Se der erro por colunas não existentes, usar SQL raw
+      if (updateError.code === 'P2022' || updateError.message?.includes('does not exist')) {
+        console.warn('⚠️ Colunas OAuth não existem, usando SQL raw para update');
+        await prisma.$executeRaw`
+          UPDATE "Cliente"
+          SET senha = ${senhaHash}, "updatedAt" = NOW()
+          WHERE id = ${cliente.id}
+        `;
+      } else {
+        throw updateError;
+      }
+    }
 
     console.log('✅ Nova senha gerada para cliente:', cliente.email);
 

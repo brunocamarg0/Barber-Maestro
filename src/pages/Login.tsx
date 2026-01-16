@@ -109,7 +109,7 @@ const Login = () => {
             <div className="bg-primary p-3">
               <Scissors className="h-8 w-8 text-primary-foreground" />
             </div>
-            <span className="text-3xl font-black text-foreground uppercase tracking-tight">BarberPro</span>
+            <span className="text-3xl font-black text-foreground uppercase tracking-tight">Barber Master</span>
           </Link>
         </div>
 
@@ -251,7 +251,7 @@ const Login = () => {
                     <Input
                       id="admin-email"
                       type="email"
-                      placeholder="admin@barberpro.com"
+                      placeholder="admin@barbermaster.com"
                       value={formData.admin.email}
                       onChange={(e) => setFormData({ ...formData, admin: { ...formData.admin, email: e.target.value } })}
                       required

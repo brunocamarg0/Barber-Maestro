@@ -242,13 +242,13 @@ export async function enviarEmailConvite(params: EnviarConviteParams) {
     
     Se você não solicitou este cadastro, pode ignorar este email.
     
-    © ${new Date().getFullYear()} Groom Guru Platform
+    © ${new Date().getFullYear()} Barber Master
   `;
 
   try {
     const transporter = await createTransporter();
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"Groom Guru" <noreply@groomguru.com>',
+      from: process.env.EMAIL_FROM || '"Barber Master" <noreply@barbermaster.com>',
       to: email,
       subject: `Ative sua conta - ${nomeBarbearia}`,
       text: textTemplate,
@@ -414,12 +414,12 @@ export async function enviarEmailSenha(params: EnviarSenhaParams) {
     
     Se você não solicitou este cadastro, entre em contato conosco imediatamente.
     
-    © ${new Date().getFullYear()} Groom Guru Platform
+    © ${new Date().getFullYear()} Barber Master
   `;
 
   try {
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"Groom Guru" <noreply@groomguru.com>',
+      from: process.env.EMAIL_FROM || '"Barber Master" <noreply@barbermaster.com>',
       to: email,
       subject: `Acesso aprovado - ${nomeBarbearia}`,
       text: textTemplate,
@@ -840,12 +840,12 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
     
     ⚠️ Importante: Se você não solicitou esta recuperação de senha, entre em contato conosco imediatamente.
     
-    © ${new Date().getFullYear()} Groom Guru Platform
+    © ${new Date().getFullYear()} Barber Master
   `;
 
   try {
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"Groom Guru" <noreply@groomguru.com>',
+      from: process.env.EMAIL_FROM || '"Barber Master" <noreply@barbermaster.com>',
       to: email,
       subject: titulo,
       text: textTemplate,

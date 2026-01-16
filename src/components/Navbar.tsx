@@ -11,7 +11,7 @@ const Navbar = () => {
             <div className="bg-primary p-2">
               <Scissors className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-black text-foreground uppercase tracking-tight">BarberPro</span>
+            <span className="text-2xl font-black text-foreground uppercase tracking-tight">Barber Master</span>
           </Link>
           
           <div className="hidden md:flex items-center gap-8">

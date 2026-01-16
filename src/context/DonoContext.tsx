@@ -212,7 +212,7 @@ const configuracaoInicial: ConfiguracaoBarbearia = {
     prazoMinimo: 2,
     permitirReagendamento: true,
   },
-  linkAgendamento: "https://barberpro.com/agendar/joao",
+  linkAgendamento: "https://barbermaster.com/agendar/joao",
   paginaPublica: true,
 };
 

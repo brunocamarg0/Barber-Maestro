@@ -220,7 +220,7 @@ export async function enviarEmailConvite(params: EnviarConviteParams) {
         </div>
         <div class="footer">
           <p>Este é um email automático, por favor não responda.</p>
-          <p>© ${new Date().getFullYear()} Groom Guru Platform</p>
+          <p>© ${new Date().getFullYear()} Barber Master</p>
         </div>
       </div>
     </body>
@@ -389,7 +389,7 @@ export async function enviarEmailSenha(params: EnviarSenhaParams) {
         </div>
         <div class="footer">
           <p>Este é um email automático, por favor não responda.</p>
-          <p>© ${new Date().getFullYear()} Groom Guru Platform</p>
+          <p>© ${new Date().getFullYear()} Barber Master</p>
         </div>
       </div>
     </body>
@@ -568,7 +568,7 @@ async function enviarEmailViaResend(params: EnviarRecuperacaoSenhaParams): Promi
           </div>
           <div class="footer">
             <p>Este é um email automático, por favor não responda.</p>
-            <p>© ${new Date().getFullYear()} Groom Guru Platform</p>
+            <p>© ${new Date().getFullYear()} Barber Master</p>
           </div>
         </div>
       </body>
@@ -591,7 +591,7 @@ Acesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/${tipo === 'dono'
 
 ⚠️ Importante: Se você não solicitou esta recuperação de senha, entre em contato conosco imediatamente.
 
-© ${new Date().getFullYear()} Groom Guru Platform
+© ${new Date().getFullYear()} Barber Master
     `;
 
         // Enviar via Resend
@@ -715,8 +715,8 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
   }
 
   const titulo = tipo === 'dono' 
-    ? `Recuperação de Senha - ${nomeBarbearia || 'Groom Guru'}`
-    : 'Recuperação de Senha - Groom Guru';
+    ? `Recuperação de Senha - ${nomeBarbearia || 'Barber Master'}`
+    : 'Recuperação de Senha - Barber Master';
 
   const htmlTemplate = `
     <!DOCTYPE html>
@@ -815,7 +815,7 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
         </div>
         <div class="footer">
           <p>Este é um email automático, por favor não responda.</p>
-          <p>© ${new Date().getFullYear()} Groom Guru Platform</p>
+          <p>© ${new Date().getFullYear()} Barber Master</p>
         </div>
       </div>
     </body>

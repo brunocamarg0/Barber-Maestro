@@ -40,7 +40,9 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
         },
         pagamento: {
           isNot: null,
-          status: 'pago',
+          status: {
+            equals: 'pago',
+          },
         },
       },
       include: {
@@ -68,6 +70,9 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
 
     // Calcular comissões
     const comissoes = agendamentos.map((agendamento) => {
+      if (!agendamento.servico) {
+        throw new Error(`Agendamento ${agendamento.id} não tem serviço associado`);
+      }
       const valorTotal = agendamento.servico.preco;
       let valorComissao = 0;
       let porcentagem = 0;
@@ -192,7 +197,10 @@ export async function listarResumoComissoes(req: AuthRequest, res: Response) {
               in: ['confirmado', 'concluido'],
             },
             pagamento: {
-              status: 'pago',
+              isNot: null,
+              status: {
+                equals: 'pago',
+              },
             },
           },
           include: {
@@ -206,6 +214,10 @@ export async function listarResumoComissoes(req: AuthRequest, res: Response) {
         let totalValor = 0;
 
         agendamentos.forEach((agendamento) => {
+          if (!agendamento.servico) {
+            console.warn(`Agendamento ${agendamento.id} não tem serviço associado`);
+            return;
+          }
           const valorTotal = agendamento.servico.preco;
           totalValor += valorTotal;
 
@@ -400,7 +412,9 @@ export async function marcarTodasComissoesComoPagas(req: AuthRequest, res: Respo
         },
         pagamento: {
           isNot: null,
-          status: 'pago',
+          status: {
+            equals: 'pago',
+          },
         },
         comissoes: {
           none: {
@@ -434,6 +448,9 @@ export async function marcarTodasComissoesComoPagas(req: AuthRequest, res: Respo
     // Criar registros de comissão para cada agendamento
     const comissoes = await Promise.all(
       agendamentos.map(async (agendamento) => {
+        if (!agendamento.servico) {
+          throw new Error(`Agendamento ${agendamento.id} não tem serviço associado`);
+        }
         const valorTotal = agendamento.servico.preco;
         let valorComissao = 0;
         let porcentagem = 0;

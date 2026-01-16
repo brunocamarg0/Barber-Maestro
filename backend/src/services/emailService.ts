@@ -645,7 +645,17 @@ Acesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/${tipo === 'dono'
         
         const { data, error } = resultado || {};
 
-    if (error) {
+    // Verificar se houve erro OU se data é null (indica falha no Resend)
+    if (error || !data || data === null) {
+      // Se não há erro explícito mas data é null, criar um erro genérico
+      if (!error && (!data || data === null)) {
+        console.error('❌ [EMAIL] Resend retornou data: null - email não foi enviado');
+        console.error('❌ [EMAIL] Possíveis causas:');
+        console.error('   - Domínio não verificado no Resend');
+        console.error('   - Email de destino bloqueado ou inválido');
+        console.error('   - Limite de envio excedido');
+        console.error('   - API Key inválida ou expirada');
+      }
       console.error('');
       console.error('═══════════════════════════════════════════════════════');
       console.error('❌ [EMAIL] ERRO AO ENVIAR VIA RESEND');
@@ -676,11 +686,23 @@ Acesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/${tipo === 'dono'
       return false;
     }
 
+    // Verificar se data.id existe (indica sucesso)
+    if (!data?.id) {
+      console.error('');
+      console.error('═══════════════════════════════════════════════════════');
+      console.error('❌ [EMAIL] RESEND RETORNOU SEM ID DE EMAIL');
+      console.error('═══════════════════════════════════════════════════════');
+      console.error('❌ [EMAIL] Data recebida:', JSON.stringify(data, null, 2));
+      console.error('❌ [EMAIL] Email não foi enviado - tentando fallback SMTP...');
+      console.error('');
+      return false;
+    }
+
     console.log('');
     console.log('═══════════════════════════════════════════════════════');
     console.log('✅ [EMAIL] EMAIL ENVIADO VIA RESEND COM SUCESSO!');
     console.log('═══════════════════════════════════════════════════════');
-    console.log('✅ [EMAIL] Email ID:', data?.id);
+    console.log('✅ [EMAIL] Email ID:', data.id);
     console.log('✅ [EMAIL] Email de destino:', email);
     console.log('✅ [EMAIL] Assunto:', titulo);
     console.log('✅ [EMAIL] Verifique a caixa de entrada e spam do email:', email);

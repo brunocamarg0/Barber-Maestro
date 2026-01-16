@@ -9,8 +9,10 @@ router.use(autenticarDono);
 
 router.get('/', clientesController.listarClientes);
 router.post('/', clientesController.criarCliente);
-router.get('/:id', clientesController.buscarCliente);
-router.put('/:id', clientesController.atualizarCliente);
+// IMPORTANTE: Rotas com métodos HTTP diferentes devem vir antes de rotas genéricas
+// Colocar DELETE e PUT antes de GET /:id para evitar conflitos
 router.delete('/:id', clientesController.deletarCliente);
+router.put('/:id', clientesController.atualizarCliente);
+router.get('/:id', clientesController.buscarCliente);
 
 export default router;

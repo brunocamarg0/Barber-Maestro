@@ -58,10 +58,10 @@ const createTransporter = async (): Promise<nodemailer.Transporter> => {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-      // Configurações adicionais para evitar timeout
-      connectionTimeout: 10000, // 10 segundos (reduzido para falhar mais rápido)
-      greetingTimeout: 5000, // 5 segundos
-      socketTimeout: 10000, // 10 segundos
+      // Configurações adicionais para evitar timeout - OTIMIZADO PARA VELOCIDADE
+      connectionTimeout: 5000, // 5 segundos (reduzido para falhar mais rápido)
+      greetingTimeout: 3000, // 3 segundos
+      socketTimeout: 5000, // 5 segundos
       // Para Outlook/Hotmail, configurações específicas
       requireTLS: false, // Não forçar TLS inicialmente
       tls: {
@@ -612,13 +612,21 @@ Acesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/${tipo === 'dono'
         console.log('📧 [EMAIL] Enviando de:', emailFrom);
         console.log('📧 [EMAIL] Enviando para:', email);
         
-        const { data, error } = await resendClient.emails.send({
+        // Enviar com timeout de 5 segundos para falhar rápido se houver problema
+        const sendPromise = resendClient.emails.send({
           from: emailFrom,
           to: email,
           subject: titulo,
           html: htmlContent,
           text: textContent,
         });
+
+        // Timeout de 5 segundos para Resend (deve ser muito rápido)
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout: Resend demorou mais de 5 segundos')), 5000);
+        });
+
+        const { data, error } = await Promise.race([sendPromise, timeoutPromise]) as any;
 
     if (error) {
       console.error('❌ [EMAIL] Erro ao enviar via Resend:', error);
@@ -672,15 +680,19 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
   console.log('📧 [EMAIL] Domínio do email:', email.split('@')[1] || 'desconhecido');
   console.log('');
 
-  // Tentar Resend primeiro (mais simples e confiável)
-  console.log('📧 [EMAIL] ETAPA 1: Tentando enviar via Resend...');
+  // Tentar Resend primeiro (mais rápido e confiável)
+  // IMPORTANTE: Resend deve responder em menos de 2 segundos
+  console.log('📧 [EMAIL] ETAPA 1: Tentando enviar via Resend (timeout: 5s)...');
   console.log('   RESEND_API_KEY presente:', !!process.env.RESEND_API_KEY);
   console.log('   resendClient presente:', !!resendClient);
   console.log('   isResendConfigured():', isResendConfigured());
   
+  const inicioResend = Date.now();
   const resendEnviado = await enviarEmailViaResend(params);
+  const tempoResend = Date.now() - inicioResend;
+  
   if (resendEnviado) {
-    console.log('✅ [EMAIL] Email enviado com sucesso via Resend!');
+    console.log(`✅ [EMAIL] Email enviado com sucesso via Resend em ${tempoResend}ms!`);
     console.log('═══════════════════════════════════════════════════════');
     return {
       sucesso: true,
@@ -691,9 +703,9 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
   }
   
   console.log('');
-  console.log('⚠️ [EMAIL] Resend não funcionou, tentando SMTP como fallback...');
+  console.log(`⚠️ [EMAIL] Resend não funcionou após ${tempoResend}ms, tentando SMTP como fallback...`);
   console.log('═══════════════════════════════════════════════════════');
-  console.log('📧 [EMAIL] ETAPA 2: Usando nodemailer (SMTP) como fallback...');
+  console.log('📧 [EMAIL] ETAPA 2: Usando nodemailer (SMTP) como fallback (timeout: 10s)...');
   console.log('📧 [EMAIL] Verificando configuração SMTP...');
   console.log('   SMTP_HOST:', process.env.SMTP_HOST || 'NÃO CONFIGURADO');
   console.log('   SMTP_PORT:', process.env.SMTP_PORT || '587 (padrão)');
@@ -844,13 +856,25 @@ export async function enviarEmailRecuperacaoSenha(params: EnviarRecuperacaoSenha
   `;
 
   try {
-    const info = await transporter.sendMail({
+    const inicioSMTP = Date.now();
+    
+    // Enviar com timeout de 10 segundos para SMTP
+    const sendPromise = transporter.sendMail({
       from: process.env.EMAIL_FROM || '"Barber Master" <noreply@barbermaster.com>',
       to: email,
       subject: titulo,
       text: textTemplate,
       html: htmlTemplate,
     });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout: SMTP demorou mais de 10 segundos')), 10000);
+    });
+
+    const info = await Promise.race([sendPromise, timeoutPromise]) as any;
+    const tempoSMTP = Date.now() - inicioSMTP;
+    
+    console.log(`✅ [EMAIL] Email enviado via SMTP em ${tempoSMTP}ms!`);
 
     console.log('✅ [EMAIL] Email de recuperação de senha enviado via SMTP!');
     console.log('✅ [EMAIL] Message ID:', info.messageId);

@@ -19,6 +19,7 @@
     "postinstall": "npx prisma generate",
     "criar-usuario-teste": "tsx scripts/criar-usuario-teste.ts",
     "criar-cliente-teste": "tsx scripts/criar-cliente-teste.ts",
+    "listar-barbearias": "tsx scripts/listar-barbearias.ts",
     "testar-emailjs": "tsx scripts/testar-emailjs.ts"
   },
   "keywords": [],

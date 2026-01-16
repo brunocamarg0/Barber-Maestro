@@ -111,6 +111,29 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
 
     console.log('🔧 [BARBEARIAS] Total de barbearias encontradas:', barbearias.length);
     
+    // Log detalhado de cada barbearia encontrada
+    if (barbearias.length > 0) {
+      console.log('\n📋 [BARBEARIAS] BARBEARIAS CADASTRADAS NO SISTEMA:');
+      console.log('═'.repeat(80));
+      barbearias.forEach((b, index) => {
+        console.log(`\n${index + 1}. ${b.nome}`);
+        console.log(`   ID: ${b.id}`);
+        console.log(`   Status: ${b.status}`);
+        console.log(`   Email: ${b.email || 'Não informado'}`);
+        console.log(`   Telefone: ${b.telefone || 'Não informado'}`);
+        console.log(`   Cidade: ${b.cidade || 'Não informado'}`);
+        console.log(`   Bairro: ${b.bairro || 'Não informado'}`);
+        console.log(`   Serviços: ${b.servicos.length} ativos`);
+        console.log(`   Profissionais: ${b.profissionais.length} ativos`);
+        console.log(`   Total Agendamentos: ${b._count.agendamentos}`);
+      });
+      console.log('\n═'.repeat(80));
+      console.log(`\n✅ Total: ${barbearias.length} barbearia(s) disponível(is) para agendamento\n`);
+    } else {
+      console.log('⚠️ [BARBEARIAS] NENHUMA BARBEARIA ENCONTRADA!');
+      console.log('⚠️ [BARBEARIAS] Verifique se há barbearias cadastradas no banco de dados.');
+    }
+    
     // Formatar resposta para o frontend
     const barbeariasFormatadas = barbearias.map((b) => ({
       id: b.id,

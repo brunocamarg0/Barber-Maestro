@@ -23,7 +23,7 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
     const dataFim = new Date(Number(ano), Number(mes), 0, 23, 59, 59);
 
     // Buscar agendamentos do profissional no mês
-    const agendamentos = await prisma.agendamento.findMany({
+    const agendamentosRaw = await prisma.agendamento.findMany({
       where: {
         barbeariaId,
         profissionais: {
@@ -40,9 +40,6 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
         },
         pagamento: {
           isNot: null,
-          status: {
-            equals: 'pago',
-          },
         },
       },
       include: {
@@ -59,6 +56,11 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
       },
     });
 
+    // Filtrar apenas agendamentos com pagamento pago
+    const agendamentos = agendamentosRaw.filter(
+      (a) => a.pagamento && a.pagamento.status === 'pago'
+    );
+
     // Buscar profissional para obter configuração de comissão
     const profissional = await prisma.profissional.findUnique({
       where: { id: String(profissionalId) },
@@ -69,11 +71,10 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
     }
 
     // Calcular comissões
-    const comissoes = agendamentos.map((agendamento) => {
-      if (!agendamento.servico) {
-        throw new Error(`Agendamento ${agendamento.id} não tem serviço associado`);
-      }
-      const valorTotal = agendamento.servico.preco;
+    const comissoes = agendamentos
+      .filter((a) => a.servico !== null)
+      .map((agendamento) => {
+        const valorTotal = agendamento.servico!.preco;
       let valorComissao = 0;
       let porcentagem = 0;
 
@@ -91,7 +92,7 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
         data: agendamento.data,
         horario: agendamento.horario,
         cliente: agendamento.cliente,
-        servico: agendamento.servico.nome,
+        servico: agendamento.servico!.nome,
         valorTotal,
         valorComissao,
         porcentagem,
@@ -181,7 +182,7 @@ export async function listarResumoComissoes(req: AuthRequest, res: Response) {
     const resumos = await Promise.all(
       profissionais.map(async (profissional) => {
         // Buscar agendamentos do profissional no mês
-        const agendamentos = await prisma.agendamento.findMany({
+        const agendamentosRaw = await prisma.agendamento.findMany({
           where: {
             barbeariaId,
             profissionais: {
@@ -198,9 +199,6 @@ export async function listarResumoComissoes(req: AuthRequest, res: Response) {
             },
             pagamento: {
               isNot: null,
-              status: {
-                equals: 'pago',
-              },
             },
           },
           include: {
@@ -209,16 +207,19 @@ export async function listarResumoComissoes(req: AuthRequest, res: Response) {
           },
         });
 
+        // Filtrar apenas agendamentos com pagamento pago
+        const agendamentos = agendamentosRaw.filter(
+          (a) => a.pagamento && a.pagamento.status === 'pago'
+        );
+
         // Calcular comissões
         let totalComissao = 0;
         let totalValor = 0;
 
-        agendamentos.forEach((agendamento) => {
-          if (!agendamento.servico) {
-            console.warn(`Agendamento ${agendamento.id} não tem serviço associado`);
-            return;
-          }
-          const valorTotal = agendamento.servico.preco;
+        agendamentos
+          .filter((a) => a.servico !== null)
+          .forEach((agendamento) => {
+            const valorTotal = agendamento.servico!.preco;
           totalValor += valorTotal;
 
           if (profissional.comissaoTipo === 'percentual') {
@@ -323,6 +324,9 @@ export async function marcarComissaoComoPaga(req: AuthRequest, res: Response) {
     }
 
     const profissional = agendamento.profissionais[0].profissional;
+    if (!agendamento.servico) {
+      return res.status(400).json({ error: 'Agendamento não tem serviço associado' });
+    }
     const valorTotal = agendamento.servico.preco;
     let valorComissao = 0;
     let porcentagem = 0;
@@ -395,7 +399,7 @@ export async function marcarTodasComissoesComoPagas(req: AuthRequest, res: Respo
     const dataFim = new Date(Number(ano), Number(mes), 0, 23, 59, 59);
 
     // Buscar agendamentos do profissional no mês que ainda não têm comissão paga
-    const agendamentos = await prisma.agendamento.findMany({
+    const agendamentosRaw = await prisma.agendamento.findMany({
       where: {
         barbeariaId,
         profissionais: {
@@ -412,9 +416,6 @@ export async function marcarTodasComissoesComoPagas(req: AuthRequest, res: Respo
         },
         pagamento: {
           isNot: null,
-          status: {
-            equals: 'pago',
-          },
         },
         comissoes: {
           none: {
@@ -425,6 +426,7 @@ export async function marcarTodasComissoesComoPagas(req: AuthRequest, res: Respo
       },
       include: {
         servico: true,
+        pagamento: true,
         profissionais: {
           where: {
             profissionalId: String(profissionalId),
@@ -435,6 +437,11 @@ export async function marcarTodasComissoesComoPagas(req: AuthRequest, res: Respo
         },
       },
     });
+
+    // Filtrar apenas agendamentos com pagamento pago
+    const agendamentos = agendamentosRaw.filter(
+      (a) => a.pagamento && a.pagamento.status === 'pago'
+    );
 
     // Buscar profissional
     const profissional = await prisma.profissional.findUnique({
@@ -447,11 +454,10 @@ export async function marcarTodasComissoesComoPagas(req: AuthRequest, res: Respo
 
     // Criar registros de comissão para cada agendamento
     const comissoes = await Promise.all(
-      agendamentos.map(async (agendamento) => {
-        if (!agendamento.servico) {
-          throw new Error(`Agendamento ${agendamento.id} não tem serviço associado`);
-        }
-        const valorTotal = agendamento.servico.preco;
+      agendamentos
+        .filter((a) => a.servico !== null)
+        .map(async (agendamento) => {
+          const valorTotal = agendamento.servico!.preco;
         let valorComissao = 0;
         let porcentagem = 0;
 

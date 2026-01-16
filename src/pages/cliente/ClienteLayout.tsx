@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
+import * as React from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -127,8 +128,44 @@ export default function ClienteLayout() {
     },
   ];
 
-  // Mostrar loading apenas se ainda estiver carregando
-  if (loading) {
+  // Se não tem cliente ainda, tentar carregar do localStorage imediatamente
+  if (!cliente || !cliente.nome) {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        if (userData && userData.nome) {
+          // Usar dados do localStorage enquanto carrega da API
+          cliente = {
+            id: userData.id || '1',
+            nome: userData.nome || 'Cliente',
+            email: userData.email || '',
+            telefone: userData.telefone || '',
+          };
+        }
+      } catch (error) {
+        console.error('Erro ao parsear localStorage:', error);
+      }
+    }
+  }
+
+  // Mostrar loading apenas se ainda estiver carregando E não tem dados do localStorage
+  // Timeout: se loading demorar mais de 3 segundos, usar dados do localStorage
+  const [loadingTimeout, setLoadingTimeout] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        console.warn('⚠️ [CLIENTE] Loading demorou mais de 3 segundos, usando dados do localStorage');
+        setLoadingTimeout(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [loading]);
+
+  if (loading && !loadingTimeout && (!cliente || !cliente.nome)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
@@ -140,41 +177,20 @@ export default function ClienteLayout() {
     );
   }
 
-  // Se não está carregando mas não tem cliente, tentar carregar do localStorage
+  // Se ainda não tem cliente após todos os fallbacks, mostrar erro
   if (!cliente || !cliente.nome) {
-    // Tentar carregar do localStorage como fallback
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const userData = JSON.parse(userStr);
-        if (userData && userData.nome) {
-          cliente = {
-            id: userData.id || '1',
-            nome: userData.nome || 'Cliente',
-            email: userData.email || '',
-            telefone: userData.telefone || '',
-          };
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao carregar do localStorage:', error);
-    }
-
-    // Se ainda não tem cliente, mostrar erro
-    if (!cliente || !cliente.nome) {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-4">
-            <p className="text-lg font-semibold text-foreground">Erro ao carregar dados do cliente</p>
-            <p className="text-muted-foreground">Não foi possível carregar seus dados.</p>
-            <p className="text-sm text-muted-foreground">Por favor, faça login novamente.</p>
-            <Button asChild className="mt-4">
-              <a href="/login?tab=client">Fazer Login Novamente</a>
-            </Button>
-          </div>
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-lg font-semibold text-foreground">Erro ao carregar dados do cliente</p>
+          <p className="text-muted-foreground">Não foi possível carregar seus dados.</p>
+          <p className="text-sm text-muted-foreground">Por favor, faça login novamente.</p>
+          <Button asChild className="mt-4">
+            <a href="/login?tab=client">Fazer Login Novamente</a>
+          </Button>
         </div>
-      );
-    }
+      </div>
+    );
   }
 
   return (

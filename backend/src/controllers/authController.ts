@@ -124,6 +124,8 @@ export async function loginCliente(req: Request, res: Response) {
         nome: true,
         email: true,
         senha: true,
+        telefone: true,
+        dataNascimento: true,
         ativo: true,
         emailVerificado: true,
         googleId: true,

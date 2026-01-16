@@ -968,10 +968,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   const removerCliente = async (id: string) => {
     try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
       console.log('🗑️ [REMOVER CLIENTE] Iniciando exclusão do cliente:', id);
-      console.log('🗑️ [REMOVER CLIENTE] URL:', `/dono/clientes/${id}`);
+      console.log('🗑️ [REMOVER CLIENTE] Endpoint:', `/dono/clientes/${id}`);
+      console.log('🗑️ [REMOVER CLIENTE] URL completa:', `${API_URL}/dono/clientes/${id}`);
       console.log('🗑️ [REMOVER CLIENTE] Token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
       console.log('🗑️ [REMOVER CLIENTE] BarbeariaId:', barbeariaId);
+      console.log('🗑️ [REMOVER CLIENTE] API_URL:', API_URL);
       
       const resultado = await apiDelete(`/dono/clientes/${id}`);
       console.log('✅ [REMOVER CLIENTE] Cliente removido com sucesso:', resultado);
@@ -985,14 +988,18 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       console.error('❌ [REMOVER CLIENTE] Erro completo:', error);
       console.error('❌ [REMOVER CLIENTE] Mensagem:', error.message);
+      console.error('❌ [REMOVER CLIENTE] Status:', error.status);
+      console.error('❌ [REMOVER CLIENTE] URL:', error.url);
       console.error('❌ [REMOVER CLIENTE] Stack:', error.stack);
       
       // Mensagens de erro mais específicas
       let mensagemErro = 'Erro ao remover cliente';
-      if (error.message?.includes('não encontrado') || error.message?.includes('404')) {
+      if (error.status === 404 || error.message?.includes('404') || error.message?.includes('Rota não encontrada')) {
+        mensagemErro = 'Rota não encontrada. Verifique se o backend está rodando e se a rota está correta.';
+        console.error('❌ [REMOVER CLIENTE] Erro 404 - Rota não encontrada');
+        console.error('❌ [REMOVER CLIENTE] Verifique se o backend está rodando e se a rota DELETE /api/dono/clientes/:id está registrada');
+      } else if (error.message?.includes('não encontrado')) {
         mensagemErro = 'Cliente não encontrado ou não pertence a esta barbearia';
-      } else if (error.message?.includes('Rota não encontrada') || error.message?.includes('404')) {
-        mensagemErro = 'Erro ao conectar com o servidor. Verifique sua conexão.';
       } else if (error.message) {
         mensagemErro = error.message;
       }

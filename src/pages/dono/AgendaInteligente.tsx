@@ -501,7 +501,7 @@ export default function AgendaInteligente() {
               {visualizacao === "mes" && format(dataSelecionada, "MMMM 'de' yyyy", { locale: ptBR })}
             </h2>
             <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 {agendamentosDoDia.length} agendamento(s) no dia selecionado
               </p>
               {agendamentosPendentes > 0 && (

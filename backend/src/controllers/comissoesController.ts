@@ -245,13 +245,24 @@ export async function listarResumoComissoes(req: AuthRequest, res: Response) {
             });
 
           // Verificar quanto já foi pago
-          const comissoesPagas = await prisma.comissaoPaga.findMany({
-            where: {
-              profissionalId: profissional.id,
-              mesReferencia,
-              pago: true,
-            },
-          });
+          let comissoesPagas: any[] = [];
+          try {
+            comissoesPagas = await prisma.comissaoPaga.findMany({
+              where: {
+                profissionalId: profissional.id,
+                mesReferencia,
+                pago: true,
+              },
+            });
+          } catch (error: any) {
+            // Se a tabela não existir, tratar como se não houvesse comissões pagas
+            if (error?.code === 'P2021' || error?.message?.includes('does not exist')) {
+              console.warn(`⚠️ Tabela ComissaoPaga não encontrada. Execute a migração do Prisma.`);
+              comissoesPagas = [];
+            } else {
+              throw error;
+            }
+          }
 
           const totalPago = comissoesPagas.reduce((sum, c) => sum + c.valorComissao, 0);
           const totalPendente = totalComissao - totalPago;

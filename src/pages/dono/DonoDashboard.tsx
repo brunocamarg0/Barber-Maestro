@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useDono } from "@/context/DonoContext";
 import {
   Card,
@@ -14,11 +15,16 @@ import {
   Star,
   TrendingUp,
   AlertCircle,
+  CreditCard,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { apiGet } from "@/services/api";
 
 export default function DonoDashboard() {
   const { kpi, agendamentos, notificacoes } = useDono();
+  const [resumoComissoes, setResumoComissoes] = useState<any>(null);
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -30,6 +36,21 @@ export default function DonoDashboard() {
   const agendamentosHoje = agendamentos.filter(
     (a) => a.data === new Date().toISOString().split("T")[0]
   );
+
+  // Carregar resumo de comissões do mês atual
+  useEffect(() => {
+    const carregarComissoes = async () => {
+      try {
+        const mes = new Date().getMonth() + 1;
+        const ano = new Date().getFullYear();
+        const data = await apiGet<any>(`/dono/comissoes/resumo?mes=${mes}&ano=${ano}`);
+        setResumoComissoes(data.resumoGeral);
+      } catch (error) {
+        console.error('Erro ao carregar resumo de comissões:', error);
+      }
+    };
+    carregarComissoes();
+  }, []);
 
   const alertas = [
     ...(agendamentosHoje.length < 5
@@ -190,6 +211,46 @@ export default function DonoDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Resumo de Comissões do Mês */}
+      {resumoComissoes && resumoComissoes.totalPendente > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-orange-600" />
+                  Comissões Pendentes - {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                </CardTitle>
+                <CardDescription>
+                  Total a pagar aos barbeiros este mês
+                </CardDescription>
+              </div>
+              <Button asChild variant="default">
+                <Link to="/dono/comissoes">
+                  Ver Detalhes
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Total de Comissões</p>
+                <p className="text-2xl font-bold">{formatarMoeda(resumoComissoes.totalComissao)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Já Pago</p>
+                <p className="text-2xl font-bold text-green-600">{formatarMoeda(resumoComissoes.totalPago)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Pendente</p>
+                <p className="text-2xl font-bold text-orange-600">{formatarMoeda(resumoComissoes.totalPendente)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Agendamentos de Hoje */}
       <Card>

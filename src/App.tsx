@@ -55,6 +55,7 @@ import GestaoServicos from "./pages/dono/GestaoServicos";
 import GestaoProfissionais from "./pages/dono/GestaoProfissionais";
 import GestaoClientes from "./pages/dono/GestaoClientes";
 import FinanceiroPagamentos from "./pages/dono/FinanceiroPagamentos";
+import ComissoesBarbeiros from "./pages/dono/ComissoesBarbeiros";
 import FidelidadePromocoes from "./pages/dono/FidelidadePromocoes";
 import AvaliacoesReputacao from "./pages/dono/AvaliacoesReputacao";
 import ProdutosEstoque from "./pages/dono/ProdutosEstoque";
@@ -143,6 +144,7 @@ const App = () => (
               <Route path="profissionais" element={<ErrorBoundary><GestaoProfissionais /></ErrorBoundary>} />
               <Route path="clientes" element={<ErrorBoundary><GestaoClientes /></ErrorBoundary>} />
               <Route path="financeiro" element={<ErrorBoundary><FinanceiroPagamentos /></ErrorBoundary>} />
+              <Route path="comissoes" element={<ErrorBoundary><ComissoesBarbeiros /></ErrorBoundary>} />
               <Route path="fidelidade" element={<ErrorBoundary><FidelidadePromocoes /></ErrorBoundary>} />
               <Route path="avaliacoes" element={<ErrorBoundary><AvaliacoesReputacao /></ErrorBoundary>} />
               <Route path="produtos" element={<ErrorBoundary><ProdutosEstoque /></ErrorBoundary>} />

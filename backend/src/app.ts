@@ -25,6 +25,7 @@ import donoProdutosRoutes from './routes/dono/produtos';
 import donoNotificacoesRoutes from './routes/dono/notificacoes';
 import donoRelatoriosRoutes from './routes/dono/relatorios';
 import donoConfiguracaoRoutes from './routes/dono/configuracao';
+import donoComissoesRoutes from './routes/dono/comissoes';
 import clientePanelRoutes from './routes/cliente/panel';
 import barbeariasPublicasRoutes from './routes/barbeariasPublicas';
 import emergencyRoutes from './routes/emergency';
@@ -208,6 +209,7 @@ app.use('/api/dono/produtos', donoProdutosRoutes);
 app.use('/api/dono/notificacoes', donoNotificacoesRoutes);
 app.use('/api/dono/relatorios', donoRelatoriosRoutes);
 app.use('/api/dono/configuracao', donoConfiguracaoRoutes);
+app.use('/api/dono/comissoes', donoComissoesRoutes);
 
 // Rotas do cliente (requerem autenticação)
 app.use('/api/cliente', clientePanelRoutes);

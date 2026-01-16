@@ -20,6 +20,7 @@ import {
   Users,
   User,
   CreditCard,
+  DollarSign,
   Gift,
   Star,
   Package,
@@ -71,6 +72,11 @@ function DonoLayoutContent() {
       title: "Financeiro",
       url: "/dono/financeiro",
       icon: CreditCard,
+    },
+    {
+      title: "Comissões",
+      url: "/dono/comissoes",
+      icon: DollarSign,
     },
     {
       title: "Fidelidade",

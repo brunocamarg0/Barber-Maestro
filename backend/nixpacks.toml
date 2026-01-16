@@ -12,7 +12,8 @@ cmds = [
 [phases.build]
 cmds = [
   "npx prisma generate",
-  "npm run build",
+  "npm run build || (echo 'Build failed, checking errors...' && exit 1)",
+  "ls -la dist/ || (echo 'dist directory not found' && exit 1)",
   "npx prisma db push --accept-data-loss || true"
 ]
 

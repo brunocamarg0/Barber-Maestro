@@ -26,6 +26,9 @@ router.get('/', async (req: AuthRequest, res) => {
         id: true,
         nome: true,
         cnpjCpf: true,
+        responsavel: true,
+        plano: true,
+        status: true,
         email: true,
         telefone: true,
         endereco: true,
@@ -33,10 +36,10 @@ router.get('/', async (req: AuthRequest, res) => {
         bairro: true,
         cep: true,
         modoConfirmacao: true,
-        horarioFuncionamento: true,
-        politicaCancelamento: true,
-        linkAgendamento: true,
-        paginaPublica: true,
+        dataCriacao: true,
+        dataVencimento: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -69,6 +72,7 @@ router.put('/', async (req: AuthRequest, res) => {
       data: {
         ...(dados.nome && { nome: dados.nome }),
         ...(dados.cnpjCpf !== undefined && { cnpjCpf: dados.cnpjCpf }),
+        ...(dados.responsavel !== undefined && { responsavel: dados.responsavel }),
         ...(dados.email !== undefined && { email: dados.email }),
         ...(dados.telefone !== undefined && { telefone: dados.telefone }),
         ...(dados.endereco !== undefined && { endereco: dados.endereco }),
@@ -76,10 +80,7 @@ router.put('/', async (req: AuthRequest, res) => {
         ...(dados.bairro !== undefined && { bairro: dados.bairro }),
         ...(dados.cep !== undefined && { cep: dados.cep }),
         ...(dados.modoConfirmacao !== undefined && { modoConfirmacao: dados.modoConfirmacao }),
-        ...(dados.horarioFuncionamento !== undefined && { horarioFuncionamento: dados.horarioFuncionamento }),
-        ...(dados.politicaCancelamento !== undefined && { politicaCancelamento: dados.politicaCancelamento }),
-        ...(dados.linkAgendamento !== undefined && { linkAgendamento: dados.linkAgendamento }),
-        ...(dados.paginaPublica !== undefined && { paginaPublica: dados.paginaPublica }),
+        ...(dados.status !== undefined && { status: dados.status }),
       },
     });
 

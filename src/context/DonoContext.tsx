@@ -968,12 +968,36 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   const removerCliente = async (id: string) => {
     try {
-      await apiDelete(`/dono/clientes/${id}`);
+      console.log('🗑️ [REMOVER CLIENTE] Iniciando exclusão do cliente:', id);
+      console.log('🗑️ [REMOVER CLIENTE] URL:', `/dono/clientes/${id}`);
+      console.log('🗑️ [REMOVER CLIENTE] Token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
+      console.log('🗑️ [REMOVER CLIENTE] BarbeariaId:', barbeariaId);
+      
+      const resultado = await apiDelete(`/dono/clientes/${id}`);
+      console.log('✅ [REMOVER CLIENTE] Cliente removido com sucesso:', resultado);
+      
+      // Remover cliente da lista local imediatamente (otimização)
+      setClientes(prev => prev.filter(c => c.id !== id));
+      
+      // Recarregar dados do banco para garantir sincronização
       await carregarDados(true);
       toast.success('Cliente removido com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao remover cliente:', error);
-      toast.error(error.message || 'Erro ao remover cliente');
+      console.error('❌ [REMOVER CLIENTE] Erro completo:', error);
+      console.error('❌ [REMOVER CLIENTE] Mensagem:', error.message);
+      console.error('❌ [REMOVER CLIENTE] Stack:', error.stack);
+      
+      // Mensagens de erro mais específicas
+      let mensagemErro = 'Erro ao remover cliente';
+      if (error.message?.includes('não encontrado') || error.message?.includes('404')) {
+        mensagemErro = 'Cliente não encontrado ou não pertence a esta barbearia';
+      } else if (error.message?.includes('Rota não encontrada') || error.message?.includes('404')) {
+        mensagemErro = 'Erro ao conectar com o servidor. Verifique sua conexão.';
+      } else if (error.message) {
+        mensagemErro = error.message;
+      }
+      
+      toast.error(mensagemErro);
       throw error;
     }
   };

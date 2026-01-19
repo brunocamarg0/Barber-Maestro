@@ -617,7 +617,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   const atualizarAgendamento = async (id: string, dados: Partial<AgendamentoDono>) => {
     try {
-      await apiPut(`/ agendamentos / ${id} `, dados);
+      await apiPut(`/agendamentos/${id}`, dados);
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       toast.success('Agendamento atualizado com sucesso');
     } catch (error) {
@@ -628,7 +628,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   const cancelarAgendamento = async (id: string) => {
     try {
-      await apiPut(`/ agendamentos / ${id}/cancelar`, {});
+      await apiPut(`/agendamentos/${id}/cancelar`, {});
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
 
       // Atualizar no Firestore

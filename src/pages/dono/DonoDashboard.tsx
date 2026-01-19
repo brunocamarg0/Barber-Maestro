@@ -25,7 +25,18 @@ import { Link } from "react-router-dom";
 import { apiGet } from "@/services/api";
 
 export default function DonoDashboard() {
-  const { barbeariaId } = useDono();
+  const { barbeariaId, kpi, agendamentos, notificacoes, loading } = useDono();
+
+  const formatarMoeda = (valor: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(valor);
+  };
+
+  const agendamentosHoje = (agendamentos || []).filter(
+    (a) => a.data === new Date().toISOString().split("T")[0]
+  );
 
   // Carregar resumo de comissões usando React Query para cache
   const { data: comissoesData } = useQuery({

@@ -819,7 +819,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   const adicionarProfissional = async (profissional: Omit<ProfissionalDono, "id" | "dataAdmissao" | "avaliacaoMedia" | "totalAvaliacoes" | "faturamentoTotal" | "faltas">) => {
     try {
       console.log('➕ Adicionando profissional ao banco de dados:', profissional.nome);
-      const resultado = await apiPost('/dono/profissionais', {
+      const novoProfissional = await apiPost<ProfissionalDono>('/dono/profissionais', {
         nome: profissional.nome,
         email: profissional.email,
         telefone: profissional.telefone,
@@ -829,13 +829,11 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         comissaoValor: profissional.comissao.valor,
       });
 
-      console.log('✅ Profissional adicionado ao banco:', resultado);
+      console.log('✅ Profissional adicionado:', novoProfissional);
 
-      // SEMPRE recarregar dados do banco após adicionar
-      console.log('🔄 Recarregando dados do banco após adicionar profissional...');
-      await carregarDados(true);
+      // Atualizar estado local
+      setProfissionais(prev => [...prev, novoProfissional]);
 
-      console.log('✅ Dados recarregados do banco com sucesso');
       toast.success('Profissional adicionado com sucesso!');
     } catch (error: any) {
       console.error('❌ Erro ao adicionar profissional:', error);
@@ -886,10 +884,6 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   const adicionarCliente = async (cliente: Omit<ClienteDono, "id" | "dataCadastro" | "totalAgendamentos" | "ticketMedio" | "frequencia">) => {
     try {
       console.log('➕ [ADICIONAR CLIENTE] Iniciando...');
-      console.log('➕ [ADICIONAR CLIENTE] Dados:', cliente);
-      console.log('➕ [ADICIONAR CLIENTE] Token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
-      console.log('➕ [ADICIONAR CLIENTE] BarbeariaId:', barbeariaId);
-
       const resultado = await apiPost<any>('/dono/clientes', {
         nome: cliente.nome,
         email: cliente.email,
@@ -900,7 +894,6 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
       console.log('✅ [ADICIONAR CLIENTE] Cliente adicionado ao banco:', resultado);
 
-      // Adicionar cliente temporariamente à lista enquanto recarrega
       if (resultado && resultado.id) {
         const novoCliente: ClienteDono = {
           id: resultado.id,
@@ -918,36 +911,17 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
         // Adicionar à lista imediatamente
         setClientes(prev => {
-          // Verificar se já não existe (evitar duplicatas)
           const existe = prev.find(c => c.id === novoCliente.id);
           if (existe) return prev;
           return [...prev, novoCliente];
         });
 
-        console.log('✅ [ADICIONAR CLIENTE] Cliente adicionado temporariamente à lista');
+        console.log('✅ [ADICIONAR CLIENTE] Cliente adicionado à lista local');
       }
-
-      console.log('🔄 [ADICIONAR CLIENTE] Iniciando recarregamento forçado de dados...');
-
-      // Guardar ID do cliente criado para verificar depois
-      const clienteIdCriado = resultado?.id;
-
-      // Forçar recarregamento após delay maior para garantir que o banco commitou
-      setTimeout(async () => {
-        try {
-          await carregarDados(true);
-          console.log('✅ [ADICIONAR CLIENTE] Dados recarregados');
-        } catch (error) {
-          console.error('❌ [ADICIONAR CLIENTE] Erro ao recarregar dados:', error);
-          // Em caso de erro, manter o cliente temporário na lista
-        }
-      }, 1500); // Aumentar delay para 1.5 segundos para dar tempo ao banco
 
       toast.success('Cliente adicionado com sucesso!');
     } catch (error: any) {
-      console.error('❌ [ADICIONAR CLIENTE] Erro completo:', error);
-      console.error('❌ [ADICIONAR CLIENTE] Mensagem:', error.message);
-      console.error('❌ [ADICIONAR CLIENTE] Stack:', error.stack);
+      console.error('❌ [ADICIONAR CLIENTE] Erro:', error);
       toast.error(error.message || 'Erro ao adicionar cliente');
       throw error;
     }
@@ -1025,9 +999,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   const adicionarServico = async (servico: { nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }) => {
     try {
       console.log('➕ Adicionando serviço ao banco de dados:', servico.nome);
-      await apiPost('/dono/servicos', servico);
-      console.log('✅ Serviço adicionado ao banco, recarregando dados...');
-      await carregarDados(true);
+      const novoServico = await apiPost('/dono/servicos', servico);
+
+      console.log('✅ Serviço adicionado:', novoServico);
+
+      // Atualizar estado local
+      setServicos(prev => [...prev, novoServico]);
+
       toast.success('Serviço adicionado com sucesso!');
     } catch (error: any) {
       console.error('❌ Erro ao adicionar serviço:', error);

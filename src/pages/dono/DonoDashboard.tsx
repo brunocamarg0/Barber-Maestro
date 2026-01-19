@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDono } from "@/context/DonoContext";
 import {
   Card,
@@ -24,34 +25,21 @@ import { Link } from "react-router-dom";
 import { apiGet } from "@/services/api";
 
 export default function DonoDashboard() {
-  const { loading, kpi, agendamentos, notificacoes } = useDono();
-  const [resumoComissoes, setResumoComissoes] = useState<any>(null);
+  const { barbeariaId } = useDono();
 
-  const formatarMoeda = (valor: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(valor);
-  };
+  // Carregar resumo de comissões usando React Query para cache
+  const { data: comissoesData } = useQuery({
+    queryKey: ['comissoes-resumo', barbeariaId],
+    queryFn: () => {
+      const mes = new Date().getMonth() + 1;
+      const ano = new Date().getFullYear();
+      return apiGet<any>(`/dono/comissoes/resumo?mes=${mes}&ano=${ano}`);
+    },
+    enabled: !!barbeariaId,
+    staleTime: 1000 * 60 * 15, // 15 minutos de cache
+  });
 
-  const agendamentosHoje = agendamentos.filter(
-    (a) => a.data === new Date().toISOString().split("T")[0]
-  );
-
-  // Carregar resumo de comissões do mês atual
-  useEffect(() => {
-    const carregarComissoes = async () => {
-      try {
-        const mes = new Date().getMonth() + 1;
-        const ano = new Date().getFullYear();
-        const data = await apiGet<any>(`/dono/comissoes/resumo?mes=${mes}&ano=${ano}`);
-        setResumoComissoes(data.resumoGeral);
-      } catch (error) {
-        console.error('Erro ao carregar resumo de comissões:', error);
-      }
-    };
-    carregarComissoes();
-  }, []);
+  const resumoComissoes = comissoesData?.resumoGeral || null;
 
   const alertas = [
     ...(agendamentosHoje.length < 5

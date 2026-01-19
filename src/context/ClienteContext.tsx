@@ -77,7 +77,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     const userType = localStorage.getItem('userType');
-    
+
     if (userStr && userType === 'cliente') {
       try {
         const userData = JSON.parse(userStr);
@@ -101,12 +101,12 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     const isClienteRoute = currentPath.startsWith('/cliente');
     const token = localStorage.getItem('token');
     const userType = localStorage.getItem('userType');
-    
+
     if (isClienteRoute && token && userType === 'cliente') {
       console.log('🔄 Carregando dados do cliente do banco...');
       console.log('🔄 Token presente:', !!token);
       console.log('🔄 UserType:', userType);
-      
+
       // Se já tem cliente no localStorage, usar temporariamente enquanto carrega
       const userStr = localStorage.getItem('user');
       if (userStr && !cliente) {
@@ -126,12 +126,12 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
           console.error('Erro ao parsear dados do localStorage:', error);
         }
       }
-      
+
       carregarDados().catch((err) => {
         console.error('❌ Erro ao carregar dados do cliente:', err);
         setLoading(false);
       });
-      
+
       // Carregar todas as barbearias ativas automaticamente ao fazer login
       buscarBarbearias().catch((err) => {
         console.warn('⚠️ Erro ao carregar barbearias iniciais:', err);
@@ -150,7 +150,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       console.log('📥 [CLIENTE] UserType:', localStorage.getItem('userType'));
 
       // Timeout de 10 segundos para cada requisição
-      const timeout = (ms: number) => new Promise((_, reject) => 
+      const timeout = (ms: number) => new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`Timeout após ${ms}ms`)), ms)
       );
 
@@ -225,7 +225,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         const dataUTC = new Date(a.data);
         const dataBrasilia = new Date(dataUTC.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
         const dataFormatada = dataBrasilia.toISOString().split('T')[0];
-        
+
         return {
           id: a.id,
           clienteId: a.clienteId,
@@ -270,12 +270,12 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       const agendamentosConcluidos = agendamentosFormatados.filter(
         (a) => a.status === 'concluido'
       ).length;
-      
+
       const pontos = agendamentosConcluidos * 10;
       const nivel = agendamentosConcluidos >= 10 ? 'Ouro' : agendamentosConcluidos >= 5 ? 'Prata' : 'Bronze';
       const proximoCorte = agendamentosConcluidos % 5;
       const cortesNecessarios = 5 - proximoCorte;
-      
+
       setFidelidade({
         pontos,
         nivel,
@@ -304,7 +304,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         stack: error?.stack,
         name: error?.name,
       });
-      
+
       // Tentar usar dados do localStorage como último recurso
       const userStr = localStorage.getItem('user');
       if (userStr && !cliente) {
@@ -325,7 +325,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
           console.error('❌ [CLIENTE] Erro ao parsear localStorage:', parseError);
         }
       }
-      
+
       // Não mostrar toast de erro se conseguiu usar dados do localStorage
       if (!cliente) {
         toast.error('Erro ao carregar dados do cliente. Tente fazer login novamente.');
@@ -353,10 +353,11 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   const criarAgendamento = async (novoAgendamento: NovoAgendamento): Promise<Agendamento> => {
     try {
       console.log('➕ [CLIENTE] Criando agendamento:', novoAgendamento);
-      
+
       const agendamentoData = await apiPost<any>('/cliente/agendamentos', {
         barbeariaId: novoAgendamento.barbeariaId,
         servicoId: novoAgendamento.servicoId,
+        profissionalId: novoAgendamento.profissionalId,
         data: novoAgendamento.data,
         horario: novoAgendamento.hora,
         observacoes: novoAgendamento.observacoes,
@@ -392,7 +393,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
 
       setAgendamentos([...agendamentos, agendamento]);
       toast.success('Agendamento criado com sucesso!');
-      
+
       return agendamento;
     } catch (error: any) {
       console.error('Erro ao criar agendamento:', error);
@@ -404,13 +405,13 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   const cancelarAgendamento = async (id: string) => {
     try {
       await apiPut(`/cliente/agendamentos/${id}/cancelar`, {});
-      
+
       setAgendamentos(
         agendamentos.map((a) =>
           a.id === id ? { ...a, status: 'cancelado' as StatusAgendamento, updatedAt: new Date().toISOString() } : a
         )
       );
-      
+
       toast.success('Agendamento cancelado com sucesso!');
     } catch (error: any) {
       console.error('Erro ao cancelar agendamento:', error);
@@ -497,7 +498,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   const realizarPagamento = async (agendamentoId: string, dados: any): Promise<Pagamento> => {
     try {
       console.log('💳 [CLIENTE] Realizando pagamento:', { agendamentoId, dados });
-      
+
       // Criar pagamento via API
       const pagamentoResponse = await apiPost<Pagamento>('/cliente/pagamentos', {
         agendamentoId,
@@ -521,16 +522,16 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
 
       // Atualizar estado local
       setPagamentos([...pagamentos, novoPagamento]);
-      
+
       // Atualizar status do agendamento
       setAgendamentos(
         agendamentos.map((a) =>
           a.id === agendamentoId
-            ? { 
-                ...a, 
-                status: dados.status === 'pago' ? 'confirmado' as StatusAgendamento : a.status,
-                updatedAt: new Date().toISOString() 
-              }
+            ? {
+              ...a,
+              status: dados.status === 'pago' ? 'confirmado' as StatusAgendamento : a.status,
+              updatedAt: new Date().toISOString()
+            }
             : a
         )
       );
@@ -550,17 +551,17 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   const buscarBarbearias = async (busca?: string, cidade?: string, bairro?: string) => {
     try {
       console.log('🔍 [CLIENTE] Buscando barbearias...', { busca, cidade, bairro });
-      
+
       const params = new URLSearchParams();
       if (busca) params.append('busca', busca);
       if (cidade) params.append('cidade', cidade);
       if (bairro) params.append('bairro', bairro);
-      
+
       const queryString = params.toString();
       const endpoint = `/barbearias${queryString ? `?${queryString}` : ''}`;
-      
+
       console.log('🔍 [CLIENTE] Endpoint:', endpoint);
-      
+
       // Fazer requisição sem token (rota pública)
       const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
       const response = await fetch(`${API_URL}${endpoint}`, {
@@ -577,7 +578,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       }
 
       const barbeariasData = await response.json();
-      
+
       if (Array.isArray(barbeariasData)) {
         setBarbearias(barbeariasData);
         console.log('✅ [CLIENTE] Barbearias encontradas:', barbeariasData.length);
@@ -600,7 +601,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   const buscarBarbeariaPorId = async (id: string) => {
     try {
       console.log('🔍 [CLIENTE] Buscando barbearia por ID:', id);
-      
+
       // Fazer requisição sem token (rota pública)
       const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
       const response = await fetch(`${API_URL}/barbearias/${id}`, {

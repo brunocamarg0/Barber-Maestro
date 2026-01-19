@@ -29,18 +29,18 @@ const gerarTodosHorarios = (): string[] => {
   const horarios: string[] = [];
   let hora = 8;
   let minuto = 0;
-  
+
   while (hora < 19 || (hora === 19 && minuto === 0)) {
     const horarioFormatado = `${hora.toString().padStart(2, "0")}:${minuto.toString().padStart(2, "0")}`;
     horarios.push(horarioFormatado);
-    
+
     minuto += 40;
     if (minuto >= 60) {
       hora += 1;
       minuto = minuto % 60;
     }
   }
-  
+
   return horarios;
 };
 
@@ -135,7 +135,7 @@ export default function AgendamentoOnline() {
 
   const servicosDisponiveis = barbearia?.servicos || [];
   const profissionaisDisponiveis = barbearia?.profissionais || [];
-  
+
   const servicoSelecionado = servicosDisponiveis.find((s: any) => s.id === formData.servicoId);
   const profissionalSelecionado = profissionaisDisponiveis.find((p: any) => p.id === formData.profissionalId);
 
@@ -153,16 +153,17 @@ export default function AgendamentoOnline() {
       const novoAgendamento = await criarAgendamento({
         barbeariaId: formData.barbeariaId!,
         servicoId: formData.servicoId!,
+        profissionalId: formData.profissionalId,
         data: formData.data!,
         hora: formData.hora!,
         observacoes: formData.observacoes,
       });
-      
+
       toast({
         title: "Agendamento criado!",
         description: "Redirecionando para página de pagamento...",
       });
-      
+
       // Redirecionar para página de pagamento após criar agendamento
       navigate(`/cliente/pagamento?agendamento=${novoAgendamento.id}`);
     } catch (error: any) {
@@ -262,17 +263,15 @@ export default function AgendamentoOnline() {
         {[1, 2, 3, 4].map((s) => (
           <div key={s} className="flex items-center flex-1">
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                step >= s ? "bg-primary text-primary-foreground" : "bg-muted"
-              }`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= s ? "bg-primary text-primary-foreground" : "bg-muted"
+                }`}
             >
               {step > s ? <CheckCircle className="h-4 w-4" /> : s}
             </div>
             {s < 4 && (
               <div
-                className={`flex-1 h-1 mx-2 ${
-                  step > s ? "bg-primary" : "bg-muted"
-                }`}
+                className={`flex-1 h-1 mx-2 ${step > s ? "bg-primary" : "bg-muted"
+                  }`}
               />
             )}
           </div>
@@ -295,11 +294,10 @@ export default function AgendamentoOnline() {
               servicosDisponiveis.map((servico: any) => (
                 <div
                   key={servico.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    formData.servicoId === servico.id
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${formData.servicoId === servico.id
                       ? "border-primary bg-primary/5"
                       : "hover:bg-accent"
-                  }`}
+                    }`}
                   onClick={() => setFormData({ ...formData, servicoId: servico.id })}
                 >
                   <div className="flex items-center justify-between">
@@ -351,11 +349,10 @@ export default function AgendamentoOnline() {
             ) : (
               <>
                 <div
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    !formData.profissionalId
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${!formData.profissionalId
                       ? "border-primary bg-primary/5"
                       : "hover:bg-accent"
-                  }`}
+                    }`}
                   onClick={() => setFormData({ ...formData, profissionalId: "" })}
                 >
                   <div className="flex items-center gap-3">
@@ -368,11 +365,10 @@ export default function AgendamentoOnline() {
                 {profissionaisDisponiveis.map((profissional: any) => (
                   <div
                     key={profissional.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      formData.profissionalId === profissional.id
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${formData.profissionalId === profissional.id
                         ? "border-primary bg-primary/5"
                         : "hover:bg-accent"
-                    }`}
+                      }`}
                     onClick={() => setFormData({ ...formData, profissionalId: profissional.id })}
                   >
                     <div className="flex items-center justify-between">

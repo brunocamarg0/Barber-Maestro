@@ -1075,9 +1075,9 @@ export default function AgendaInteligente() {
             </Button>
             <Button
               onClick={handleCriarAgendamento}
-              disabled={isLoading}
+              disabled={processingId === 'creating'}
             >
-              {isLoading ? (
+              {processingId === 'creating' ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Criando...
@@ -1122,16 +1122,16 @@ export default function AgendaInteligente() {
                 setAgendamentoParaRecusar(null);
                 setMotivoRecusa("");
               }}
-              disabled={isLoading}
+              disabled={!!processingId}
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={handleRecusar}
-              disabled={isLoading}
+              disabled={!!processingId}
             >
-              {isLoading ? "Recusando..." : "Confirmar Recusa"}
+              {processingId ? "Recusando..." : "Confirmar Recusa"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -8,7 +8,8 @@ import { AuthRequest } from '../middleware/auth';
 export async function calcularComissoesProfissional(req: AuthRequest, res: Response) {
   try {
     const { barbeariaId } = req;
-    const { profissionalId, mes, ano } = req.query;
+    const { profissionalId } = req.params;
+    const { mes, ano } = req.query;
 
     if (!barbeariaId) {
       return res.status(401).json({ error: 'Barbearia não identificada' });

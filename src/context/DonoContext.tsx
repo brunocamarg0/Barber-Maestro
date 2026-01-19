@@ -20,7 +20,7 @@ function obterBarbeariaIdDoToken(): string | null {
   try {
     const token = localStorage.getItem('token');
     if (!token) return null;
-    
+
     // Decodificar JWT (sem verificar assinatura, apenas para obter dados)
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.barbeariaId || null;
@@ -42,45 +42,45 @@ interface DonoContextType {
   produtos: ProdutoDono[];
   notificacoes: NotificacaoDono[];
   configuracao: ConfiguracaoBarbearia;
-  
+
   // Funções
   criarAgendamento: (agendamento: Omit<AgendamentoDono, "id" | "dataCriacao">) => Promise<void>;
   atualizarAgendamento: (id: string, dados: Partial<AgendamentoDono>) => Promise<void>;
   cancelarAgendamento: (id: string) => Promise<void>;
   confirmarAgendamento: (id: string) => Promise<void>;
   recusarAgendamento: (id: string, motivo?: string) => Promise<void>;
-  
+
   adicionarProfissional: (profissional: Omit<ProfissionalDono, "id" | "dataAdmissao" | "avaliacaoMedia" | "totalAvaliacoes" | "faturamentoTotal" | "faltas">) => Promise<void>;
   atualizarProfissional: (id: string, dados: Partial<ProfissionalDono>) => Promise<void>;
   removerProfissional: (id: string) => Promise<void>;
-  
+
   adicionarCliente: (cliente: Omit<ClienteDono, "id" | "dataCadastro" | "totalAgendamentos" | "ticketMedio" | "frequencia">) => Promise<void>;
   atualizarCliente: (id: string, dados: Partial<ClienteDono>) => Promise<void>;
   removerCliente: (id: string) => Promise<void>;
   marcarClienteVIP: (id: string, vip: boolean) => void;
-  
+
   // Funções de serviços
   servicos: any[];
   adicionarServico: (servico: { nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }) => Promise<void>;
   atualizarServico: (id: string, dados: Partial<{ nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }>) => Promise<void>;
   removerServico: (id: string) => Promise<void>;
   toggleServicoAtivo: (id: string) => Promise<void>;
-  
+
   registrarPagamento: (pagamento: Omit<PagamentoDono, "id">) => Promise<void>;
-  
+
   criarPromocao: (promocao: Omit<PromocaoDono, "id">) => Promise<void>;
   atualizarPromocao: (id: string, dados: Partial<PromocaoDono>) => Promise<void>;
-  
+
   responderAvaliacao: (id: string, resposta: string) => Promise<void>;
-  
+
   adicionarProduto: (produto: Omit<ProdutoDono, "id">) => Promise<void>;
   atualizarProduto: (id: string, dados: Partial<ProdutoDono>) => Promise<void>;
   atualizarEstoque: (id: string, quantidade: number) => Promise<void>;
-  
+
   marcarNotificacaoLida: (id: string) => Promise<void>;
-  
+
   atualizarConfiguracao: (dados: Partial<ConfiguracaoBarbearia>) => void;
-  
+
   gerarRelatorio: (dataInicio: string, dataFim: string) => RelatorioDono;
 }
 
@@ -222,22 +222,22 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     // Primeiro tenta obter do token JWT
     const tokenId = obterBarbeariaIdDoToken();
     if (tokenId) return tokenId;
-    
+
     // Fallback: tenta obter do localStorage
     try {
       const userStr = localStorage.getItem('user');
       const barbeariaStr = localStorage.getItem('barbearia');
-      
+
       if (barbeariaStr) {
         const barbearia = JSON.parse(barbeariaStr);
         return barbearia.id || null;
       }
-      
+
       if (userStr) {
         const user = JSON.parse(userStr);
         return user.barbeariaId || null;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Erro ao obter barbeariaId do localStorage:', error);
@@ -279,7 +279,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
+
     // Verificar periodicamente (fallback)
     const interval = setInterval(checkBarbeariaId, 1000);
 
@@ -294,7 +294,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const currentPath = window.location.pathname;
     const isDonoRoute = currentPath.startsWith('/dono');
-    
+
     if (barbeariaId && isDonoRoute) {
       console.log('🔄 Carregando dados do banco para barbeariaId:', barbeariaId);
       console.log('🔄 Rota atual:', currentPath);
@@ -316,7 +316,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     const checkRoute = () => {
       const currentPath = window.location.pathname;
       const isDonoRoute = currentPath.startsWith('/dono');
-      
+
       if (isDonoRoute) {
         console.log('🔄 Detectada navegação para /dono, recarregando dados...');
         // Forçar carregamento ao navegar para o painel
@@ -333,7 +333,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     };
 
     window.addEventListener('popstate', handlePopState);
-    
+
     // Verificar periodicamente (fallback para React Router)
     const interval = setInterval(checkRoute, 2000);
 
@@ -443,7 +443,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       console.log('  - Profissionais:', profissionaisData?.length || 0, profissionaisData);
       console.log('  - Clientes:', clientesData?.length || 0, clientesData);
       console.log('  - Agendamentos:', agendamentosData?.length || 0);
-      
+
       // IMPORTANTE: Se não houver dados, define arrays vazios (NUNCA dados mockados)
       if (!profissionaisData || profissionaisData.length === 0) {
         console.log('ℹ️ Nenhum profissional encontrado no banco de dados');
@@ -472,7 +472,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         const dataUTC = new Date(ag.data);
         const dataBrasilia = new Date(dataUTC.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
         const dataFormatada = dataBrasilia.toISOString().split('T')[0];
-        
+
         return {
           id: ag.id,
           clienteId: ag.clienteId || '',
@@ -508,10 +508,10 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           valor: prof.comissaoValor || 0,
         },
         ativo: prof.ativo !== undefined ? prof.ativo : true,
-        dataAdmissao: prof.dataAdmissao 
-          ? (typeof prof.dataAdmissao === 'string' 
-              ? (prof.dataAdmissao.includes('T') ? prof.dataAdmissao.split('T')[0] : prof.dataAdmissao)
-              : new Date(prof.dataAdmissao).toISOString().split('T')[0])
+        dataAdmissao: prof.dataAdmissao
+          ? (typeof prof.dataAdmissao === 'string'
+            ? (prof.dataAdmissao.includes('T') ? prof.dataAdmissao.split('T')[0] : prof.dataAdmissao)
+            : new Date(prof.dataAdmissao).toISOString().split('T')[0])
           : new Date().toISOString().split('T')[0],
         avaliacaoMedia: 0, // Calcular se necessário
         totalAvaliacoes: 0,
@@ -541,18 +541,18 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
       console.log('✅ [CARREGAR DADOS] Clientes carregados do banco:', clientesTransformados.length);
       console.log('✅ [CARREGAR DADOS] IDs dos clientes:', clientesTransformados.map(c => c.id));
-      
+
       // Preservar clientes temporários que não vieram do banco (evitar que sumam)
       setClientes(prev => {
         const idsDoBanco = new Set(clientesTransformados.map(c => c.id));
         const clientesTemporarios = prev.filter(c => !idsDoBanco.has(c.id));
-        
+
         // Se houver clientes temporários, mantê-los na lista
         if (clientesTemporarios.length > 0) {
           console.log('⚠️ [CARREGAR DADOS] Mantendo clientes temporários:', clientesTemporarios.map(c => c.nome));
           return [...clientesTransformados, ...clientesTemporarios];
         }
-        
+
         return clientesTransformados;
       });
 
@@ -660,13 +660,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         });
         console.log('✅ Configuração carregada do banco:', configuracaoData);
       }
-      
+
       // Atualizar estado com os dados carregados
       const totalClientes = clientesTransformados.length;
       const totalProfissionais = profissionaisTransformados.length;
       const totalServicos = servicosData?.length || 0;
       const totalAgendamentos = agendamentosTransformados.length;
-      
+
       console.log('✅ [CARREGAR DADOS] ==========================================');
       console.log('✅ [CARREGAR DADOS] Todos os dados foram carregados do banco de dados com sucesso!');
       console.log('✅ [CARREGAR DADOS] Resumo final:');
@@ -681,10 +681,10 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       console.error('❌ [CARREGAR DADOS] Mensagem:', error?.message);
       console.error('❌ [CARREGAR DADOS] Stack:', error?.stack);
       console.error('❌ [CARREGAR DADOS] ==========================================');
-      
+
       // Não mostrar toast de erro para não incomodar o usuário em caso de erro temporário
       // toast.error('Erro ao carregar dados do painel. Verifique sua conexão.');
-      
+
       // Em caso de erro, define arrays vazios (não dados mockados)
       setProfissionais([]);
       setClientes([]);
@@ -705,7 +705,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     try {
       // Combinar data e horário
       const dataHora = new Date(`${agendamento.data}T${agendamento.horario}`);
-      
+
       const novoAgendamento = await apiPost<any>('/agendamentos', {
         barbeariaId,
         clienteId: agendamento.clienteId || null,
@@ -737,7 +737,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           observacoes: novoAgendamento.agendamento.observacao,
           dataCriacao: novoAgendamento.agendamento.createdAt,
         };
-        
+
         setAgendamentos(prev => [...prev, agendamentoTransformado]);
       } else {
         // Fallback: recarregar apenas agendamentos se formato não for o esperado
@@ -761,7 +761,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         }));
         setAgendamentos(agendamentosTransformados);
       }
-      
+
       toast.success('Agendamento criado com sucesso!');
     } catch (error: any) {
       console.error('Erro ao criar agendamento:', error);
@@ -828,13 +828,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         comissaoTipo: profissional.comissao.tipo,
         comissaoValor: profissional.comissao.valor,
       });
-      
+
       console.log('✅ Profissional adicionado ao banco:', resultado);
-      
+
       // SEMPRE recarregar dados do banco após adicionar
       console.log('🔄 Recarregando dados do banco após adicionar profissional...');
       await carregarDados(true);
-      
+
       console.log('✅ Dados recarregados do banco com sucesso');
       toast.success('Profissional adicionado com sucesso!');
     } catch (error: any) {
@@ -889,7 +889,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       console.log('➕ [ADICIONAR CLIENTE] Dados:', cliente);
       console.log('➕ [ADICIONAR CLIENTE] Token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
       console.log('➕ [ADICIONAR CLIENTE] BarbeariaId:', barbeariaId);
-      
+
       const resultado = await apiPost<any>('/dono/clientes', {
         nome: cliente.nome,
         email: cliente.email,
@@ -897,9 +897,9 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         foto: cliente.foto,
         dataNascimento: cliente.dataNascimento,
       });
-      
+
       console.log('✅ [ADICIONAR CLIENTE] Cliente adicionado ao banco:', resultado);
-      
+
       // Adicionar cliente temporariamente à lista enquanto recarrega
       if (resultado && resultado.id) {
         const novoCliente: ClienteDono = {
@@ -915,7 +915,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           frequencia: 0,
           dataCadastro: resultado.createdAt ? (typeof resultado.createdAt === 'string' ? resultado.createdAt.split('T')[0] : new Date(resultado.createdAt).toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
         };
-        
+
         // Adicionar à lista imediatamente
         setClientes(prev => {
           // Verificar se já não existe (evitar duplicatas)
@@ -923,15 +923,15 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           if (existe) return prev;
           return [...prev, novoCliente];
         });
-        
+
         console.log('✅ [ADICIONAR CLIENTE] Cliente adicionado temporariamente à lista');
       }
-      
+
       console.log('🔄 [ADICIONAR CLIENTE] Iniciando recarregamento forçado de dados...');
-      
+
       // Guardar ID do cliente criado para verificar depois
       const clienteIdCriado = resultado?.id;
-      
+
       // Forçar recarregamento após delay maior para garantir que o banco commitou
       setTimeout(async () => {
         try {
@@ -942,7 +942,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           // Em caso de erro, manter o cliente temporário na lista
         }
       }, 1500); // Aumentar delay para 1.5 segundos para dar tempo ao banco
-      
+
       toast.success('Cliente adicionado com sucesso!');
     } catch (error: any) {
       console.error('❌ [ADICIONAR CLIENTE] Erro completo:', error);
@@ -982,13 +982,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       console.log('🗑️ [REMOVER CLIENTE] Token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
       console.log('🗑️ [REMOVER CLIENTE] BarbeariaId:', barbeariaId);
       console.log('🗑️ [REMOVER CLIENTE] API_URL:', API_URL);
-      
+
       const resultado = await apiDelete(`/dono/clientes/${id}`);
       console.log('✅ [REMOVER CLIENTE] Cliente removido com sucesso:', resultado);
-      
+
       // Remover cliente da lista local imediatamente (otimização)
       setClientes(prev => prev.filter(c => c.id !== id));
-      
+
       // Recarregar dados do banco para garantir sincronização
       await carregarDados(true);
       toast.success('Cliente removido com sucesso!');
@@ -998,7 +998,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       console.error('❌ [REMOVER CLIENTE] Status:', error.status);
       console.error('❌ [REMOVER CLIENTE] URL:', error.url);
       console.error('❌ [REMOVER CLIENTE] Stack:', error.stack);
-      
+
       // Mensagens de erro mais específicas
       let mensagemErro = 'Erro ao remover cliente';
       if (error.status === 404 || error.message?.includes('404') || error.message?.includes('Rota não encontrada')) {
@@ -1010,7 +1010,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       } else if (error.message) {
         mensagemErro = error.message;
       }
-      
+
       toast.error(mensagemErro);
       throw error;
     }
@@ -1141,7 +1141,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   const adicionarProduto = async (produto: Omit<ProdutoDono, "id">) => {
     try {
       console.log('📦 Adicionando produto ao banco de dados:', produto.nome);
-      await apiPost('/dono/produtos', {
+      const novoProduto = await apiPost<ProdutoDono>('/dono/produtos', {
         nome: produto.nome,
         descricao: produto.descricao,
         categoria: produto.categoria,
@@ -1151,8 +1151,12 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         ativo: produto.ativo,
         foto: produto.foto,
       });
-      console.log('✅ Produto adicionado ao banco, recarregando dados...');
-      await carregarDados(true);
+
+      console.log('✅ Produto adicionado com sucesso:', novoProduto);
+
+      // Atualizar estado localmente sem recarregar tudo
+      setProdutos((prev) => [...prev, novoProduto]);
+
       toast.success('Produto adicionado com sucesso!');
     } catch (error: any) {
       console.error('❌ Erro ao adicionar produto:', error);

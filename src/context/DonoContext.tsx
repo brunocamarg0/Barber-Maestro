@@ -289,6 +289,21 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     };
   }, [barbeariaId]);
 
+  // Auto-refresh dos dados a cada 10 segundos para reduzir delay
+  useEffect(() => {
+    if (!barbeariaId) return;
+
+    const refreshInterval = setInterval(() => {
+      // Só recarrega se não estiver carregando e se a página estiver visível
+      if (!loading && document.visibilityState === 'visible') {
+        console.log('🔄 [AUTO-REFRESH] Atualizando dados do painel...');
+        carregarDados();
+      }
+    }, 10000); // 10 segundos
+
+    return () => clearInterval(refreshInterval);
+  }, [barbeariaId, loading]);
+
   // Carregar dados da API quando o componente montar ou barbeariaId mudar
   // Mas só se estiver em uma rota do dono (não na página inicial)
   useEffect(() => {

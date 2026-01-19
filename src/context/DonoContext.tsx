@@ -368,12 +368,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     // Mas permitir forçar o carregamento (útil após criar/atualizar/deletar)
     const agora = Date.now();
     if (!forcar && agora - ultimoCarregamento < 1000) {
-      console.log('⏸️ [CARREGAR DADOS] Carregamento já em andamento, aguardando...');
-      // Aguardar um pouco e tentar novamente se estiver forçando
-      if (forcar) {
-        await new Promise(resolve => setTimeout(resolve, 1100));
-        return carregarDados(true);
-      }
+      console.log('⏸️ [CARREGAR DADOS] Carregamento já em andamento, ignorando...');
       return;
     }
     setUltimoCarregamento(agora);
@@ -384,6 +379,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     console.log('📥 [CARREGAR DADOS] Token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
     console.log('📥 [CARREGAR DADOS] Forçar:', forcar);
     setLoading(true);
+
+    // Timeout de segurança: após 30 segundos, forçar loading = false
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ [CARREGAR DADOS] Timeout de 30s atingido, forçando fim do loading');
+      setLoading(false);
+    }, 30000);
+
     try {
       // Carregar dados em paralelo do BANCO DE DADOS
       // IMPORTANTE: Sempre carrega do banco, nunca usa dados mockados
@@ -704,6 +706,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       setClientes([]);
       setAgendamentos([]);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
       console.log('🔚 [CARREGAR DADOS] Carregamento finalizado. Loading:', false);
     }

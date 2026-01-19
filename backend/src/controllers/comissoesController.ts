@@ -38,9 +38,6 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
         status: {
           in: ['confirmado', 'concluido'],
         },
-        status: {
-          in: ['confirmado', 'concluido'],
-        },
       },
       include: {
         servico: true,
@@ -206,9 +203,6 @@ export async function listarResumoComissoes(req: AuthRequest, res: Response) {
               data: {
                 gte: dataInicio,
                 lte: dataFim,
-              },
-              status: {
-                in: ['confirmado', 'concluido'],
               },
               status: {
                 in: ['confirmado', 'concluido'],
@@ -455,9 +449,6 @@ export async function marcarTodasComissoesComoPagas(req: AuthRequest, res: Respo
         data: {
           gte: dataInicio,
           lte: dataFim,
-        },
-        status: {
-          in: ['confirmado', 'concluido'],
         },
         status: {
           in: ['confirmado', 'concluido'],

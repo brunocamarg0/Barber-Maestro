@@ -22,6 +22,7 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
     const mesReferencia = `${ano}-${String(mes).padStart(2, '0')}`;
     const dataInicio = new Date(`${ano}-${String(mes).padStart(2, '0')}-01T00:00:00-03:00`);
     const dataFim = new Date(Number(ano), Number(mes), 0, 23, 59, 59, 999);
+    console.log(`📊 [COMISSÕES] Buscando para profissional ${profissionalId} no período ${dataInicio.toISOString()} - ${dataFim.toISOString()}`);
 
     // Buscar agendamentos do profissional no mês
     const agendamentosRaw = await prisma.agendamento.findMany({
@@ -53,6 +54,8 @@ export async function calcularComissoesProfissional(req: AuthRequest, res: Respo
         },
       },
     });
+
+    console.log(`   Encontrados ${agendamentosRaw.length} agendamentos vinculados.`);
 
     // Usar todos agendamentos validos
     const agendamentos = agendamentosRaw;

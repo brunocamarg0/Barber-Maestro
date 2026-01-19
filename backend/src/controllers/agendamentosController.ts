@@ -519,9 +519,10 @@ export async function criarAgendamento(req: Request, res: Response) {
   try {
     const { barbeariaId, clienteId, servicoId, profissionalId, cliente, telefone, data, horario, observacao } = req.body;
 
-    if (!barbeariaId || !servicoId || !data || !horario) {
-      return res.status(400).json({ error: 'Campos obrigatórios: barbeariaId, servicoId, data, horario' });
-    }
+    console.log('📅 [AGENDAMENTO] Criando novo agendamento:');
+    console.log('   barbeariaId:', barbeariaId);
+    console.log('   profissionalId:', profissionalId);
+    console.log('   cliente:', cliente);
 
     // Buscar configuração da barbearia e serviço
     const [barbearia, servico] = await Promise.all([
@@ -626,12 +627,16 @@ export async function criarAgendamento(req: Request, res: Response) {
 
     // Associar profissional se informado
     if (profissionalId) {
+      console.log('   🔗 Vinculando profissional:', profissionalId);
       await prisma.agendamentoProfissional.create({
         data: {
           agendamentoId: agendamento.id,
           profissionalId,
         },
       });
+      console.log('   ✅ Vínculo criado com sucesso');
+    } else {
+      console.log('   ⚠️ Nenhum profissionalId informado para vincular');
     }
 
     // Buscar agendamento novamente com profissional associado (se foi associado)

@@ -616,8 +616,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
     window.addEventListener('storage', handleStorageChange);
 
-    // Verificar periodicamente (fallback)
-    const interval = setInterval(checkBarbeariaId, 1000);
+    // Verificar periodicamente (fallback) - reduzido para 5 segundos para evitar sobrecarga
+    const interval = setInterval(checkBarbeariaId, 5000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -639,6 +639,9 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
     return () => clearInterval(refreshInterval);
   }, [barbeariaId, loading]);
+
+  // Não verificar token periodicamente - isso pode causar redirecionamentos prematuros
+  // O DonoLayout já faz a verificação inicial
 
   // ÚNICO Listener para carregar dados iniciais
   useEffect(() => {

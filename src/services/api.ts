@@ -60,38 +60,9 @@ export async function apiRequest<T>(
       console.warn('   Endpoint:', endpoint);
       console.warn('   Error message:', error.error || error.message);
       
-      // Se não há token e está em rota pública, apenas lançar o erro
-      if (!token && isPublicRoute) {
-        throw new Error(error.error || error.message || 'Erro na requisição');
-      }
-      
-      // Se há token mas a requisição falhou com 401, pode ser token expirado ou inválido
-      // Mas não redirecionar imediatamente - pode ser um erro temporário
-      // Apenas lançar o erro e deixar o componente tratar
-      // Não limpar o token imediatamente - pode ser um problema de rede ou servidor
-      
-      // Só limpar e redirecionar se:
-      // 1. Estiver em rota protegida (não pública)
-      // 2. Não estiver já na página de login
-      // 3. O erro indicar claramente que o token está inválido/expirado
-      const errorMessage = (error.error || error.message || '').toLowerCase();
-      const isTokenError = errorMessage.includes('token') || 
-                          errorMessage.includes('expirado') || 
-                          errorMessage.includes('inválido') ||
-                          errorMessage.includes('autenticação');
-      
-      if (!isPublicRoute && !currentPath.includes('/login') && token && isTokenError) {
-        console.error('❌ [API REQUEST] Token inválido/expirado detectado. Redirecionando para login...');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('userType');
-        localStorage.removeItem('barbearia');
-        window.location.href = '/login?tab=owner';
-        return; // Não lançar erro adicional, já está redirecionando
-      }
-      
-      // Se não é claramente um erro de token, apenas lançar o erro
-      // O componente pode tratar o erro de forma apropriada
+      // Apenas lançar o erro - não fazer nada mais
+      // O componente que chamou a API deve tratar o erro
+      // Isso evita redirecionamentos prematuros e loops
     }
     
     // Para erros 404, incluir mais informações

@@ -68,7 +68,22 @@ import Funcionalidades from "./pages/Funcionalidades";
 import Cadastro from "./pages/Cadastro";
 import EsqueciSenha from "./pages/EsqueciSenha";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: any) => {
+        // Não tentar novamente se for erro 401 (token inválido)
+        if (error?.status === 401 || error?.message?.includes('401')) {
+          return false;
+        }
+        // Tentar no máximo 2 vezes para outros erros
+        return failureCount < 2;
+      },
+      refetchOnWindowFocus: false, // Não refazer requisição ao focar na janela
+      refetchOnReconnect: true, // Refazer apenas ao reconectar
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

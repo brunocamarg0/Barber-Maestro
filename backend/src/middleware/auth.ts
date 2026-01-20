@@ -73,12 +73,14 @@ export async function autenticarDono(
     }
     
     console.log('🔐 autenticarDono: Buscando dono no banco com ID:', userId);
-    // Buscar usuário dono
+    // Buscar usuário dono (sem include barbearia para evitar erro se coluna foto não existir)
     let dono;
     try {
       dono = await prisma.usuarioDono.findUnique({
         where: { id: userId },
-        include: { barbearia: true },
+        // Removido include: { barbearia: true } temporariamente
+        // pois a coluna foto pode não existir no banco ainda
+        // O barbeariaId já está disponível no modelo UsuarioDono
       });
     } catch (prismaError: any) {
       console.error('❌ autenticarDono: Erro ao buscar dono no Prisma:');

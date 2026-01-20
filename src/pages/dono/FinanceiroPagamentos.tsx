@@ -160,20 +160,13 @@ export default function FinanceiroPagamentos() {
   const pagamentosDinheiro = pagamentosFiltrados.filter((p) => p.metodo === "dinheiro");
   const pagamentosPendentes = pagamentosFiltrados.filter((p) => p.status === "pendente");
 
-  // VALORES HARDCODED PARA MARKETING
-  const totalPix = 7200;
-  const totalCartaoCredito = 3100;
-  const totalCartaoDebito = 2000;
-  const totalDinheiro = 3150;
-  const totalGeral = 15450;
-  const totalPendente = 1200;
-
-  // const totalPix = pagamentosPix.reduce((sum, p) => sum + p.valor, 0);
-  // const totalCartaoCredito = pagamentosCartaoCredito.reduce((sum, p) => sum + p.valor, 0);
-  // const totalCartaoDebito = pagamentosCartaoDebito.reduce((sum, p) => sum + p.valor, 0);
-  // const totalDinheiro = pagamentosDinheiro.reduce((sum, p) => sum + p.valor, 0);
-  // const totalGeral = totalPix + totalCartaoCredito + totalCartaoDebito + totalDinheiro;
-  // const totalPendente = pagamentosPendentes.reduce((sum, p) => sum + p.valor, 0);
+  // Calcular totais reais dos pagamentos
+  const totalPix = pagamentosPix.reduce((sum, p) => sum + p.valor, 0);
+  const totalCartaoCredito = pagamentosCartaoCredito.reduce((sum, p) => sum + p.valor, 0);
+  const totalCartaoDebito = pagamentosCartaoDebito.reduce((sum, p) => sum + p.valor, 0);
+  const totalDinheiro = pagamentosDinheiro.reduce((sum, p) => sum + p.valor, 0);
+  const totalGeral = totalPix + totalCartaoCredito + totalCartaoDebito + totalDinheiro;
+  const totalPendente = pagamentosPendentes.reduce((sum, p) => sum + p.valor, 0);
 
   // Taxa de gateway estimada
   const taxaGatewayTotal = pagamentosFiltrados.reduce((sum, p) => sum + (p.taxaGateway || 0), 0);

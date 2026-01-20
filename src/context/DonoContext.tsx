@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import {
   KPI,
   AgendamentoDono,
@@ -342,6 +342,94 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       clearInterval(interval);
     };
   }, [barbeariaId]);
+
+  // Função leve para recarregar apenas agendamentos (usada no polling)
+  const recarregarAgendamentos = useCallback(async () => {
+    if (!barbeariaId) return;
+
+    try {
+      const agendamentosData = await apiGet<any[]>(`/agendamentos/barbearia/${barbeariaId}`).catch((err) => {
+        console.warn('⚠️ Erro ao recarregar agendamentos:', err);
+        return null;
+      });
+
+      if (!agendamentosData) return;
+
+      // Transformar agendamentos da API para o formato do frontend
+      const agendamentosTransformados: AgendamentoDono[] = agendamentosData.map((ag: any) => ({
+        id: ag.id,
+        clienteId: ag.clienteId || '',
+        clienteNome: ag.clienteRel?.nome || ag.cliente || 'Cliente não cadastrado',
+        clienteTelefone: ag.clienteRel?.telefone || ag.telefone,
+        profissionalId: ag.profissionais?.[0]?.profissionalId || '',
+        profissionalNome: ag.profissionais?.[0]?.profissional?.nome || 'Não atribuído',
+        servicoId: ag.servicoId,
+        servicoNome: ag.servico?.nome || '',
+        data: ag.data.split('T')[0],
+        horario: ag.horario || new Date(ag.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        duracao: ag.servico?.duracao || 40,
+        valor: ag.servico?.preco || 0,
+        status: ag.status,
+        observacoes: ag.observacao,
+        dataCriacao: ag.createdAt,
+      }));
+
+      // Só atualizar se houver diferença (evitar re-renders desnecessários)
+      setAgendamentos(prev => {
+        // Comparar por IDs e quantidade
+        const prevIds = new Set(prev.map(a => a.id));
+        const newIds = new Set(agendamentosTransformados.map(a => a.id));
+        
+        // Se quantidade ou IDs forem diferentes, atualizar
+        if (prev.length !== agendamentosTransformados.length || 
+            ![...newIds].every(id => prevIds.has(id)) ||
+            ![...prevIds].every(id => newIds.has(id))) {
+          console.log('🔄 [POLLING] Novos agendamentos detectados! Atualizando...');
+          return agendamentosTransformados;
+        }
+        
+        return prev;
+      });
+    } catch (error) {
+      console.error('❌ Erro ao recarregar agendamentos:', error);
+    }
+  }, [barbeariaId]);
+
+  // Polling automático para atualizar agendamentos em tempo real
+  // Verifica novos agendamentos a cada 10 segundos quando estiver na página do dono
+  useEffect(() => {
+    if (!barbeariaId) return;
+
+    const checkAndUpdate = () => {
+      const currentPath = window.location.pathname;
+      const isDonoRoute = currentPath.startsWith('/dono');
+      
+      // Só fazer polling se estiver na página do dono e a página estiver visível
+      if (isDonoRoute && !document.hidden) {
+        recarregarAgendamentos();
+      }
+    };
+
+    // Verificar imediatamente ao montar
+    checkAndUpdate();
+
+    // Configurar polling a cada 10 segundos
+    const pollingInterval = setInterval(checkAndUpdate, 10000);
+
+    // Também verificar quando a página voltar a ficar visível
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkAndUpdate();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(pollingInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [barbeariaId, recarregarAgendamentos]);
 
   const carregarDados = async (forcar: boolean = false) => {
     if (!barbeariaId) {

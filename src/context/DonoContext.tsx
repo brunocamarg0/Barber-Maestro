@@ -406,13 +406,14 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   }, [kpisData, errorKpi]);
 
   // Hook para buscar Professionais
+  const queryEnabledProfs = !!barbeariaId && hasToken;
   const { data: qProfissionais, isLoading: loadingProfs, error: errorProfs } = useQuery({
     queryKey: ['profissionais', barbeariaId],
     queryFn: () => {
       console.log('👥 [QUERY] Buscando profissionais para barbeariaId:', barbeariaId);
       return apiGet<any[]>('/dono/profissionais');
     },
-    enabled: !!barbeariaId && hasToken,
+    enabled: queryEnabledProfs,
     staleTime: 1000 * 60 * 10,
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.message?.includes('401')) {
@@ -422,6 +423,18 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2;
     },
   });
+  
+  // Log quando a query é habilitada/desabilitada
+  useEffect(() => {
+    console.log('🔧 [QUERY PROFISSIONAIS] Estado:', {
+      enabled: queryEnabledProfs,
+      barbeariaId: !!barbeariaId,
+      hasToken,
+      isLoading: loadingProfs,
+      hasData: !!qProfissionais,
+      hasError: !!errorProfs,
+    });
+  }, [queryEnabledProfs, loadingProfs, qProfissionais, errorProfs, barbeariaId, hasToken]);
   
   useEffect(() => {
     if (errorProfs) {
@@ -487,13 +500,14 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   });
 
   // Hook para buscar Serviços
+  const queryEnabledServicos = !!barbeariaId && hasToken;
   const { data: qServicos, isLoading: loadingSrvs, error: errorServicos } = useQuery({
     queryKey: ['servicos', barbeariaId],
     queryFn: () => {
       console.log('✂️ [QUERY] Buscando serviços para barbeariaId:', barbeariaId);
       return apiGet<any[]>('/dono/servicos');
     },
-    enabled: !!barbeariaId && hasToken,
+    enabled: queryEnabledServicos,
     staleTime: 1000 * 60 * 30,
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.message?.includes('401')) {
@@ -503,6 +517,18 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2;
     },
   });
+  
+  // Log quando a query é habilitada/desabilitada
+  useEffect(() => {
+    console.log('🔧 [QUERY SERVIÇOS] Estado:', {
+      enabled: queryEnabledServicos,
+      barbeariaId: !!barbeariaId,
+      hasToken,
+      isLoading: loadingSrvs,
+      hasData: !!qServicos,
+      hasError: !!errorServicos,
+    });
+  }, [queryEnabledServicos, loadingSrvs, qServicos, errorServicos, barbeariaId, hasToken]);
   
   useEffect(() => {
     if (errorServicos) {
@@ -514,13 +540,14 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   }, [qServicos, errorServicos]);
 
   // Hook para buscar Produtos
-  const { data: qProdutos, error: errorProdutos } = useQuery({
+  const queryEnabledProdutos = !!barbeariaId && hasToken;
+  const { data: qProdutos, error: errorProdutos, isLoading: loadingProdutos } = useQuery({
     queryKey: ['produtos', barbeariaId],
     queryFn: () => {
       console.log('📦 [QUERY] Buscando produtos para barbeariaId:', barbeariaId);
       return apiGet<any[]>('/dono/produtos');
     },
-    enabled: !!barbeariaId && hasToken,
+    enabled: queryEnabledProdutos,
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.message?.includes('401')) {
         console.error('❌ [QUERY PRODUTOS] Erro 401, não tentando novamente');
@@ -529,6 +556,18 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2;
     },
   });
+  
+  // Log quando a query é habilitada/desabilitada
+  useEffect(() => {
+    console.log('🔧 [QUERY PRODUTOS] Estado:', {
+      enabled: queryEnabledProdutos,
+      barbeariaId: !!barbeariaId,
+      hasToken,
+      isLoading: loadingProdutos,
+      hasData: !!qProdutos,
+      hasError: !!errorProdutos,
+    });
+  }, [queryEnabledProdutos, loadingProdutos, qProdutos, errorProdutos, barbeariaId, hasToken]);
   
   useEffect(() => {
     if (errorProdutos) {

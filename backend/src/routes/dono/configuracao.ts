@@ -78,22 +78,43 @@ router.put('/', async (req: AuthRequest, res) => {
     }
 
     console.log('💾 [CONFIG BACKEND] Atualizando barbearia no banco...');
+    
+    // Preparar dados de atualização (sem foto por enquanto se coluna não existir)
+    const updateData: any = {
+      ...(dados.nome && { nome: dados.nome }),
+      ...(dados.cnpjCpf !== undefined && { cnpjCpf: dados.cnpjCpf }),
+      ...(dados.responsavel !== undefined && { responsavel: dados.responsavel }),
+      ...(dados.email !== undefined && { email: dados.email }),
+      ...(dados.telefone !== undefined && { telefone: dados.telefone }),
+      ...(dados.endereco !== undefined && { endereco: dados.endereco }),
+      ...(dados.cidade !== undefined && { cidade: dados.cidade }),
+      ...(dados.bairro !== undefined && { bairro: dados.bairro }),
+      ...(dados.cep !== undefined && { cep: dados.cep }),
+      ...(dados.modoConfirmacao !== undefined && { modoConfirmacao: dados.modoConfirmacao }),
+      ...(dados.status !== undefined && { status: dados.status }),
+    };
+    
+    // Tentar adicionar foto apenas se a coluna existir
+    // Se a coluna não existir, o erro será capturado e a foto será ignorada
+    if (dados.foto !== undefined) {
+      try {
+        // Verificar se a coluna existe tentando fazer um select primeiro
+        await prisma.$queryRaw`SELECT foto FROM "Barbearia" WHERE id = ${barbeariaId} LIMIT 1`;
+        updateData.foto = dados.foto;
+        console.log('💾 [CONFIG BACKEND] Coluna foto existe, incluindo no update');
+      } catch (colError: any) {
+        if (colError?.code === 'P2022' || colError?.message?.includes('does not exist')) {
+          console.warn('⚠️ [CONFIG BACKEND] Coluna foto não existe ainda, ignorando campo foto');
+          // Não adicionar foto ao updateData
+        } else {
+          throw colError; // Re-throw se for outro erro
+        }
+      }
+    }
+    
     const barbearia = await prisma.barbearia.update({
       where: { id: barbeariaId },
-      data: {
-        ...(dados.nome && { nome: dados.nome }),
-        ...(dados.cnpjCpf !== undefined && { cnpjCpf: dados.cnpjCpf }),
-        ...(dados.responsavel !== undefined && { responsavel: dados.responsavel }),
-        ...(dados.email !== undefined && { email: dados.email }),
-        ...(dados.telefone !== undefined && { telefone: dados.telefone }),
-        ...(dados.endereco !== undefined && { endereco: dados.endereco }),
-        ...(dados.cidade !== undefined && { cidade: dados.cidade }),
-        ...(dados.bairro !== undefined && { bairro: dados.bairro }),
-        ...(dados.cep !== undefined && { cep: dados.cep }),
-        ...(dados.modoConfirmacao !== undefined && { modoConfirmacao: dados.modoConfirmacao }),
-        ...(dados.status !== undefined && { status: dados.status }),
-        ...(dados.foto !== undefined && { foto: dados.foto }),
-      },
+      data: updateData,
     });
 
     console.log('✅ [CONFIG BACKEND] Configuração atualizada com sucesso');

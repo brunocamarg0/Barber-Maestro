@@ -31,6 +31,7 @@ import {
   LogOut,
   Building2,
 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,7 @@ import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 
 function DonoLayoutContent() {
   const location = useLocation();
-  const { notificacoes } = useDono();
+  const { notificacoes, configuracao } = useDono();
   const { theme } = useTheme();
   const notificacoesNaoLidas = notificacoes?.filter((n) => !n.lida).length || 0;
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -159,12 +160,21 @@ function DonoLayoutContent() {
         <Sidebar className="bg-sidebar border-r border-sidebar-border">
         <SidebarHeader className="border-b border-sidebar-border bg-sidebar">
           <div className="flex items-center gap-3 px-4 py-3">
-            <div className="bg-primary p-2 rounded-full">
-              <Building2 className="h-5 w-5 text-primary-foreground" />
-            </div>
+            {configuracao?.foto ? (
+              <Avatar className="h-10 w-10 border-2 border-primary/20">
+                <AvatarImage src={configuracao.foto} alt={configuracao.nome || "Barbearia"} />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  <Building2 className="h-5 w-5" />
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <div className="bg-primary p-2 rounded-full">
+                <Building2 className="h-5 w-5 text-primary-foreground" />
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="font-semibold text-sm text-sidebar-foreground">
-                Painel do Dono
+                {configuracao?.nome || "Painel do Dono"}
               </span>
               <span className="text-xs text-sidebar-foreground/70">
                 Gestão Completa

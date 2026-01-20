@@ -607,13 +607,36 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   });
 
   // Hook para buscar Pagamentos
-  const { data: qPagamentos, isLoading: loadingPags } = useQuery({
+  const queryEnabledPagamentos = !!barbeariaId && hasToken;
+  const { data: qPagamentos, isLoading: loadingPags, error: errorPagamentos } = useQuery({
     queryKey: ['pagamentos', barbeariaId],
-    queryFn: () => apiGet<any[]>('/dono/financeiro/pagamentos'),
-    enabled: !!barbeariaId,
+    queryFn: () => {
+      console.log('💰 [QUERY] Buscando pagamentos para barbeariaId:', barbeariaId);
+      return apiGet<any[]>('/dono/financeiro/pagamentos');
+    },
+    enabled: queryEnabledPagamentos,
     staleTime: 1000 * 30, // 30 segundos de cache (atualiza mais frequentemente)
     refetchInterval: 1000 * 30, // Refetch a cada 30 segundos quando na página
+    retry: (failureCount, error: any) => {
+      if (error?.status === 401 || error?.message?.includes('401')) {
+        console.error('❌ [QUERY PAGAMENTOS] Erro 401, não tentando novamente');
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
+  
+  // Log quando a query é habilitada/desabilitada
+  useEffect(() => {
+    console.log('🔧 [QUERY PAGAMENTOS] Estado:', {
+      enabled: queryEnabledPagamentos,
+      barbeariaId: !!barbeariaId,
+      hasToken,
+      isLoading: loadingPags,
+      hasData: !!qPagamentos,
+      hasError: !!errorPagamentos,
+    });
+  }, [queryEnabledPagamentos, loadingPags, qPagamentos, errorPagamentos, barbeariaId, hasToken]);
 
   // --- SINCRONIZAÇÃO DOS DADOS DO REACT QUERY COM O ESTADO DO CONTEXTO ---
 

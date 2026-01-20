@@ -18,17 +18,41 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as firestoreUtils from "@/lib/firestoreUtils";
 
-// Função para decodificar JWT e obter barbeariaId
-function obterBarbeariaIdDoToken(): string | null {
+// Função para decodificar JWT e obter dados do token
+function obterDadosDoToken(): { id: string; email: string; tipo: string; barbeariaId?: string } | null {
   try {
     const token = localStorage.getItem('token');
     if (!token) return null;
     
     // Decodificar JWT (sem verificar assinatura, apenas para obter dados)
     const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.barbeariaId || null;
+    return payload;
   } catch (error) {
     console.error('Erro ao decodificar token:', error);
+    return null;
+  }
+}
+
+// Função para obter barbeariaId do token ou localStorage
+function obterBarbeariaIdDoToken(): string | null {
+  // O token não contém barbeariaId diretamente, precisa buscar do localStorage
+  // que foi salvo durante o login
+  try {
+    const barbeariaStr = localStorage.getItem('barbearia');
+    if (barbeariaStr) {
+      const barbearia = JSON.parse(barbeariaStr);
+      return barbearia.id || null;
+    }
+    
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      return user.barbeariaId || null;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Erro ao obter barbeariaId:', error);
     return null;
   }
 }
@@ -252,30 +276,37 @@ const configuracaoInicial: ConfiguracaoBarbearia = {
 
 export function DonoProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  // Obter barbeariaId do token JWT (prioridade) ou localStorage (fallback)
+  // Obter barbeariaId do localStorage (salvo durante o login)
+  // O token JWT não contém barbeariaId, apenas id, email e tipo
   const getBarbeariaIdFromStorage = (): string | null => {
-    // Primeiro tenta obter do token JWT
-    const tokenId = obterBarbeariaIdDoToken();
-    if (tokenId) return tokenId;
-    
-    // Fallback: tenta obter do localStorage
     try {
-      const userStr = localStorage.getItem('user');
-      const barbeariaStr = localStorage.getItem('barbearia');
+      console.log('🔍 [DONO CONTEXT] Buscando barbeariaId no localStorage...');
       
+      // Primeiro tenta obter do objeto barbearia salvo no login
+      const barbeariaStr = localStorage.getItem('barbearia');
       if (barbeariaStr) {
         const barbearia = JSON.parse(barbeariaStr);
+        console.log('✅ [DONO CONTEXT] barbeariaId encontrado em localStorage.barbearia:', barbearia.id);
         return barbearia.id || null;
       }
       
+      // Fallback: tenta obter do objeto user
+      const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        return user.barbeariaId || null;
+        if (user.barbeariaId) {
+          console.log('✅ [DONO CONTEXT] barbeariaId encontrado em localStorage.user:', user.barbeariaId);
+          return user.barbeariaId;
+        }
       }
       
+      console.warn('⚠️ [DONO CONTEXT] barbeariaId não encontrado no localStorage');
+      console.warn('   localStorage.barbearia:', localStorage.getItem('barbearia'));
+      console.warn('   localStorage.user:', localStorage.getItem('user'));
+      console.warn('   localStorage.token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
       return null;
     } catch (error) {
-      console.error('Erro ao obter barbeariaId do localStorage:', error);
+      console.error('❌ [DONO CONTEXT] Erro ao obter barbeariaId do localStorage:', error);
       return null;
     }
   };
@@ -304,20 +335,43 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // Verificar se há token antes de fazer requisições
   const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('token');
   
+  // Log para debug
+  useEffect(() => {
+    console.log('🔍 [DONO CONTEXT] Estado atual:');
+    console.log('   barbeariaId:', barbeariaId);
+    console.log('   hasToken:', hasToken);
+    console.log('   token presente:', !!localStorage.getItem('token'));
+    console.log('   userType:', localStorage.getItem('userType'));
+  }, [barbeariaId, hasToken]);
+  
   // Hook para buscar KPIs
-  const { data: kpisData, isLoading: loadingKpi } = useQuery({
+  const { data: kpisData, isLoading: loadingKpi, error: errorKpi } = useQuery({
     queryKey: ['kpis', barbeariaId],
-    queryFn: () => apiGet<any>('/dono/dashboard/kpis'),
+    queryFn: () => {
+      console.log('📊 [QUERY] Buscando KPIs para barbeariaId:', barbeariaId);
+      return apiGet<any>('/dono/dashboard/kpis');
+    },
     enabled: !!barbeariaId && hasToken, // Só fazer requisição se tiver token
     staleTime: 1000 * 60 * 5, // 5 minutos de cache
     retry: (failureCount, error: any) => {
       // Não tentar novamente se for erro 401 (token inválido)
       if (error?.status === 401 || error?.message?.includes('401')) {
+        console.error('❌ [QUERY KPIs] Erro 401, não tentando novamente');
         return false;
       }
       return failureCount < 2; // Tentar no máximo 2 vezes
     },
   });
+  
+  // Log de erros nas queries
+  useEffect(() => {
+    if (errorKpi) {
+      console.error('❌ [QUERY KPIs] Erro ao buscar KPIs:', errorKpi);
+    }
+    if (kpisData) {
+      console.log('✅ [QUERY KPIs] KPIs carregados:', kpisData);
+    }
+  }, [kpisData, errorKpi]);
 
   // Hook para buscar Professionais
   const { data: qProfissionais, isLoading: loadingProfs } = useQuery({
@@ -334,18 +388,31 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   });
 
   // Hook para buscar Clientes
-  const { data: qClientes, isLoading: loadingClis } = useQuery({
+  const { data: qClientes, isLoading: loadingClis, error: errorClientes } = useQuery({
     queryKey: ['clientes', barbeariaId],
-    queryFn: () => apiGet<any[]>('/dono/clientes'),
+    queryFn: () => {
+      console.log('👤 [QUERY] Buscando clientes para barbeariaId:', barbeariaId);
+      return apiGet<any[]>('/dono/clientes');
+    },
     enabled: !!barbeariaId && hasToken,
     staleTime: 1000 * 60 * 10,
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.message?.includes('401')) {
+        console.error('❌ [QUERY CLIENTES] Erro 401, não tentando novamente');
         return false;
       }
       return failureCount < 2;
     },
   });
+  
+  useEffect(() => {
+    if (errorClientes) {
+      console.error('❌ [QUERY CLIENTES] Erro ao buscar clientes:', errorClientes);
+    }
+    if (qClientes) {
+      console.log('✅ [QUERY CLIENTES] Clientes carregados:', qClientes.length);
+    }
+  }, [qClientes, errorClientes]);
 
   // Hook para buscar Agendamentos
   const { data: qAgendamentos, isLoading: loadingAgends } = useQuery({

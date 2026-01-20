@@ -363,17 +363,27 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     };
   }, [hasToken]);
   
-  // Log para debug
+  // Log para debug - FORÇAR LOG VISÍVEL
   useEffect(() => {
+    const tokenPresent = typeof window !== 'undefined' && !!localStorage.getItem('token');
+    console.log('═══════════════════════════════════════════════════════════');
     console.log('🔍 [DONO CONTEXT] Estado atual:');
     console.log('   barbeariaId:', barbeariaId);
-    console.log('   hasToken:', hasToken);
-    console.log('   token presente:', !!localStorage.getItem('token'));
+    console.log('   hasToken (state):', hasToken);
+    console.log('   token presente (localStorage):', tokenPresent);
     console.log('   userType:', localStorage.getItem('userType'));
     console.log('   Query habilitada (profissionais):', !!barbeariaId && hasToken);
     console.log('   Query habilitada (clientes):', !!barbeariaId && hasToken);
     console.log('   Query habilitada (serviços):', !!barbeariaId && hasToken);
     console.log('   Query habilitada (produtos):', !!barbeariaId && hasToken);
+    console.log('   Query habilitada (pagamentos):', !!barbeariaId && hasToken);
+    console.log('═══════════════════════════════════════════════════════════');
+    
+    // Se hasToken está false mas o token está presente, forçar atualização
+    if (!hasToken && tokenPresent) {
+      console.warn('⚠️ [DONO CONTEXT] hasToken está false mas token está presente! Forçando atualização...');
+      setHasToken(true);
+    }
   }, [barbeariaId, hasToken]);
   
   // Hook para buscar KPIs

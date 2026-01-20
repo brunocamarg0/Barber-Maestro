@@ -73,6 +73,7 @@ interface DonoContextType {
   toggleServicoAtivo: (id: string) => Promise<void>;
 
   registrarPagamento: (pagamento: Omit<PagamentoDono, "id">) => Promise<void>;
+  registrarPagamentoManual: (agendamentoId: string, valor: number, metodo: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito', observacao?: string) => Promise<void>;
 
   criarPromocao: (promocao: Omit<PromocaoDono, "id">) => Promise<void>;
   atualizarPromocao: (id: string, dados: Partial<PromocaoDono>) => Promise<void>;
@@ -1090,6 +1091,47 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     queryClient.invalidateQueries({ queryKey: [barbeariaId] });
   };
 
+  // Registrar pagamento manual/presencial
+  const registrarPagamentoManual = async (
+    agendamentoId: string, 
+    valor: number, 
+    metodo: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito',
+    observacao?: string
+  ): Promise<void> => {
+    try {
+      if (!barbeariaId) {
+        toast.error('Barbearia não identificada');
+        throw new Error('Barbearia não identificada');
+      }
+
+      console.log('💰 Registrando pagamento manual:', { agendamentoId, valor, metodo });
+
+      const response = await apiPost<any>('/dono/financeiro/pagamentos/manual', {
+        agendamentoId,
+        valor,
+        metodo,
+        observacao,
+      });
+
+      if (response.success) {
+        // Invalidar queries para atualizar dados
+        queryClient.invalidateQueries({ queryKey: ['agendamentos', barbeariaId] });
+        queryClient.invalidateQueries({ queryKey: ['pagamentos', barbeariaId] });
+        
+        // Recarregar dados para atualizar a lista
+        await carregarDados(true);
+        
+        toast.success('Pagamento registrado com sucesso!');
+      } else {
+        throw new Error(response.error || 'Erro ao registrar pagamento');
+      }
+    } catch (error: any) {
+      console.error('❌ Erro ao registrar pagamento manual:', error);
+      toast.error(error.message || 'Erro ao registrar pagamento');
+      throw error;
+    }
+  };
+
   // Funções de promoção
   const criarPromocao = async (promocao: Omit<PromocaoDono, "id">) => {
     try {
@@ -1295,6 +1337,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         removerServico,
         toggleServicoAtivo,
         registrarPagamento,
+        registrarPagamentoManual,
         criarPromocao,
         atualizarPromocao,
         responderAvaliacao,

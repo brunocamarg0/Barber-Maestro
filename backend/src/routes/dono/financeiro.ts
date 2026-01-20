@@ -9,6 +9,7 @@ router.use(autenticarDono);
 
 router.get('/pagamentos', financeiroController.listarPagamentos);
 router.get('/estatisticas', financeiroController.obterEstatisticasFinanceiras);
+router.post('/pagamentos/manual', financeiroController.registrarPagamentoManual);
 
 export default router;
 

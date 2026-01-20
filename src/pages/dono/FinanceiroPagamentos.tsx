@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { format } from "date-fns";
 import { useDono } from "@/context/DonoContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,9 @@ import {
   TrendingUp,
   TrendingDown,
   Calendar,
-  Filter
+  Filter,
+  Plus,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -39,20 +42,100 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function FinanceiroPagamentos() {
-  const { pagamentos, agendamentos } = useDono();
+  const { pagamentos, agendamentos, registrarPagamentoManual } = useDono();
   const [dataInicio, setDataInicio] = useState(
     new Date(new Date().setDate(1)).toISOString().split("T")[0]
   );
   const [dataFim, setDataFim] = useState(new Date().toISOString().split("T")[0]);
   const [filtroMetodo, setFiltroMetodo] = useState("todos");
+  const [modalPagamento, setModalPagamento] = useState(false);
+  const [isRegistrando, setIsRegistrando] = useState(false);
+  const [formPagamento, setFormPagamento] = useState({
+    agendamentoId: "",
+    valor: "",
+    metodo: "dinheiro" as "dinheiro" | "pix" | "cartao_credito" | "cartao_debito",
+    observacao: "",
+  });
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
     }).format(valor);
+  };
+
+  // Agendamentos sem pagamento (para o modal)
+  const agendamentosSemPagamento = useMemo(() => {
+    const agendamentosComPagamento = new Set(pagamentos.map(p => p.agendamentoId));
+    return agendamentos.filter(a => 
+      !agendamentosComPagamento.has(a.id) && 
+      (a.status === "confirmado" || a.status === "concluido" || a.status === "pendente")
+    );
+  }, [agendamentos, pagamentos]);
+
+  const handleRegistrarPagamento = async () => {
+    // Validações
+    if (!formPagamento.agendamentoId) {
+      toast.error("Selecione um agendamento");
+      return;
+    }
+    if (!formPagamento.valor || parseFloat(formPagamento.valor) <= 0) {
+      toast.error("Informe um valor válido");
+      return;
+    }
+
+    setIsRegistrando(true);
+    try {
+      await registrarPagamentoManual(
+        formPagamento.agendamentoId,
+        parseFloat(formPagamento.valor),
+        formPagamento.metodo,
+        formPagamento.observacao || undefined
+      );
+      
+      // Limpar formulário e fechar modal
+      setFormPagamento({
+        agendamentoId: "",
+        valor: "",
+        metodo: "dinheiro",
+        observacao: "",
+      });
+      setModalPagamento(false);
+    } catch (error: any) {
+      // Erro já foi tratado no contexto
+      console.error("Erro ao registrar pagamento:", error);
+    } finally {
+      setIsRegistrando(false);
+    }
+  };
+
+  // Quando selecionar um agendamento, preencher o valor automaticamente
+  const handleAgendamentoChange = (agendamentoId: string) => {
+    const agendamento = agendamentos.find(a => a.id === agendamentoId);
+    if (agendamento) {
+      setFormPagamento({
+        ...formPagamento,
+        agendamentoId,
+        valor: agendamento.valor.toString(),
+      });
+    } else {
+      setFormPagamento({
+        ...formPagamento,
+        agendamentoId,
+        valor: "",
+      });
+    }
   };
 
   // Filtrar pagamentos por período
@@ -202,10 +285,16 @@ export default function FinanceiroPagamentos() {
             Controle financeiro completo da sua barbearia
           </p>
         </div>
-        <Button variant="outline" onClick={handleExportarCSV}>
-          <Download className="h-4 w-4 mr-2" />
-          Exportar CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setModalPagamento(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Registrar Pagamento
+          </Button>
+          <Button variant="outline" onClick={handleExportarCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -448,6 +537,166 @@ export default function FinanceiroPagamentos() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Registrar Pagamento Manual */}
+      <Dialog open={modalPagamento} onOpenChange={setModalPagamento}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Registrar Pagamento Presencial</DialogTitle>
+            <DialogDescription>
+              Registre um pagamento feito presencialmente na barbearia (dinheiro, PIX, cartão)
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="agendamento">Agendamento *</Label>
+              <Select
+                value={formPagamento.agendamentoId}
+                onValueChange={handleAgendamentoChange}
+              >
+                <SelectTrigger id="agendamento">
+                  <SelectValue placeholder="Selecione um agendamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {agendamentosSemPagamento.length === 0 ? (
+                    <SelectItem value="" disabled>
+                      Nenhum agendamento sem pagamento encontrado
+                    </SelectItem>
+                  ) : (
+                    agendamentosSemPagamento.map((agendamento) => (
+                      <SelectItem key={agendamento.id} value={agendamento.id}>
+                        {agendamento.clienteNome} - {agendamento.servicoNome} - {format(new Date(agendamento.data), "dd/MM/yyyy")} às {agendamento.horario} - {formatarMoeda(agendamento.valor)}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {agendamentosSemPagamento.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Todos os agendamentos já possuem pagamento registrado
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="valor">Valor (R$) *</Label>
+                <Input
+                  id="valor"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formPagamento.valor}
+                  onChange={(e) => setFormPagamento({ ...formPagamento, valor: e.target.value })}
+                  placeholder="0,00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="metodo">Método de Pagamento *</Label>
+                <Select
+                  value={formPagamento.metodo}
+                  onValueChange={(value) => setFormPagamento({ ...formPagamento, metodo: value as typeof formPagamento.metodo })}
+                >
+                  <SelectTrigger id="metodo">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dinheiro">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-4 w-4" />
+                        Dinheiro
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pix">
+                      <div className="flex items-center gap-2">
+                        <QrCode className="h-4 w-4" />
+                        PIX
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="cartao_debito">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        Cartão Débito
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="cartao_credito">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        Cartão Crédito
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="observacao">Observação (Opcional)</Label>
+              <Textarea
+                id="observacao"
+                value={formPagamento.observacao}
+                onChange={(e) => setFormPagamento({ ...formPagamento, observacao: e.target.value })}
+                placeholder="Ex: Pagamento recebido em dinheiro, troco de R$ 5,00..."
+                rows={3}
+              />
+            </div>
+
+            {formPagamento.agendamentoId && (
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-sm font-medium mb-1">Resumo do Agendamento:</p>
+                {(() => {
+                  const agendamento = agendamentos.find(a => a.id === formPagamento.agendamentoId);
+                  if (!agendamento) return null;
+                  return (
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p>Cliente: {agendamento.clienteNome}</p>
+                      <p>Serviço: {agendamento.servicoNome}</p>
+                      <p>Data: {format(new Date(agendamento.data), "dd/MM/yyyy")} às {agendamento.horario}</p>
+                      <p className="font-semibold text-foreground">Valor do Serviço: {formatarMoeda(agendamento.valor)}</p>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setModalPagamento(false);
+                setFormPagamento({
+                  agendamentoId: "",
+                  valor: "",
+                  metodo: "dinheiro",
+                  observacao: "",
+                });
+              }}
+              disabled={isRegistrando}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleRegistrarPagamento}
+              disabled={isRegistrando || !formPagamento.agendamentoId || !formPagamento.valor}
+            >
+              {isRegistrando ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Registrando...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Registrar Pagamento
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

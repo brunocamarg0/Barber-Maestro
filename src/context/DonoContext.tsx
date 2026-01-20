@@ -433,13 +433,14 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   }, [qProfissionais, errorProfs]);
 
   // Hook para buscar Clientes
+  const queryEnabledClientes = !!barbeariaId && hasToken;
   const { data: qClientes, isLoading: loadingClis, error: errorClientes } = useQuery({
     queryKey: ['clientes', barbeariaId],
     queryFn: () => {
       console.log('👤 [QUERY] Buscando clientes para barbeariaId:', barbeariaId);
       return apiGet<any[]>('/dono/clientes');
     },
-    enabled: !!barbeariaId && hasToken,
+    enabled: queryEnabledClientes,
     staleTime: 1000 * 60 * 10,
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.message?.includes('401')) {
@@ -449,6 +450,18 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2;
     },
   });
+  
+  // Log quando a query é habilitada/desabilitada
+  useEffect(() => {
+    console.log('🔧 [QUERY CLIENTES] Estado:', {
+      enabled: queryEnabledClientes,
+      barbeariaId: !!barbeariaId,
+      hasToken,
+      isLoading: loadingClis,
+      hasData: !!qClientes,
+      hasError: !!errorClientes,
+    });
+  }, [queryEnabledClientes, loadingClis, qClientes, errorClientes, barbeariaId, hasToken]);
   
   useEffect(() => {
     if (errorClientes) {

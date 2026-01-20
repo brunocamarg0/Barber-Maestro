@@ -374,18 +374,31 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   }, [kpisData, errorKpi]);
 
   // Hook para buscar Professionais
-  const { data: qProfissionais, isLoading: loadingProfs } = useQuery({
+  const { data: qProfissionais, isLoading: loadingProfs, error: errorProfs } = useQuery({
     queryKey: ['profissionais', barbeariaId],
-    queryFn: () => apiGet<any[]>('/dono/profissionais'),
+    queryFn: () => {
+      console.log('👥 [QUERY] Buscando profissionais para barbeariaId:', barbeariaId);
+      return apiGet<any[]>('/dono/profissionais');
+    },
     enabled: !!barbeariaId && hasToken,
     staleTime: 1000 * 60 * 10,
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.message?.includes('401')) {
+        console.error('❌ [QUERY PROFISSIONAIS] Erro 401, não tentando novamente');
         return false;
       }
       return failureCount < 2;
     },
   });
+  
+  useEffect(() => {
+    if (errorProfs) {
+      console.error('❌ [QUERY PROFISSIONAIS] Erro ao buscar profissionais:', errorProfs);
+    }
+    if (qProfissionais) {
+      console.log('✅ [QUERY PROFISSIONAIS] Profissionais carregados:', qProfissionais.length);
+    }
+  }, [qProfissionais, errorProfs]);
 
   // Hook para buscar Clientes
   const { data: qClientes, isLoading: loadingClis, error: errorClientes } = useQuery({
@@ -443,17 +456,30 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   });
 
   // Hook para buscar Produtos
-  const { data: qProdutos } = useQuery({
+  const { data: qProdutos, error: errorProdutos } = useQuery({
     queryKey: ['produtos', barbeariaId],
-    queryFn: () => apiGet<any[]>('/dono/produtos'),
+    queryFn: () => {
+      console.log('📦 [QUERY] Buscando produtos para barbeariaId:', barbeariaId);
+      return apiGet<any[]>('/dono/produtos');
+    },
     enabled: !!barbeariaId && hasToken,
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.message?.includes('401')) {
+        console.error('❌ [QUERY PRODUTOS] Erro 401, não tentando novamente');
         return false;
       }
       return failureCount < 2;
     },
   });
+  
+  useEffect(() => {
+    if (errorProdutos) {
+      console.error('❌ [QUERY PRODUTOS] Erro ao buscar produtos:', errorProdutos);
+    }
+    if (qProdutos) {
+      console.log('✅ [QUERY PRODUTOS] Produtos carregados:', qProdutos.length);
+    }
+  }, [qProdutos, errorProdutos]);
 
   // Hook para buscar Promoções
   const { data: qPromocoes } = useQuery({
@@ -514,6 +540,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (qProfissionais) {
+      console.log('🔄 [SYNC] Sincronizando profissionais:', qProfissionais.length);
       const transformados = qProfissionais.map((prof: any) => ({
         id: prof.id,
         nome: prof.nome,
@@ -533,11 +560,15 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         faltas: 0,
       }));
       setProfissionais(transformados);
+      console.log('✅ [SYNC] Profissionais sincronizados:', transformados.length);
+    } else {
+      console.log('⚠️ [SYNC] qProfissionais está undefined/null');
     }
   }, [qProfissionais]);
 
   useEffect(() => {
     if (qClientes) {
+      console.log('🔄 [SYNC] Sincronizando clientes:', qClientes.length);
       const transformados = qClientes.map((cli: any) => ({
         id: cli.id,
         nome: cli.nome,
@@ -553,6 +584,9 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         dataCadastro: cli.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
       }));
       setClientes(transformados);
+      console.log('✅ [SYNC] Clientes sincronizados:', transformados.length);
+    } else {
+      console.log('⚠️ [SYNC] qClientes está undefined/null');
     }
   }, [qClientes]);
 
@@ -603,7 +637,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   }, [qServicos]);
 
   useEffect(() => {
-    if (qProdutos) setProdutos(qProdutos);
+    if (qProdutos) {
+      console.log('🔄 [SYNC] Sincronizando produtos:', qProdutos.length);
+      setProdutos(qProdutos);
+      console.log('✅ [SYNC] Produtos sincronizados:', qProdutos.length);
+    } else {
+      console.log('⚠️ [SYNC] qProdutos está undefined/null');
+    }
   }, [qProdutos]);
 
   useEffect(() => {

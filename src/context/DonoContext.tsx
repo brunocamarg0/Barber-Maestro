@@ -301,51 +301,91 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   // --- CONFIGURAÇÃO DO REACT QUERY PARA NEON ---
 
+  // Verificar se há token antes de fazer requisições
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('token');
+  
   // Hook para buscar KPIs
   const { data: kpisData, isLoading: loadingKpi } = useQuery({
     queryKey: ['kpis', barbeariaId],
     queryFn: () => apiGet<any>('/dono/dashboard/kpis'),
-    enabled: !!barbeariaId,
+    enabled: !!barbeariaId && hasToken, // Só fazer requisição se tiver token
     staleTime: 1000 * 60 * 5, // 5 minutos de cache
+    retry: (failureCount, error: any) => {
+      // Não tentar novamente se for erro 401 (token inválido)
+      if (error?.status === 401 || error?.message?.includes('401')) {
+        return false;
+      }
+      return failureCount < 2; // Tentar no máximo 2 vezes
+    },
   });
 
   // Hook para buscar Professionais
   const { data: qProfissionais, isLoading: loadingProfs } = useQuery({
     queryKey: ['profissionais', barbeariaId],
     queryFn: () => apiGet<any[]>('/dono/profissionais'),
-    enabled: !!barbeariaId,
+    enabled: !!barbeariaId && hasToken,
     staleTime: 1000 * 60 * 10,
+    retry: (failureCount, error: any) => {
+      if (error?.status === 401 || error?.message?.includes('401')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   // Hook para buscar Clientes
   const { data: qClientes, isLoading: loadingClis } = useQuery({
     queryKey: ['clientes', barbeariaId],
     queryFn: () => apiGet<any[]>('/dono/clientes'),
-    enabled: !!barbeariaId,
+    enabled: !!barbeariaId && hasToken,
     staleTime: 1000 * 60 * 10,
+    retry: (failureCount, error: any) => {
+      if (error?.status === 401 || error?.message?.includes('401')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   // Hook para buscar Agendamentos
   const { data: qAgendamentos, isLoading: loadingAgends } = useQuery({
     queryKey: ['agendamentos', barbeariaId],
     queryFn: () => apiGet<any[]>(`/agendamentos/barbearia/${barbeariaId}`),
-    enabled: !!barbeariaId,
+    enabled: !!barbeariaId && hasToken,
     staleTime: 1000 * 60 * 2, // Agendamentos expiram mais rápido
+    retry: (failureCount, error: any) => {
+      if (error?.status === 401 || error?.message?.includes('401')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   // Hook para buscar Serviços
   const { data: qServicos, isLoading: loadingSrvs } = useQuery({
     queryKey: ['servicos', barbeariaId],
     queryFn: () => apiGet<any[]>('/dono/servicos'),
-    enabled: !!barbeariaId,
+    enabled: !!barbeariaId && hasToken,
     staleTime: 1000 * 60 * 30,
+    retry: (failureCount, error: any) => {
+      if (error?.status === 401 || error?.message?.includes('401')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   // Hook para buscar Produtos
   const { data: qProdutos } = useQuery({
     queryKey: ['produtos', barbeariaId],
     queryFn: () => apiGet<any[]>('/dono/produtos'),
-    enabled: !!barbeariaId,
+    enabled: !!barbeariaId && hasToken,
+    retry: (failureCount, error: any) => {
+      if (error?.status === 401 || error?.message?.includes('401')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   // Hook para buscar Promoções

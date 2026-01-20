@@ -43,21 +43,55 @@ export async function apiRequest<T>(
     console.error('   Status Text:', response.statusText);
     console.error('   Error:', error);
     
-    // Se erro de autenticação, limpar token e redirecionar para login
-    // Mas só redirecionar se estiver em uma rota protegida (não na página inicial)
+    // Se erro de autenticação, verificar se realmente é um problema de token
+    // Não redirecionar imediatamente - pode ser um erro temporário ou de outra natureza
     if (response.status === 401) {
       const currentPath = window.location.pathname;
       const isPublicRoute = currentPath === '/' || currentPath === '/login' || currentPath === '/cadastro' || currentPath.startsWith('/funcionalidades');
       
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userType');
-      localStorage.removeItem('barbearia');
+      // Verificar se o token existe antes de remover
+      const token = localStorage.getItem('token');
+      const userType = localStorage.getItem('userType');
       
-      // Só redirecionar se não estiver em rota pública e não estiver já na página de login
-      if (!isPublicRoute && !currentPath.includes('/login')) {
-        window.location.href = '/login';
+      console.warn('⚠️ [API REQUEST] Erro 401 detectado');
+      console.warn('   Path:', currentPath);
+      console.warn('   Token presente:', !!token);
+      console.warn('   UserType:', userType);
+      console.warn('   Endpoint:', endpoint);
+      console.warn('   Error message:', error.error || error.message);
+      
+      // Se não há token e está em rota pública, apenas lançar o erro
+      if (!token && isPublicRoute) {
+        throw new Error(error.error || error.message || 'Erro na requisição');
       }
+      
+      // Se há token mas a requisição falhou com 401, pode ser token expirado ou inválido
+      // Mas não redirecionar imediatamente - pode ser um erro temporário
+      // Apenas lançar o erro e deixar o componente tratar
+      // Não limpar o token imediatamente - pode ser um problema de rede ou servidor
+      
+      // Só limpar e redirecionar se:
+      // 1. Estiver em rota protegida (não pública)
+      // 2. Não estiver já na página de login
+      // 3. O erro indicar claramente que o token está inválido/expirado
+      const errorMessage = (error.error || error.message || '').toLowerCase();
+      const isTokenError = errorMessage.includes('token') || 
+                          errorMessage.includes('expirado') || 
+                          errorMessage.includes('inválido') ||
+                          errorMessage.includes('autenticação');
+      
+      if (!isPublicRoute && !currentPath.includes('/login') && token && isTokenError) {
+        console.error('❌ [API REQUEST] Token inválido/expirado detectado. Redirecionando para login...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userType');
+        localStorage.removeItem('barbearia');
+        window.location.href = '/login?tab=owner';
+        return; // Não lançar erro adicional, já está redirecionando
+      }
+      
+      // Se não é claramente um erro de token, apenas lançar o erro
+      // O componente pode tratar o erro de forma apropriada
     }
     
     // Para erros 404, incluir mais informações

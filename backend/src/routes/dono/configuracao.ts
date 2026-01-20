@@ -141,20 +141,90 @@ router.put('/', async (req: AuthRequest, res) => {
         data: updateData,
       });
     } catch (updateError: any) {
-      // Se o erro for de coluna inexistente (P2022) e tiver foto no update, tentar sem foto
+      // Se o erro for de coluna inexistente (P2022) e tiver foto no update, usar SQL raw
       if (
         (updateError?.code === 'P2022' || updateError?.message?.includes('does not exist')) &&
         dados.foto !== undefined
       ) {
-        console.warn('⚠️ [CONFIG BACKEND] Coluna foto não existe ainda, tentando atualizar sem foto');
+        console.warn('⚠️ [CONFIG BACKEND] Coluna foto não existe ainda, usando SQL raw para atualizar sem foto');
         const updateDataSemFoto = { ...updateData };
         delete updateDataSemFoto.foto;
         
-        barbearia = await prisma.barbearia.update({
-          where: { id: barbeariaId },
-          data: updateDataSemFoto,
-        });
-        console.log('✅ [CONFIG BACKEND] Configuração atualizada (sem foto)');
+        // Construir query SQL manualmente
+        const campos: string[] = [];
+        const valores: any[] = [];
+        let paramIndex = 1;
+        
+        if (updateDataSemFoto.nome) {
+          campos.push(`nome = $${paramIndex}`);
+          valores.push(updateDataSemFoto.nome);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.cnpjCpf !== undefined) {
+          campos.push(`"cnpjCpf" = $${paramIndex}`);
+          valores.push(updateDataSemFoto.cnpjCpf);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.responsavel !== undefined) {
+          campos.push(`responsavel = $${paramIndex}`);
+          valores.push(updateDataSemFoto.responsavel);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.email !== undefined) {
+          campos.push(`email = $${paramIndex}`);
+          valores.push(updateDataSemFoto.email);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.telefone !== undefined) {
+          campos.push(`telefone = $${paramIndex}`);
+          valores.push(updateDataSemFoto.telefone);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.endereco !== undefined) {
+          campos.push(`endereco = $${paramIndex}`);
+          valores.push(updateDataSemFoto.endereco);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.cidade !== undefined) {
+          campos.push(`cidade = $${paramIndex}`);
+          valores.push(updateDataSemFoto.cidade);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.bairro !== undefined) {
+          campos.push(`bairro = $${paramIndex}`);
+          valores.push(updateDataSemFoto.bairro);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.cep !== undefined) {
+          campos.push(`cep = $${paramIndex}`);
+          valores.push(updateDataSemFoto.cep);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.modoConfirmacao !== undefined) {
+          campos.push(`"modoConfirmacao" = $${paramIndex}`);
+          valores.push(updateDataSemFoto.modoConfirmacao);
+          paramIndex++;
+        }
+        if (updateDataSemFoto.status !== undefined) {
+          campos.push(`status = $${paramIndex}`);
+          valores.push(updateDataSemFoto.status);
+          paramIndex++;
+        }
+        
+        if (campos.length > 0) {
+          campos.push(`"updatedAt" = NOW()`);
+          valores.push(barbeariaId);
+          
+          const sql = `UPDATE "Barbearia" SET ${campos.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+          const resultado = await prisma.$queryRawUnsafe(sql, ...valores);
+          barbearia = Array.isArray(resultado) ? resultado[0] : resultado;
+          console.log('✅ [CONFIG BACKEND] Configuração atualizada via SQL raw (sem foto)');
+        } else {
+          // Se não há campos para atualizar, apenas buscar a barbearia
+          barbearia = await prisma.barbearia.findUnique({
+            where: { id: barbeariaId },
+          });
+        }
       } else {
         // Se for outro erro, re-throw
         throw updateError;

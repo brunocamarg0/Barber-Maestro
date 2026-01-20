@@ -36,6 +36,7 @@ router.get('/', async (req: AuthRequest, res) => {
         bairro: true,
         cep: true,
         modoConfirmacao: true,
+        foto: true,
         dataCriacao: true,
         dataVencimento: true,
         createdAt: true,
@@ -81,6 +82,7 @@ router.put('/', async (req: AuthRequest, res) => {
         ...(dados.cep !== undefined && { cep: dados.cep }),
         ...(dados.modoConfirmacao !== undefined && { modoConfirmacao: dados.modoConfirmacao }),
         ...(dados.status !== undefined && { status: dados.status }),
+        ...(dados.foto !== undefined && { foto: dados.foto }),
       },
     });
 

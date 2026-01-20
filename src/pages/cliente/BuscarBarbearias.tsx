@@ -197,6 +197,7 @@ export default function BuscarBarbearias() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-16 w-16 border-2 border-primary/20">
+                      <AvatarImage src={barbearia.foto || undefined} alt={barbearia.nome} />
                       <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
                         {barbearia.nome.charAt(0).toUpperCase()}
                       </AvatarFallback>

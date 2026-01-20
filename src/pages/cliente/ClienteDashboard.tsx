@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Calendar,
   Clock,
@@ -392,9 +393,18 @@ export default function ClienteDashboard() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="bg-primary p-2 rounded-full">
-                        <Scissors className="h-5 w-5 text-primary-foreground" />
-                      </div>
+                      {barbearia.foto ? (
+                        <Avatar className="h-12 w-12 border-2 border-primary/20">
+                          <AvatarImage src={barbearia.foto} alt={barbearia.nome} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                            {barbearia.nome.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      ) : (
+                        <div className="bg-primary p-2 rounded-full">
+                          <Scissors className="h-5 w-5 text-primary-foreground" />
+                        </div>
+                      )}
                       <div className="flex-1">
                         <CardTitle className="text-lg">{barbearia.nome}</CardTitle>
                         {(barbearia.endereco || barbearia.cidade || barbearia.bairro) && (

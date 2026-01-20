@@ -20,7 +20,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Lock, CheckCircle, Clock, Settings } from "lucide-react";
+import { Loader2, Lock, CheckCircle, Clock, Settings, Upload, Image as ImageIcon, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfiguracaoBarbearia } from "@/types/dono";
 
@@ -283,6 +284,100 @@ export default function ConfiguracoesBarbearia() {
           Gerencie as configurações da sua barbearia
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Foto da Barbearia</CardTitle>
+          <CardDescription>
+            Adicione uma foto da sua barbearia. Esta foto aparecerá no painel dos clientes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-24 w-24 border-2 border-primary/20">
+              <AvatarImage src={formData.foto || undefined} alt={formData.nome || "Barbearia"} />
+              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                {formData.nome ? formData.nome.charAt(0).toUpperCase() : "B"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 space-y-2">
+              <div className="flex gap-2">
+                <Label htmlFor="foto-upload" className="cursor-pointer">
+                  <Button type="button" variant="outline" asChild>
+                    <span>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {formData.foto ? "Alterar Foto" : "Adicionar Foto"}
+                    </span>
+                  </Button>
+                </Label>
+                <Input
+                  id="foto-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      // Validar tamanho (máximo 5MB)
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast({
+                          title: "Erro",
+                          description: "A imagem deve ter no máximo 5MB.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      
+                      // Validar tipo
+                      if (!file.type.startsWith('image/')) {
+                        toast({
+                          title: "Erro",
+                          description: "Por favor, selecione uma imagem válida.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      
+                      // Converter para base64
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        const base64String = reader.result as string;
+                        setFormData({ ...formData, foto: base64String });
+                      };
+                      reader.onerror = () => {
+                        toast({
+                          title: "Erro",
+                          description: "Erro ao ler a imagem. Tente novamente.",
+                          variant: "destructive",
+                        });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                {formData.foto && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setFormData({ ...formData, foto: undefined });
+                      // Limpar input file
+                      const input = document.getElementById('foto-upload') as HTMLInputElement;
+                      if (input) input.value = '';
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Remover
+                  </Button>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 5MB
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -23,7 +23,7 @@ function obterBarbeariaIdDoToken(): string | null {
   try {
     const token = localStorage.getItem('token');
     if (!token) return null;
-
+    
     // Decodificar JWT (sem verificar assinatura, apenas para obter dados)
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.barbeariaId || null;
@@ -48,46 +48,46 @@ interface DonoContextType {
   produtos: ProdutoDono[];
   notificacoes: NotificacaoDono[];
   configuracao: ConfiguracaoBarbearia;
-
+  
   // Funções
   criarAgendamento: (agendamento: Omit<AgendamentoDono, "id" | "dataCriacao">) => Promise<void>;
   atualizarAgendamento: (id: string, dados: Partial<AgendamentoDono>) => Promise<void>;
   cancelarAgendamento: (id: string) => Promise<void>;
   confirmarAgendamento: (id: string) => Promise<void>;
   recusarAgendamento: (id: string, motivo?: string) => Promise<void>;
-
+  
   adicionarProfissional: (profissional: Omit<ProfissionalDono, "id" | "dataAdmissao" | "avaliacaoMedia" | "totalAvaliacoes" | "faturamentoTotal" | "faltas">) => Promise<void>;
   atualizarProfissional: (id: string, dados: Partial<ProfissionalDono>) => Promise<void>;
   removerProfissional: (id: string) => Promise<void>;
-
+  
   adicionarCliente: (cliente: Omit<ClienteDono, "id" | "dataCadastro" | "totalAgendamentos" | "ticketMedio" | "frequencia">) => Promise<void>;
   atualizarCliente: (id: string, dados: Partial<ClienteDono>) => Promise<void>;
   removerCliente: (id: string) => Promise<void>;
   marcarClienteVIP: (id: string, vip: boolean) => void;
-
+  
   // Funções de serviços
   servicos: any[];
   adicionarServico: (servico: { nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }) => Promise<void>;
   atualizarServico: (id: string, dados: Partial<{ nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }>) => Promise<void>;
   removerServico: (id: string) => Promise<void>;
   toggleServicoAtivo: (id: string) => Promise<void>;
-
+  
   registrarPagamento: (pagamento: Omit<PagamentoDono, "id">) => Promise<void>;
   registrarPagamentoManual: (agendamentoId: string, valor: number, metodo: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito', observacao?: string) => Promise<void>;
-
+  
   criarPromocao: (promocao: Omit<PromocaoDono, "id">) => Promise<void>;
   atualizarPromocao: (id: string, dados: Partial<PromocaoDono>) => Promise<void>;
-
+  
   responderAvaliacao: (id: string, resposta: string) => Promise<void>;
-
+  
   adicionarProduto: (produto: Omit<ProdutoDono, "id">) => Promise<void>;
   atualizarProduto: (id: string, dados: Partial<ProdutoDono>) => Promise<void>;
   atualizarEstoque: (id: string, quantidade: number) => Promise<void>;
-
+  
   marcarNotificacaoLida: (id: string) => Promise<void>;
-
+  
   atualizarConfiguracao: (dados: Partial<ConfiguracaoBarbearia>) => void;
-
+  
   gerarRelatorio: (dataInicio: string, dataFim: string) => RelatorioDono;
 }
 
@@ -201,6 +201,33 @@ const produtosIniciais: ProdutoDono[] = [
   },
 ];
 
+// Função helper para converter data para timezone de Brasília corretamente
+// Esta função garante que as datas sejam exibidas no dia correto, independente do fuso horário do servidor
+const converterDataParaBrasilia = (dataUTC: string | Date): string => {
+  try {
+    const data = typeof dataUTC === 'string' ? new Date(dataUTC) : dataUTC;
+    
+    // Criar uma data no timezone de Brasília usando Intl.DateTimeFormat
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    
+    // Formatar a data no timezone de Brasília
+    const dataFormatada = formatter.format(data);
+    
+    // Retornar no formato YYYY-MM-DD
+    return dataFormatada;
+  } catch (error) {
+    console.error('Erro ao converter data para Brasília:', error);
+    // Fallback: extrair apenas a parte da data se houver erro
+    const data = typeof dataUTC === 'string' ? new Date(dataUTC) : dataUTC;
+    return data.toISOString().split('T')[0];
+  }
+};
+
 const configuracaoInicial: ConfiguracaoBarbearia = {
   id: "1",
   nome: "Barbearia do João",
@@ -230,22 +257,22 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     // Primeiro tenta obter do token JWT
     const tokenId = obterBarbeariaIdDoToken();
     if (tokenId) return tokenId;
-
+    
     // Fallback: tenta obter do localStorage
     try {
       const userStr = localStorage.getItem('user');
       const barbeariaStr = localStorage.getItem('barbearia');
-
+      
       if (barbeariaStr) {
         const barbearia = JSON.parse(barbeariaStr);
         return barbearia.id || null;
       }
-
+      
       if (userStr) {
         const user = JSON.parse(userStr);
         return user.barbeariaId || null;
       }
-
+      
       return null;
     } catch (error) {
       console.error('Erro ao obter barbeariaId do localStorage:', error);
@@ -361,21 +388,21 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // --- SINCRONIZAÇÃO DOS DADOS DO REACT QUERY COM O ESTADO DO CONTEXTO ---
 
   useEffect(() => {
-    if (kpisData) {
-      setKpi({
-        faturamentoHoje: kpisData.faturamentoHoje || 0,
-        faturamentoSemana: kpisData.faturamentoSemana || 0,
-        faturamentoMes: kpisData.faturamentoMes || 0,
-        agendamentosHoje: kpisData.agendamentosHoje || 0,
-        cancelamentos: kpisData.cancelamentos || 0,
-        clientesRecorrentes: kpisData.clientesRecorrentes || kpisData.totalClientes || 0,
-        notaMedia: kpisData.notaMedia || 0,
-        totalAvaliacoes: kpisData.totalAvaliacoes || 0,
-        variacaoHoje: kpisData.variacaoHoje || 0,
-        variacaoSemana: kpisData.variacaoSemana || 0,
-        variacaoMes: kpisData.variacaoMes || 0,
-      });
-    }
+      if (kpisData) {
+        setKpi({
+          faturamentoHoje: kpisData.faturamentoHoje || 0,
+          faturamentoSemana: kpisData.faturamentoSemana || 0,
+          faturamentoMes: kpisData.faturamentoMes || 0,
+          agendamentosHoje: kpisData.agendamentosHoje || 0,
+          cancelamentos: kpisData.cancelamentos || 0,
+          clientesRecorrentes: kpisData.clientesRecorrentes || kpisData.totalClientes || 0,
+          notaMedia: kpisData.notaMedia || 0,
+          totalAvaliacoes: kpisData.totalAvaliacoes || 0,
+          variacaoHoje: kpisData.variacaoHoje || 0,
+          variacaoSemana: kpisData.variacaoSemana || 0,
+          variacaoMes: kpisData.variacaoMes || 0,
+        });
+      }
   }, [kpisData]);
 
   useEffect(() => {
@@ -425,7 +452,23 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (qAgendamentos) {
       const transformados = qAgendamentos.map((ag: any) => {
-        const dataBrasilia = new Date(new Date(ag.data).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        // Converter data para timezone de Brasília corretamente
+        const dataFormatada = converterDataParaBrasilia(ag.data);
+        
+        // Para o horário, usar o horário salvo ou extrair do campo data
+        let horarioFormatado = ag.horario;
+        if (!horarioFormatado && ag.data) {
+          // Extrair horário no timezone de Brasília
+          const dataObj = typeof ag.data === 'string' ? new Date(ag.data) : ag.data;
+          const formatterHora = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+          horarioFormatado = formatterHora.format(dataObj);
+        }
+        
         return {
           id: ag.id,
           clienteId: ag.clienteId || '',
@@ -435,8 +478,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           profissionalNome: ag.profissionais?.[0]?.profissional?.nome || 'Não atribuído',
           servicoId: ag.servicoId,
           servicoNome: ag.servico?.nome || '',
-          data: dataBrasilia.toISOString().split('T')[0],
-          horario: ag.horario || dataBrasilia.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          data: dataFormatada,
+          horario: horarioFormatado || '00:00',
           duracao: ag.servico?.duracao || 40,
           valor: ag.servico?.preco || 0,
           status: ag.status,
@@ -589,23 +632,42 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       if (!agendamentosData) return;
 
       // Transformar agendamentos da API para o formato do frontend
-      const agendamentosTransformados: AgendamentoDono[] = agendamentosData.map((ag: any) => ({
-        id: ag.id,
-        clienteId: ag.clienteId || '',
-        clienteNome: ag.clienteRel?.nome || ag.cliente || 'Cliente não cadastrado',
-        clienteTelefone: ag.clienteRel?.telefone || ag.telefone,
-        profissionalId: ag.profissionais?.[0]?.profissionalId || '',
-        profissionalNome: ag.profissionais?.[0]?.profissional?.nome || 'Não atribuído',
-        servicoId: ag.servicoId,
-        servicoNome: ag.servico?.nome || '',
-        data: ag.data.split('T')[0],
-        horario: ag.horario || new Date(ag.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        duracao: ag.servico?.duracao || 40,
-        valor: ag.servico?.preco || 0,
-        status: ag.status,
-        observacoes: ag.observacao,
-        dataCriacao: ag.createdAt,
-      }));
+      const agendamentosTransformados: AgendamentoDono[] = agendamentosData.map((ag: any) => {
+        // Converter data para timezone de Brasília corretamente
+        const dataFormatada = converterDataParaBrasilia(ag.data);
+        
+        // Para o horário, usar o horário salvo ou extrair do campo data
+        let horarioFormatado = ag.horario;
+        if (!horarioFormatado && ag.data) {
+          // Extrair horário no timezone de Brasília
+          const dataObj = typeof ag.data === 'string' ? new Date(ag.data) : ag.data;
+          const formatterHora = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+          horarioFormatado = formatterHora.format(dataObj);
+        }
+        
+        return {
+          id: ag.id,
+          clienteId: ag.clienteId || '',
+          clienteNome: ag.clienteRel?.nome || ag.cliente || 'Cliente não cadastrado',
+          clienteTelefone: ag.clienteRel?.telefone || ag.telefone,
+          profissionalId: ag.profissionais?.[0]?.profissionalId || '',
+          profissionalNome: ag.profissionais?.[0]?.profissional?.nome || 'Não atribuído',
+          servicoId: ag.servicoId,
+          servicoNome: ag.servico?.nome || '',
+          data: dataFormatada,
+          horario: horarioFormatado || '00:00',
+          duracao: ag.servico?.duracao || 40,
+          valor: ag.servico?.preco || 0,
+          status: ag.status,
+          observacoes: ag.observacao,
+          dataCriacao: ag.createdAt,
+        };
+      });
 
       // Só atualizar se houver diferença (evitar re-renders desnecessários)
       setAgendamentos(prev => {
@@ -681,7 +743,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     try {
       // Combinar data e horário
       const dataHora = new Date(`${agendamento.data}T${agendamento.horario}`);
-
+      
       const novoAgendamento = await apiPost<any>('/agendamentos', {
         barbeariaId,
         clienteId: agendamento.clienteId || null,
@@ -696,6 +758,25 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
       // Adicionar novo agendamento à lista local (otimização: não recarregar todos os dados)
       if (novoAgendamento.agendamento) {
+        // Converter data para timezone de Brasília corretamente
+        const dataFormatada = converterDataParaBrasilia(novoAgendamento.agendamento.data);
+        
+        // Para o horário, usar o horário salvo ou extrair do campo data
+        let horarioFormatado = novoAgendamento.agendamento.horario;
+        if (!horarioFormatado && novoAgendamento.agendamento.data) {
+          // Extrair horário no timezone de Brasília
+          const dataObj = typeof novoAgendamento.agendamento.data === 'string' 
+            ? new Date(novoAgendamento.agendamento.data) 
+            : novoAgendamento.agendamento.data;
+          const formatterHora = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+          horarioFormatado = formatterHora.format(dataObj);
+        }
+        
         const agendamentoTransformado: AgendamentoDono = {
           id: novoAgendamento.agendamento.id,
           clienteId: novoAgendamento.agendamento.clienteId || '',
@@ -705,15 +786,15 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           profissionalNome: novoAgendamento.agendamento.profissionais?.[0]?.profissional?.nome || 'Não atribuído',
           servicoId: novoAgendamento.agendamento.servicoId,
           servicoNome: novoAgendamento.agendamento.servico?.nome || '',
-          data: novoAgendamento.agendamento.data.split('T')[0],
-          horario: novoAgendamento.agendamento.horario || new Date(novoAgendamento.agendamento.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          data: dataFormatada,
+          horario: horarioFormatado || '00:00',
           duracao: novoAgendamento.agendamento.servico?.duracao || 40,
           valor: novoAgendamento.agendamento.servico?.preco || 0,
           status: novoAgendamento.agendamento.status,
           observacoes: novoAgendamento.agendamento.observacao,
           dataCriacao: novoAgendamento.agendamento.createdAt,
         };
-
+        
         setAgendamentos(prev => [...prev, agendamentoTransformado]);
 
         // Salvar no Firestore para atualização em tempo real
@@ -725,26 +806,45 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       } else {
         // Fallback: recarregar apenas agendamentos se formato não for o esperado
         const agendamentosData = await apiGet<any[]>(`/agendamentos/barbearia/${barbeariaId}`).catch(() => []);
-        const agendamentosTransformados: AgendamentoDono[] = agendamentosData.map((ag: any) => ({
-          id: ag.id,
-          clienteId: ag.clienteId || '',
-          clienteNome: ag.clienteRel?.nome || ag.cliente || 'Cliente não cadastrado',
-          clienteTelefone: ag.clienteRel?.telefone || ag.telefone,
-          profissionalId: ag.profissionais?.[0]?.profissionalId || '',
-          profissionalNome: ag.profissionais?.[0]?.profissional?.nome || 'Não atribuído',
-          servicoId: ag.servicoId,
-          servicoNome: ag.servico?.nome || '',
-          data: ag.data.split('T')[0],
-          horario: ag.horario || new Date(ag.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          duracao: ag.servico?.duracao || 40,
-          valor: ag.servico?.preco || 0,
-          status: ag.status,
-          observacoes: ag.observacao,
-          dataCriacao: ag.createdAt,
-        }));
+        const agendamentosTransformados: AgendamentoDono[] = agendamentosData.map((ag: any) => {
+          // Converter data para timezone de Brasília corretamente
+          const dataFormatada = converterDataParaBrasilia(ag.data);
+          
+          // Para o horário, usar o horário salvo ou extrair do campo data
+          let horarioFormatado = ag.horario;
+          if (!horarioFormatado && ag.data) {
+            // Extrair horário no timezone de Brasília
+            const dataObj = typeof ag.data === 'string' ? new Date(ag.data) : ag.data;
+            const formatterHora = new Intl.DateTimeFormat('pt-BR', {
+              timeZone: 'America/Sao_Paulo',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            });
+            horarioFormatado = formatterHora.format(dataObj);
+          }
+          
+          return {
+            id: ag.id,
+            clienteId: ag.clienteId || '',
+            clienteNome: ag.clienteRel?.nome || ag.cliente || 'Cliente não cadastrado',
+            clienteTelefone: ag.clienteRel?.telefone || ag.telefone,
+            profissionalId: ag.profissionais?.[0]?.profissionalId || '',
+            profissionalNome: ag.profissionais?.[0]?.profissional?.nome || 'Não atribuído',
+            servicoId: ag.servicoId,
+            servicoNome: ag.servico?.nome || '',
+            data: dataFormatada,
+            horario: horarioFormatado || '00:00',
+            duracao: ag.servico?.duracao || 40,
+            valor: ag.servico?.preco || 0,
+            status: ag.status,
+            observacoes: ag.observacao,
+            dataCriacao: ag.createdAt,
+          };
+        });
         setAgendamentos(agendamentosTransformados);
       }
-
+      
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       toast.success('Agendamento criado com sucesso');
     } catch (error: any) {
@@ -829,7 +929,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         comissaoTipo: profissional.comissao.tipo,
         comissaoValor: profissional.comissao.valor,
       });
-
+      
       console.log('✅ Profissional adicionado:', novoProfissional);
 
       queryClient.invalidateQueries({ queryKey: ['profissionais'] });
@@ -912,9 +1012,9 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         foto: cliente.foto,
         dataNascimento: cliente.dataNascimento,
       });
-
+      
       console.log('✅ [ADICIONAR CLIENTE] Cliente adicionado ao banco:', resultado);
-
+      
       if (resultado && resultado.id) {
         const novoCliente: ClienteDono = {
           id: resultado.id,
@@ -929,7 +1029,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           frequencia: 0,
           dataCadastro: resultado.createdAt ? (typeof resultado.createdAt === 'string' ? resultado.createdAt.split('T')[0] : new Date(resultado.createdAt).toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
         };
-
+        
         queryClient.invalidateQueries({ queryKey: ['clientes'] });
 
         // Salvar no Firestore
@@ -941,7 +1041,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
         console.log('✅ [ADICIONAR CLIENTE] Cliente adicionado à lista local');
       }
-
+      
       toast.success('Cliente adicionado com sucesso!');
     } catch (error: any) {
       console.error('❌ [ADICIONAR CLIENTE] Erro:', error);

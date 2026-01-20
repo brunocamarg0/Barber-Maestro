@@ -144,6 +144,7 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
       cidade: b.cidade,
       bairro: b.bairro,
       cep: b.cep,
+      foto: b.foto,
       servicos: b.servicos.map((s) => ({
         id: s.id,
         nome: s.nome,
@@ -226,6 +227,7 @@ export async function buscarBarbeariaPublica(req: Request, res: Response) {
       cidade: barbearia.cidade,
       bairro: barbearia.bairro,
       cep: barbearia.cep,
+      foto: barbearia.foto,
       servicos: barbearia.servicos.map((s) => ({
         id: s.id,
         nome: s.nome,

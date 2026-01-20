@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma';
+import { obterJWTSecret } from '../utils/token';
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -23,17 +24,30 @@ export async function autenticarDono(
     
     const authHeader = req.headers.authorization;
     console.log('🔐 autenticarDono: Authorization header presente:', !!authHeader);
+    console.log('🔐 autenticarDono: Authorization header (primeiros 30 chars):', authHeader ? authHeader.substring(0, 30) + '...' : 'N/A');
     
-    const token = authHeader?.replace('Bearer ', '');
+    const token = authHeader?.replace('Bearer ', '').trim();
     
     if (!token) {
       console.error('❌ autenticarDono: Token não fornecido');
+      console.error('❌ autenticarDono: Headers authorization:', req.headers.authorization);
       return res.status(401).json({ error: 'Token não fornecido' });
     }
+    
+    // Verificar formato básico do token (deve ter 3 partes separadas por ponto)
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+      console.error('❌ autenticarDono: Token em formato inválido (não é JWT válido)');
+      console.error('❌ autenticarDono: Token parts:', tokenParts.length);
+      console.error('❌ autenticarDono: Token (primeiros 50 chars):', token.substring(0, 50));
+      return res.status(401).json({ error: 'Token inválido: formato incorreto' });
+    }
 
-    console.log('🔐 autenticarDono: Token presente, verificando...');
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret';
+    console.log('🔐 autenticarDono: Token presente e formato válido, verificando...');
+    // Usar função centralizada para obter o secret (garante consistência)
+    const jwtSecret = obterJWTSecret();
     console.log('🔐 autenticarDono: JWT_SECRET configurado:', !!process.env.JWT_SECRET);
+    console.log('🔐 autenticarDono: JWT_SECRET (primeiros 10 chars):', jwtSecret.substring(0, 10) + '...');
     
     const decoded = jwt.verify(token, jwtSecret) as any;
     console.log('🔐 autenticarDono: Token decodificado:', { id: decoded.id, email: decoded.email, tipo: decoded.tipo });

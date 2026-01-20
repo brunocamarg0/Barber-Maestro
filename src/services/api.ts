@@ -27,7 +27,23 @@ export async function apiRequest<T>(
     console.log('💾 [API REQUEST] PUT Configuração:', urlCompleta);
     console.log('💾 [API REQUEST] Token presente:', !!token);
     console.log('💾 [API REQUEST] Token (primeiros 20 chars):', token ? token.substring(0, 20) + '...' : 'N/A');
+    console.log('💾 [API REQUEST] Token (últimos 20 chars):', token ? '...' + token.substring(token.length - 20) : 'N/A');
     console.log('💾 [API REQUEST] Body size:', options.body ? (options.body as string).length : 0);
+    
+    // Verificar se o token parece válido (deve ter 3 partes separadas por ponto)
+    if (token) {
+      const tokenParts = token.split('.');
+      console.log('💾 [API REQUEST] Token parts:', tokenParts.length);
+      if (tokenParts.length !== 3) {
+        console.error('❌ [API REQUEST] Token parece estar em formato inválido!');
+      }
+    }
+  }
+  
+  // Verificar se há token antes de fazer requisição
+  if (!token && endpoint.includes('/dono/')) {
+    console.error('❌ [API REQUEST] Requisição para rota protegida sem token!');
+    throw new Error('Token não encontrado. Faça login novamente.');
   }
   
   const response = await fetch(urlCompleta, {

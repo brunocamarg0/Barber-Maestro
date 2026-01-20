@@ -333,7 +333,35 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // --- CONFIGURAÇÃO DO REACT QUERY PARA NEON ---
 
   // Verificar se há token antes de fazer requisições
-  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('token');
+  // Usar useState para garantir que seja recalculado quando o token mudar
+  const [hasToken, setHasToken] = useState(() => 
+    typeof window !== 'undefined' && !!localStorage.getItem('token')
+  );
+  
+  // Atualizar hasToken quando o token mudar
+  useEffect(() => {
+    const checkToken = () => {
+      const tokenPresent = typeof window !== 'undefined' && !!localStorage.getItem('token');
+      if (tokenPresent !== hasToken) {
+        console.log('🔄 [DONO CONTEXT] Token mudou, atualizando hasToken:', tokenPresent);
+        setHasToken(tokenPresent);
+      }
+    };
+    
+    // Verificar imediatamente
+    checkToken();
+    
+    // Verificar periodicamente (a cada 1 segundo) para pegar mudanças no localStorage
+    const interval = setInterval(checkToken, 1000);
+    
+    // Listener para mudanças no localStorage (pode não funcionar em todas as abas)
+    window.addEventListener('storage', checkToken);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', checkToken);
+    };
+  }, [hasToken]);
   
   // Log para debug
   useEffect(() => {
@@ -342,6 +370,10 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     console.log('   hasToken:', hasToken);
     console.log('   token presente:', !!localStorage.getItem('token'));
     console.log('   userType:', localStorage.getItem('userType'));
+    console.log('   Query habilitada (profissionais):', !!barbeariaId && hasToken);
+    console.log('   Query habilitada (clientes):', !!barbeariaId && hasToken);
+    console.log('   Query habilitada (serviços):', !!barbeariaId && hasToken);
+    console.log('   Query habilitada (produtos):', !!barbeariaId && hasToken);
   }, [barbeariaId, hasToken]);
   
   // Hook para buscar KPIs

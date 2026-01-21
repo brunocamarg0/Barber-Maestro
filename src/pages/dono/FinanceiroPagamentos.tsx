@@ -86,9 +86,12 @@ export default function FinanceiroPagamentos() {
   };
 
   // Agendamentos sem pagamento (para o modal)
+  // Filtra apenas agendamentos com id válido para evitar erro no Select.Item
   const agendamentosSemPagamento = useMemo(() => {
     const agendamentosComPagamento = new Set(pagamentos.map(p => p.agendamentoId));
     return agendamentos.filter(a => 
+      a.id && // Garante que o id existe e não é vazio
+      a.id.trim() !== '' && // Garante que o id não é string vazia
       !agendamentosComPagamento.has(a.id) && 
       (a.status === "confirmado" || a.status === "concluido" || a.status === "pendente")
     );
@@ -563,7 +566,7 @@ export default function FinanceiroPagamentos() {
                 </SelectTrigger>
                 <SelectContent>
                   {agendamentosSemPagamento.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="__empty__" disabled>
                       Nenhum agendamento sem pagamento encontrado
                     </SelectItem>
                   ) : (

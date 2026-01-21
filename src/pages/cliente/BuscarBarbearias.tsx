@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Scissors, MapPin, Phone, Mail, Search, Star, Users, Clock, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function BuscarBarbearias() {
   const { barbearias, buscarBarbearias } = useCliente();

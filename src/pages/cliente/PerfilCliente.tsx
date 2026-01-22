@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCliente } from "@/context/ClienteContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,28 +22,52 @@ import { useToast } from "@/hooks/use-toast";
 type TipoServicoLocal = "corte" | "barba" | "combo";
 
 export default function PerfilCliente() {
-  const { cliente, atualizarPerfil } = useCliente();
+  const { cliente, atualizarPerfil, loading, carregarDados } = useCliente();
   const { toast } = useToast();
 
+  // Carregar dados se ainda não foram carregados
+  useEffect(() => {
+    if (!cliente && !loading) {
+      console.log('🔄 [PERFIL] Cliente não encontrado, carregando dados...');
+      carregarDados?.();
+    }
+  }, [cliente, loading, carregarDados]);
+
+  const [formData, setFormData] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    dataNascimento: "",
+    profissionalFavorito: "",
+    servicoPreferido: undefined as string | undefined,
+  });
+
+  // Atualizar formData quando cliente for carregado
+  useEffect(() => {
+    if (cliente) {
+      console.log('✅ [PERFIL] Cliente carregado, atualizando formulário:', cliente);
+      setFormData({
+        nome: cliente.nome || "",
+        email: cliente.email || "",
+        telefone: cliente.telefone || "",
+        dataNascimento: cliente.dataNascimento || "",
+        profissionalFavorito: (cliente as any).preferencias?.profissionalFavorito || "",
+        servicoPreferido: (cliente as any).preferencias?.servicoPreferido || undefined,
+      });
+    }
+  }, [cliente]);
+
   // Proteção contra undefined
-  if (!cliente) {
+  if (loading || !cliente) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Carregando perfil...</p>
         </div>
       </div>
     );
   }
-
-  const [formData, setFormData] = useState({
-    nome: cliente.nome || "",
-    email: cliente.email || "",
-    telefone: cliente.telefone || "",
-    dataNascimento: cliente.dataNascimento || "",
-    profissionalFavorito: (cliente as any).preferencias?.profissionalFavorito || "",
-    servicoPreferido: (cliente as any).preferencias?.servicoPreferido || undefined,
-  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCliente } from "@/context/ClienteContext";
 import {
   Card,
@@ -32,11 +32,19 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 export default function HistoricoAgendamentos() {
-  const { agendamentos, getAgendamentosPorStatus, cancelarAgendamento, carregarDados } = useCliente();
+  const { agendamentos, getAgendamentosPorStatus, cancelarAgendamento, carregarDados, loading, cliente } = useCliente();
   const { toast } = useToast();
   const [filtroData, setFiltroData] = useState("");
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Carregar dados se ainda não foram carregados
+  useEffect(() => {
+    if (!cliente && !loading && carregarDados) {
+      console.log('🔄 [HISTORICO] Cliente não encontrado, carregando dados...');
+      carregarDados();
+    }
+  }, [cliente, loading, carregarDados]);
 
   // Garantir que agendamentos é um array
   const agendamentosArray = Array.isArray(agendamentos) ? agendamentos : [];

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useCliente } from "@/context/ClienteContext";
 import {
   Card,
@@ -13,13 +14,22 @@ import { Gift, Star, TrendingUp, Award, Percent, CheckCircle, RefreshCw } from "
 import { Link } from "react-router-dom";
 
 export default function Fidelidade() {
-  const { fidelidade, cliente, agendamentos, carregarDados } = useCliente();
+  const { fidelidade, cliente, agendamentos, carregarDados, loading } = useCliente();
+
+  // Carregar dados se ainda não foram carregados
+  useEffect(() => {
+    if (!cliente && !loading && carregarDados) {
+      console.log('🔄 [FIDELIDADE] Cliente não encontrado, carregando dados...');
+      carregarDados();
+    }
+  }, [cliente, loading, carregarDados]);
 
   // Proteção contra undefined
-  if (!fidelidade) {
+  if (loading || !fidelidade || !cliente) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Carregando dados de fidelidade...</p>
         </div>
       </div>

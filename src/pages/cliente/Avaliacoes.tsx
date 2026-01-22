@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useCliente } from "@/context/ClienteContext";
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,19 @@ import { apiPost } from "@/services/api";
 import { Link } from "react-router-dom";
 
 export default function Avaliacoes() {
-  const { agendamentos, carregarDados } = useCliente();
+  const { agendamentos, carregarDados, loading, cliente } = useCliente();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const agendamentoId = searchParams.get("agendamento");
+
+  // Carregar dados se ainda não foram carregados
+  useEffect(() => {
+    if (!cliente && !loading && carregarDados) {
+      console.log('🔄 [AVALIACOES] Cliente não encontrado, carregando dados...');
+      carregarDados();
+    }
+  }, [cliente, loading, carregarDados]);
 
   // Proteção contra undefined
   const agendamentosArray = Array.isArray(agendamentos) ? agendamentos : [];

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as React from "react";
 import { useCliente } from "@/context/ClienteContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +27,17 @@ import { apiPut, apiDelete } from "@/services/api";
 import { useNavigate } from "react-router-dom";
 
 export default function ConfiguracoesCliente() {
-  const { cliente, atualizarPerfil } = useCliente();
+  const { cliente, atualizarPerfil, loading, carregarDados } = useCliente();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Carregar dados se ainda não foram carregados
+  React.useEffect(() => {
+    if (!cliente && !loading && carregarDados) {
+      console.log('🔄 [CONFIGURACOES] Cliente não encontrado, carregando dados...');
+      carregarDados();
+    }
+  }, [cliente, loading, carregarDados]);
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");

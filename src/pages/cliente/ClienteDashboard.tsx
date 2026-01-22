@@ -1,4 +1,5 @@
 import { useCliente } from "@/context/ClienteContext";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,34 +33,21 @@ import { useToast } from "@/hooks/use-toast";
 export default function ClienteDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  let cliente, getProximoAgendamento, fidelidade, barbearias, cancelarAgendamento, carregarDados;
-  
-  try {
-    const clienteContext = useCliente();
-    cliente = clienteContext.cliente;
-    getProximoAgendamento = clienteContext.getProximoAgendamento;
-    fidelidade = clienteContext.fidelidade;
-    barbearias = clienteContext.barbearias || [];
-    cancelarAgendamento = clienteContext.cancelarAgendamento;
-    carregarDados = clienteContext.carregarDados;
-  } catch (error) {
-    console.error("Erro ao carregar dados do cliente:", error);
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-muted-foreground">Erro ao carregar dados do cliente</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            {error instanceof Error ? error.message : "Erro desconhecido"}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const { cliente, getProximoAgendamento, fidelidade, barbearias, cancelarAgendamento, carregarDados, loading, agendamentos } = useCliente();
 
-  if (!cliente || !getProximoAgendamento || !fidelidade) {
+  // Carregar dados se ainda não foram carregados
+  React.useEffect(() => {
+    if (!cliente && !loading && carregarDados) {
+      console.log('🔄 [DASHBOARD] Cliente não encontrado, carregando dados...');
+      carregarDados();
+    }
+  }, [cliente, loading, carregarDados]);
+
+  if (loading || !cliente || !getProximoAgendamento || !fidelidade) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Carregando dados do cliente...</p>
         </div>
       </div>

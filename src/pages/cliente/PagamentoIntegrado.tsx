@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as React from "react";
 import { useCliente } from "@/context/ClienteContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +19,18 @@ import { MetodoPagamento } from "@/types/cliente";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 export default function PagamentoIntegrado() {
-  const { agendamentos, realizarPagamento, cliente, carregarDados } = useCliente();
+  const { agendamentos, realizarPagamento, cliente, carregarDados, loading } = useCliente();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const agendamentoIdParam = searchParams.get("agendamento");
+  
+  // Carregar dados se ainda não foram carregados
+  React.useEffect(() => {
+    if (!cliente && !loading && carregarDados) {
+      console.log('🔄 [PAGAMENTO] Cliente não encontrado, carregando dados...');
+      carregarDados();
+    }
+  }, [cliente, loading, carregarDados]);
   
   // Proteção: se realizarPagamento não existir, criar função placeholder
   const handleRealizarPagamento = realizarPagamento || (async () => {
@@ -32,10 +41,11 @@ export default function PagamentoIntegrado() {
   const [cupom, setCupom] = useState("");
 
   // Proteção contra undefined
-  if (!cliente || !agendamentos) {
+  if (loading || !cliente || !agendamentos) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Carregando dados de pagamento...</p>
         </div>
       </div>

@@ -313,19 +313,44 @@ export async function criarMeuAgendamento(req: AuthRequestCliente, res: Response
     }
 
     // Criar agendamento
-    const agendamento = await prisma.agendamento.create({
-      data: {
-        clienteId,
-        cliente: cliente.nome,
-        telefone: cliente.telefone,
-        barbeariaId,
-        servicoId,
-        data: dataHora,
-        horario,
-        observacao: observacoes || null,
-        status: 'pendente',
-      },
-    });
+    // Nota: formaPagamento será definido apenas quando o cliente escolher a forma de pagamento
+    // Por enquanto, não incluímos esse campo para evitar erro se a coluna não existir no banco
+    let agendamento;
+    try {
+      agendamento = await prisma.agendamento.create({
+        data: {
+          clienteId,
+          cliente: cliente.nome,
+          telefone: cliente.telefone,
+          barbeariaId,
+          servicoId,
+          data: dataHora,
+          horario,
+          observacao: observacoes || null,
+          status: 'pendente',
+        },
+      });
+    } catch (prismaError: any) {
+      // Se o erro for porque a coluna formaPagamento não existe, tentar sem ela
+      if (prismaError.code === 'P2022' && prismaError.meta?.column?.includes('formaPagamento')) {
+        console.warn('⚠️ [CLIENTE PANEL] Coluna formaPagamento não existe, criando agendamento sem ela');
+        agendamento = await prisma.agendamento.create({
+          data: {
+            clienteId,
+            cliente: cliente.nome,
+            telefone: cliente.telefone,
+            barbeariaId,
+            servicoId,
+            data: dataHora,
+            horario,
+            observacao: observacoes || null,
+            status: 'pendente',
+          },
+        });
+      } else {
+        throw prismaError;
+      }
+    }
 
     console.log('✅ [CLIENTE PANEL] Agendamento criado:', agendamento.id);
 

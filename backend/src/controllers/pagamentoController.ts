@@ -212,13 +212,28 @@ export async function webhookPagamento(req: Request, res: Response) {
 
         // Se pagamento aprovado, atualizar status do agendamento
         if (paymentData.status === 'approved') {
-          await prisma.agendamento.update({
-            where: { id: externalReference },
-            data: {
-              status: 'confirmado',
-              formaPagamento: 'online',
-            },
-          });
+          try {
+            await prisma.agendamento.update({
+              where: { id: externalReference },
+              data: {
+                status: 'confirmado',
+                formaPagamento: 'online',
+              },
+            });
+          } catch (updateError: any) {
+            // Se a coluna formaPagamento não existir, atualizar sem ela
+            if (updateError.code === 'P2022' && updateError.meta?.column?.includes('formaPagamento')) {
+              console.warn('⚠️ [MERCADO PAGO] Coluna formaPagamento não existe, atualizando sem ela');
+              await prisma.agendamento.update({
+                where: { id: externalReference },
+                data: {
+                  status: 'confirmado',
+                },
+              });
+            } else {
+              throw updateError;
+            }
+          }
 
           console.log('✅ [MERCADO PAGO] Pagamento aprovado e agendamento confirmado:', externalReference);
         }
@@ -323,13 +338,22 @@ export async function criarPagamentoPresencial(req: AuthRequest, res: Response) 
       },
     });
 
-    // Atualizar agendamento com forma de pagamento
-    await prisma.agendamento.update({
-      where: { id: agendamentoId },
-      data: {
-        formaPagamento: 'presencial',
-      },
-    });
+    // Atualizar agendamento com forma de pagamento (se a coluna existir)
+    try {
+      await prisma.agendamento.update({
+        where: { id: agendamentoId },
+        data: {
+          formaPagamento: 'presencial',
+        },
+      });
+    } catch (updateError: any) {
+      // Se a coluna formaPagamento não existir, apenas logar (não é crítico)
+      if (updateError.code === 'P2022' && updateError.meta?.column?.includes('formaPagamento')) {
+        console.warn('⚠️ [PAGAMENTO] Coluna formaPagamento não existe ainda, pulando atualização');
+      } else {
+        throw updateError;
+      }
+    }
 
     console.log('✅ [PAGAMENTO] Pagamento presencial criado:', agendamentoId);
 

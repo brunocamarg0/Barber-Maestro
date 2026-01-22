@@ -18,7 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Scissors, User, Clock, CheckCircle, ArrowLeft, MapPin, Phone, AlertCircle } from "lucide-react";
+import { Scissors, User, Clock, CheckCircle, ArrowLeft, MapPin, Phone, AlertCircle, Search } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { NovoAgendamento } from "@/types/cliente";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -48,7 +49,7 @@ const gerarTodosHorarios = (): string[] => {
 const todosHorarios = gerarTodosHorarios();
 
 export default function AgendamentoOnline() {
-  const { criarAgendamento, buscarBarbeariaPorId } = useCliente();
+  const { criarAgendamento, buscarBarbeariaPorId, barbearias, buscarBarbearias } = useCliente();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -58,6 +59,10 @@ export default function AgendamentoOnline() {
   const [horariosOcupados, setHorariosOcupados] = useState<string[]>([]);
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [agendamentoIdAtual, setAgendamentoIdAtual] = useState<string | null>(null);
+  const [buscandoBarbearias, setBuscandoBarbearias] = useState(false);
+  const [buscaTexto, setBuscaTexto] = useState("");
+  const [buscaCidade, setBuscaCidade] = useState("");
+  const [buscaBairro, setBuscaBairro] = useState("");
   const [formData, setFormData] = useState<Partial<NovoAgendamento>>({
     barbeariaId: searchParams.get("barbearia") || "",
     servicoId: "",
@@ -65,6 +70,17 @@ export default function AgendamentoOnline() {
     hora: "",
     observacoes: "",
   });
+
+  // Carregar todas as barbearias ao montar o componente
+  useEffect(() => {
+    if (!formData.barbeariaId) {
+      console.log('🔍 [AGENDAMENTO] Carregando todas as barbearias...');
+      buscarBarbearias(undefined, undefined, undefined).catch((err) => {
+        console.warn('Erro ao carregar barbearias iniciais:', err);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Carregar barbearia quando barbeariaId mudar
   useEffect(() => {
@@ -80,13 +96,11 @@ export default function AgendamentoOnline() {
             description: "Não foi possível carregar a barbearia. Tente novamente.",
             variant: "destructive",
           });
-          navigate("/cliente/barbearias");
+          // Limpar barbeariaId para mostrar lista novamente
+          setFormData({ ...formData, barbeariaId: "" });
         } finally {
           setLoading(false);
         }
-      } else {
-        // Se não tiver barbearia selecionada, redirecionar para buscar
-        navigate("/cliente/barbearias");
       }
     };
 
@@ -195,6 +209,230 @@ export default function AgendamentoOnline() {
     return new Date(dataISO).toLocaleDateString("pt-BR");
   };
 
+  const handleBuscarBarbearias = async () => {
+    setBuscandoBarbearias(true);
+    try {
+      await buscarBarbearias(
+        buscaTexto.trim() || undefined,
+        buscaCidade.trim() || undefined,
+        buscaBairro.trim() || undefined
+      );
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível buscar barbearias. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setBuscandoBarbearias(false);
+    }
+  };
+
+  const handleSelecionarBarbearia = (barbeariaId: string) => {
+    setFormData({ ...formData, barbeariaId });
+    setStep(1);
+  };
+
+  const handleVoltarParaLista = () => {
+    setFormData({ ...formData, barbeariaId: "", servicoId: "", data: "", hora: "", observacoes: "" });
+    setBarbearia(null);
+    setStep(1);
+  };
+
+  // Se não tiver barbearia selecionada, mostrar lista de barbearias com busca
+  if (!barbearia && !formData.barbeariaId) {
+    return (
+      <div className="space-y-6 max-w-7xl mx-auto p-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Agendar Serviço</h2>
+          <p className="text-muted-foreground">
+            Escolha uma barbearia para começar seu agendamento
+          </p>
+        </div>
+
+        {/* Barra de busca */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome..."
+                    value={buscaTexto}
+                    onChange={(e) => setBuscaTexto(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        handleBuscarBarbearias();
+                      }
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+                <Button onClick={handleBuscarBarbearias} disabled={buscandoBarbearias} variant="default">
+                  <Search className="h-4 w-4 mr-2" />
+                  {buscandoBarbearias ? "Buscando..." : "Buscar"}
+                </Button>
+                {(buscaTexto || buscaCidade || buscaBairro) && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setBuscaTexto("");
+                      setBuscaCidade("");
+                      setBuscaBairro("");
+                      buscarBarbearias(undefined, undefined, undefined);
+                    }}
+                  >
+                    Limpar
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Cidade..."
+                    value={buscaCidade}
+                    onChange={(e) => setBuscaCidade(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        handleBuscarBarbearias();
+                      }
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Bairro..."
+                    value={buscaBairro}
+                    onChange={(e) => setBuscaBairro(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        handleBuscarBarbearias();
+                      }
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Lista de barbearias */}
+        {buscandoBarbearias ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Buscando barbearias...</p>
+          </div>
+        ) : barbearias.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Scissors className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg mb-2">
+                Nenhuma barbearia encontrada
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Tente uma busca diferente ou limpe os filtros para ver todas as barbearias
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => {
+                  setBuscaTexto("");
+                  setBuscaCidade("");
+                  setBuscaBairro("");
+                  buscarBarbearias(undefined, undefined, undefined);
+                }}
+              >
+                Limpar Filtros
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-muted-foreground">
+                {barbearias.length} {barbearias.length === 1 ? 'barbearia encontrada' : 'barbearias encontradas'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {barbearias.map((barbeariaItem: any) => (
+                <Card
+                  key={barbeariaItem.id}
+                  className="cursor-pointer hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 hover:border-primary/50"
+                  onClick={() => handleSelecionarBarbearia(barbeariaItem.id)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-16 w-16 border-2 border-primary/20">
+                        <AvatarImage src={barbeariaItem.foto || undefined} alt={barbeariaItem.nome} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
+                          {barbeariaItem.nome.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg leading-tight mb-1 line-clamp-2">
+                          {barbeariaItem.nome}
+                        </CardTitle>
+                        {(barbeariaItem.bairro || barbeariaItem.cidade) && (
+                          <CardDescription className="flex items-center gap-1 mt-1 text-xs">
+                            <MapPin className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">
+                              {[barbeariaItem.bairro, barbeariaItem.cidade].filter(Boolean).join(', ')}
+                            </span>
+                          </CardDescription>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
+                    {barbeariaItem.telefone && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">{barbeariaItem.telefone}</span>
+                      </div>
+                    )}
+                    {barbeariaItem.servicos && barbeariaItem.servicos.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t">
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          Serviços:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {barbeariaItem.servicos.slice(0, 2).map((servico: any) => (
+                            <Badge key={servico.id} variant="secondary" className="text-xs">
+                              {servico.nome}
+                            </Badge>
+                          ))}
+                          {barbeariaItem.servicos.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{barbeariaItem.servicos.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                        {barbeariaItem.servicos.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            A partir de {formatarMoeda(Math.min(...barbeariaItem.servicos.map((s: any) => s.preco)))}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <Button className="w-full mt-4" variant="default" size="sm">
+                      <Clock className="h-4 w-4 mr-2" />
+                      Agendar Agora
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -205,40 +443,11 @@ export default function AgendamentoOnline() {
     );
   }
 
-  if (!barbearia) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/cliente/barbearias">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Barbearia não encontrada</h2>
-            <p className="text-muted-foreground">
-              Selecione uma barbearia para continuar
-            </p>
-          </div>
-        </div>
-        <Card>
-          <CardContent className="py-8 text-center">
-            <Button asChild>
-              <Link to="/cliente/barbearias">Buscar Barbearias</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/cliente/barbearias">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+        <Button variant="ghost" size="icon" onClick={handleVoltarParaLista}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Agendar Serviço</h2>

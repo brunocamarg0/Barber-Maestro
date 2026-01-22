@@ -1066,13 +1066,16 @@ export async function enviarEmailBoasVindas(params: EnviarEmailBoasVindasParams)
         }
         .header {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          color: #ffffff;
           padding: 40px 30px;
           text-align: center;
         }
         .header h1 {
           margin: 0;
           font-size: 28px;
+          color: #ffffff !important;
+          font-weight: bold;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
         .content {
           padding: 40px 30px;

@@ -199,10 +199,10 @@ export default function ClienteLayout() {
                 <User className="h-5 w-5 text-primary-foreground" />
               </div>
               <div className="flex flex-col">
-                <span className="font-semibold text-sm text-sidebar-foreground">
+                <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                   {cliente.nome || "Cliente"}
                 </span>
-                <span className="text-xs text-sidebar-foreground/70">
+                <span className="text-xs text-gray-700 dark:text-gray-300">
                   Painel do Cliente
                 </span>
               </div>
@@ -210,7 +210,7 @@ export default function ClienteLayout() {
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel>Menu</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-gray-900 dark:text-gray-100 font-semibold">Menu</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {menuItems.map((item) => (
@@ -218,10 +218,11 @@ export default function ClienteLayout() {
                       <SidebarMenuButton
                         asChild
                         isActive={location.pathname === item.url || location.pathname.startsWith(item.url + "/")}
+                        className="text-gray-900 dark:text-gray-100"
                       >
-                        <Link to={item.url}>
+                        <Link to={item.url} className="text-gray-900 dark:text-gray-100">
                           <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
+                          <span className="text-gray-900 dark:text-gray-100">{item.title}</span>
                           {item.badge && (
                             <Badge variant="destructive" className="ml-auto">
                               {item.badge}

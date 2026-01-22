@@ -76,11 +76,11 @@ All colors MUST be HSL.
 
     /* Sidebar colors for light theme */
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 9%;
+    --sidebar-foreground: 0 0% 3%;
     --sidebar-primary: 0 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 96.1%;
-    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-accent-foreground: 0 0% 3%;
     --sidebar-border: 0 0% 89.8%;
     --sidebar-ring: 0 85% 60%;
 

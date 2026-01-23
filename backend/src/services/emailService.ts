@@ -1039,6 +1039,28 @@ interface EnviarEmailBoasVindasParams {
 export async function enviarEmailBoasVindas(params: EnviarEmailBoasVindasParams) {
   const { email, nomeBarbearia, linkFormulario } = params;
   
+  // Validar email antes de tentar enviar
+  if (!email || typeof email !== 'string' || email.trim() === '') {
+    const erro = 'Email inválido ou vazio';
+    console.error('❌ [EMAIL BOAS-VINDAS]', erro, { email, nomeBarbearia });
+    return { sucesso: false, erro };
+  }
+  
+  // Validar formato de email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailNormalizado = email.trim().toLowerCase();
+  if (!emailRegex.test(emailNormalizado)) {
+    const erro = `Formato de email inválido: ${email}`;
+    console.error('❌ [EMAIL BOAS-VINDAS]', erro);
+    return { sucesso: false, erro };
+  }
+  
+  console.log('📧 [EMAIL BOAS-VINDAS] ==========================================');
+  console.log('📧 [EMAIL BOAS-VINDAS] Iniciando envio de email de boas-vindas');
+  console.log('📧 [EMAIL BOAS-VINDAS] Email destino:', emailNormalizado);
+  console.log('📧 [EMAIL BOAS-VINDAS] Nome barbearia:', nomeBarbearia);
+  console.log('📧 [EMAIL BOAS-VINDAS] ==========================================');
+  
   // Link padrão do formulário (pode ser configurado via variável de ambiente)
   const formularioLink = linkFormulario || process.env.FORMULARIO_BARBEARIA_LINK || 'https://forms.gle/seu-formulario-aqui';
   
@@ -1244,21 +1266,28 @@ Bernardo Strabelli
   try {
     // Tentar enviar via Resend primeiro
     if (isResendConfigured() && resendClient) {
-      console.log('📧 [EMAIL BOAS-VINDAS] Tentando enviar via Resend...');
-      console.log('📧 [EMAIL BOAS-VINDAS] Enviando para:', email);
-      console.log('📧 [EMAIL BOAS-VINDAS] Barbearia:', nomeBarbearia);
+      console.log('📧 [EMAIL BOAS-VINDAS] Método: Resend');
       
       let emailFrom = process.env.EMAIL_FROM || 'Barber Maestro <onboarding@resend.dev>';
+      const isTestMode = emailFrom.includes('onboarding@resend.dev') || process.env.RESEND_FORCE_TEST_FROM === 'true';
       
       // Se estiver em modo de teste, usar email de teste do Resend
-      if (process.env.RESEND_FORCE_TEST_FROM === 'true') {
-        console.warn('⚠️ [EMAIL BOAS-VINDAS] RESEND_FORCE_TEST_FROM=true — usando onboarding@resend.dev');
+      if (isTestMode) {
+        console.warn('⚠️ [EMAIL BOAS-VINDAS] ⚠️ MODO DE TESTE DETECTADO ⚠️');
+        console.warn('⚠️ [EMAIL BOAS-VINDAS] Resend em modo de teste só envia para emails verificados!');
+        console.warn('⚠️ [EMAIL BOAS-VINDAS] Email FROM:', emailFrom);
+        console.warn('⚠️ [EMAIL BOAS-VINDAS] Para produção, configure um domínio verificado no Resend');
         emailFrom = 'Barber Maestro <onboarding@resend.dev>';
+      } else {
+        console.log('✅ [EMAIL BOAS-VINDAS] Resend em modo de produção');
+        console.log('📧 [EMAIL BOAS-VINDAS] Email FROM:', emailFrom);
       }
+      
+      console.log('📧 [EMAIL BOAS-VINDAS] Enviando para:', emailNormalizado);
       
       const result = await resendClient.emails.send({
         from: emailFrom,
-        to: email,
+        to: emailNormalizado,
         subject: assunto,
         html: htmlContent,
         text: textoContent,
@@ -1267,28 +1296,103 @@ Bernardo Strabelli
       const { data, error } = result || {};
       
       // Verificar se houve erro
-      if (error || !data || !data.id) {
-        console.error('❌ [EMAIL BOAS-VINDAS] Erro ao enviar via Resend:', error);
-        throw new Error(error?.message || 'Erro ao enviar email via Resend');
+      if (error) {
+        console.error('❌ [EMAIL BOAS-VINDAS] Erro do Resend:', JSON.stringify(error, null, 2));
+        console.error('❌ [EMAIL BOAS-VINDAS] Tipo de erro:', error.name || 'Desconhecido');
+        console.error('❌ [EMAIL BOAS-VINDAS] Mensagem:', error.message);
+        
+        // Se for erro de email não verificado em modo de teste, avisar
+        if (isTestMode && (error.message?.includes('not verified') || error.message?.includes('not allowed'))) {
+          console.error('❌ [EMAIL BOAS-VINDAS] Email não verificado no Resend (modo de teste)');
+          console.error('❌ [EMAIL BOAS-VINDAS] Em modo de teste, o Resend só envia para emails verificados');
+          console.error('❌ [EMAIL BOAS-VINDAS] Solução: Verifique o email no painel do Resend ou configure um domínio');
+          console.log('🔄 [EMAIL BOAS-VINDAS] Tentando fallback automático para nodemailer...');
+          
+          // Tentar fallback automático para nodemailer
+          try {
+            const transporter = await createTransporter();
+            const info = await transporter.sendMail({
+              from: process.env.EMAIL_FROM || '"Barber Maestro" <noreply@barbermaster.com>',
+              to: emailNormalizado,
+              subject: assunto,
+              html: htmlContent,
+              text: textoContent,
+            });
+            
+            console.log('✅ [EMAIL BOAS-VINDAS] Email enviado via nodemailer (fallback)');
+            console.log('✅ [EMAIL BOAS-VINDAS] Message ID:', info.messageId);
+            console.log('📧 [EMAIL BOAS-VINDAS] ==========================================');
+            
+            return {
+              sucesso: true,
+              metodo: 'nodemailer (fallback)',
+              messageId: info.messageId,
+              previewUrl: nodemailer.getTestMessageUrl ? nodemailer.getTestMessageUrl(info) : null,
+            };
+          } catch (fallbackError: any) {
+            console.error('❌ [EMAIL BOAS-VINDAS] Fallback para nodemailer também falhou:', fallbackError.message);
+            throw new Error(`Resend falhou: ${error.message}. Fallback também falhou: ${fallbackError.message}`);
+          }
+        }
+        
+        // Tentar fallback para nodemailer se Resend falhar
+        console.log('🔄 [EMAIL BOAS-VINDAS] Tentando fallback para nodemailer...');
+        try {
+          const transporter = await createTransporter();
+          const info = await transporter.sendMail({
+            from: process.env.EMAIL_FROM || '"Barber Maestro" <noreply@barbermaster.com>',
+            to: emailNormalizado,
+            subject: assunto,
+            html: htmlContent,
+            text: textoContent,
+          });
+          
+          console.log('✅ [EMAIL BOAS-VINDAS] Email enviado via nodemailer (fallback)');
+          console.log('✅ [EMAIL BOAS-VINDAS] Message ID:', info.messageId);
+          console.log('📧 [EMAIL BOAS-VINDAS] ==========================================');
+          
+          return {
+            sucesso: true,
+            metodo: 'nodemailer (fallback)',
+            messageId: info.messageId,
+            previewUrl: nodemailer.getTestMessageUrl ? nodemailer.getTestMessageUrl(info) : null,
+          };
+        } catch (fallbackError: any) {
+          console.error('❌ [EMAIL BOAS-VINDAS] Fallback para nodemailer também falhou:', fallbackError.message);
+          throw new Error(error?.message || 'Erro ao enviar email via Resend');
+        }
       }
       
-      console.log('✅ [EMAIL BOAS-VINDAS] Email enviado via Resend:', data.id);
+      if (!data || !data.id) {
+        console.error('❌ [EMAIL BOAS-VINDAS] Resposta do Resend sem data ou ID');
+        console.error('❌ [EMAIL BOAS-VINDAS] Resposta completa:', JSON.stringify(result, null, 2));
+        throw new Error('Resposta inválida do Resend');
+      }
+      
+      console.log('✅ [EMAIL BOAS-VINDAS] Email enviado via Resend com sucesso!');
+      console.log('✅ [EMAIL BOAS-VINDAS] Message ID:', data.id);
+      console.log('📧 [EMAIL BOAS-VINDAS] ==========================================');
       return { sucesso: true, metodo: 'resend', messageId: data.id };
     }
     
     // Fallback para nodemailer
-    console.log('📧 [EMAIL BOAS-VINDAS] Resend não disponível, usando nodemailer...');
+    console.log('📧 [EMAIL BOAS-VINDAS] Método: Nodemailer (SMTP)');
+    console.log('📧 [EMAIL BOAS-VINDAS] Resend não disponível ou falhou, usando nodemailer...');
+    
     const transporter = await createTransporter();
+    
+    console.log('📧 [EMAIL BOAS-VINDAS] Enviando para:', emailNormalizado);
     
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || '"Barber Maestro" <noreply@barbermaster.com>',
-      to: email,
+      to: emailNormalizado,
       subject: assunto,
       html: htmlContent,
       text: textoContent,
     });
     
-    console.log('✅ [EMAIL BOAS-VINDAS] Email enviado via nodemailer:', info.messageId);
+    console.log('✅ [EMAIL BOAS-VINDAS] Email enviado via nodemailer com sucesso!');
+    console.log('✅ [EMAIL BOAS-VINDAS] Message ID:', info.messageId);
     
     // Se for Ethereal (teste), mostrar preview URL
     if (process.env.SMTP_HOST?.includes('ethereal') || !process.env.SMTP_HOST) {
@@ -1299,6 +1403,8 @@ Bernardo Strabelli
       }
     }
     
+    console.log('📧 [EMAIL BOAS-VINDAS] ==========================================');
+    
     return {
       sucesso: true,
       metodo: 'nodemailer',
@@ -1306,15 +1412,33 @@ Bernardo Strabelli
       previewUrl: nodemailer.getTestMessageUrl ? nodemailer.getTestMessageUrl(info) : null,
     };
   } catch (error: any) {
-    console.error('❌ [EMAIL BOAS-VINDAS] Erro ao enviar email:', error);
-    console.error('❌ [EMAIL BOAS-VINDAS] Detalhes:', {
-      email,
-      nomeBarbearia,
-      erro: error.message,
-    });
+    console.error('❌ [EMAIL BOAS-VINDAS] ==========================================');
+    console.error('❌ [EMAIL BOAS-VINDAS] ERRO AO ENVIAR EMAIL');
+    console.error('❌ [EMAIL BOAS-VINDAS] ==========================================');
+    console.error('❌ [EMAIL BOAS-VINDAS] Email destino:', emailNormalizado);
+    console.error('❌ [EMAIL BOAS-VINDAS] Nome barbearia:', nomeBarbearia);
+    console.error('❌ [EMAIL BOAS-VINDAS] Tipo de erro:', error.name || 'Desconhecido');
+    console.error('❌ [EMAIL BOAS-VINDAS] Mensagem:', error.message);
+    console.error('❌ [EMAIL BOAS-VINDAS] Stack:', error.stack);
+    
+    // Log detalhado do erro do Resend se disponível
+    if (error.response) {
+      console.error('❌ [EMAIL BOAS-VINDAS] Resposta do erro:', JSON.stringify(error.response, null, 2));
+    }
+    
+    console.error('❌ [EMAIL BOAS-VINDAS] ==========================================');
+    
     // Não lançar erro para não quebrar o fluxo de cadastro
-    // Apenas logar o erro
-    return { sucesso: false, erro: error.message };
+    // Apenas logar o erro e retornar falha
+    return { 
+      sucesso: false, 
+      erro: error.message || 'Erro desconhecido ao enviar email',
+      detalhes: {
+        email: emailNormalizado,
+        nomeBarbearia,
+        tipoErro: error.name,
+      }
+    };
   }
 }
 

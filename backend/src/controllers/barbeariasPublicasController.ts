@@ -22,6 +22,7 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
     };
 
     // Busca geral (nome, cidade, bairro ou endereço)
+    // Tentar usar mode: 'insensitive', mas se falhar, usar busca case-sensitive
     if (busca && typeof busca === 'string') {
       where.OR = [
         {
@@ -69,8 +70,11 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
 
     console.log('🔧 [BARBEARIAS] Where clause:', JSON.stringify(where, null, 2));
     
-    const barbearias = await prisma.barbearia.findMany({
-      where,
+    // Tentar executar a query
+    let barbearias;
+    try {
+      barbearias = await prisma.barbearia.findMany({
+      where: Object.keys(where).length > 0 ? where : {},
       include: {
         servicos: {
           where: {
@@ -111,7 +115,75 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
       orderBy: {
         nome: 'asc',
       },
-    });
+      });
+    } catch (queryError: any) {
+      // Se a query falhar com mode: 'insensitive', tentar sem ele
+      console.warn('⚠️ [BARBEARIAS] Erro na query com mode: insensitive, tentando sem ele:', queryError?.message);
+      
+      // Recriar where clause sem mode: 'insensitive'
+      const whereFallback: any = {};
+      
+      if (busca && typeof busca === 'string') {
+        whereFallback.OR = [
+          { nome: { contains: busca } },
+          { cidade: { contains: busca } },
+          { bairro: { contains: busca } },
+          { endereco: { contains: busca } },
+        ];
+      }
+      
+      if (cidade && typeof cidade === 'string') {
+        whereFallback.cidade = { contains: cidade };
+      }
+      
+      if (bairro && typeof bairro === 'string') {
+        whereFallback.bairro = { contains: bairro };
+      }
+      
+      barbearias = await prisma.barbearia.findMany({
+        where: Object.keys(whereFallback).length > 0 ? whereFallback : {},
+        include: {
+          servicos: {
+            where: {
+              ativo: true,
+            },
+            orderBy: {
+              ordem: 'asc',
+            },
+          },
+          profissionais: {
+            where: {
+              ativo: true,
+            },
+            select: {
+              id: true,
+              nome: true,
+              foto: true,
+              especialidades: true,
+            },
+          },
+          _count: {
+            select: {
+              agendamentos: {
+                where: {
+                  status: {
+                    in: ['confirmado', 'concluido'],
+                  },
+                },
+              },
+              servicos: {
+                where: {
+                  ativo: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          nome: 'asc',
+        },
+      });
+    }
 
     console.log('🔧 [BARBEARIAS] Total de barbearias encontradas:', barbearias.length);
     
@@ -166,9 +238,23 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
     }));
 
     res.json(barbeariasFormatadas);
-  } catch (error) {
-    console.error('Erro ao listar barbearias públicas:', error);
-    res.status(500).json({ error: 'Erro ao listar barbearias' });
+  } catch (error: any) {
+    console.error('❌ [BARBEARIAS] Erro ao listar barbearias públicas:', error);
+    console.error('❌ [BARBEARIAS] Stack:', error?.stack);
+    console.error('❌ [BARBEARIAS] Message:', error?.message);
+    console.error('❌ [BARBEARIAS] Name:', error?.name);
+    console.error('❌ [BARBEARIAS] Code:', error?.code);
+    console.error('❌ [BARBEARIAS] Meta:', error?.meta);
+    
+    // Retornar mensagem de erro mais detalhada em desenvolvimento
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? `Erro ao listar barbearias: ${error?.message || 'Erro desconhecido'}`
+      : 'Erro ao listar barbearias';
+    
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    });
   }
 }
 

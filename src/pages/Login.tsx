@@ -107,23 +107,53 @@ const Login = () => {
           // Aguardar um pouco antes de salvar
           await new Promise(resolve => setTimeout(resolve, 50));
           
-          // Salvar token
+          // Salvar token - usar método direto sem interceptação
           const userTypeValue = activeTab === 'owner' ? 'dono' : activeTab === 'client' ? 'cliente' : 'admin';
           console.log('💾 [LOGIN] Salvando token...');
-          localStorage.setItem('token', data.token);
-          console.log('💾 [LOGIN] Salvando userType:', userTypeValue);
-          localStorage.setItem('userType', userTypeValue);
+          console.log('   Token (primeiros 50 chars):', data.token.substring(0, 50) + '...');
+          console.log('   Token (tamanho):', data.token.length);
+          console.log('   UserType:', userTypeValue);
           
-          // Verificar imediatamente após salvar
-          const tokenTeste = localStorage.getItem('token');
-          const userTypeTeste = localStorage.getItem('userType');
+          // Usar método direto do localStorage (não através de proxy)
+          const storage = window.localStorage;
+          storage.setItem('token', data.token);
+          storage.setItem('userType', userTypeValue);
+          
+          // Forçar sincronização
+          if ('sync' in storage && typeof (storage as any).sync === 'function') {
+            (storage as any).sync();
+          }
+          
+          // Verificar imediatamente após salvar (múltiplas vezes)
+          let tokenTeste = storage.getItem('token');
+          let userTypeTeste = storage.getItem('userType');
+          
+          // Se não encontrou, tentar novamente
+          if (!tokenTeste) {
+            console.warn('⚠️ [LOGIN] Token não encontrado na primeira verificação, tentando salvar novamente...');
+            storage.setItem('token', data.token);
+            storage.setItem('userType', userTypeValue);
+            // Aguardar um pouco
+            await new Promise(resolve => setTimeout(resolve, 100));
+            tokenTeste = storage.getItem('token');
+            userTypeTeste = storage.getItem('userType');
+          }
+          
           console.log('✅ [LOGIN] Verificação imediata após salvar:');
           console.log('   Token salvo:', !!tokenTeste);
           console.log('   UserType salvo:', userTypeTeste);
           console.log('   Token (primeiros 30 chars):', tokenTeste ? tokenTeste.substring(0, 30) + '...' : 'N/A');
+          console.log('   localStorage completo:', {
+            token: !!storage.getItem('token'),
+            userType: storage.getItem('userType'),
+            user: !!storage.getItem('user'),
+            barbearia: !!storage.getItem('barbearia'),
+          });
           
           if (!tokenTeste) {
-            throw new Error('Token não foi salvo no localStorage!');
+            console.error('❌ [LOGIN] Token não foi salvo após múltiplas tentativas!');
+            console.error('   Verifique se o navegador está bloqueando localStorage');
+            throw new Error('Token não foi salvo no localStorage! Verifique as configurações do navegador.');
           }
 
           if (data.usuario) {

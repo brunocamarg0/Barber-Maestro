@@ -377,25 +377,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     // Listener para mudanças no localStorage (funciona entre abas)
     window.addEventListener('storage', checkToken);
     
-    // Listener customizado para detectar mudanças no localStorage na mesma aba
-    // Isso é necessário porque o evento 'storage' só dispara em outras abas
-    const originalSetItem = Storage.prototype.setItem;
-    Storage.prototype.setItem = function(key: string, value: string) {
-      originalSetItem.apply(this, [key, value]);
-      if (key === 'token' || key === 'userType') {
-        // Disparar evento customizado
-        window.dispatchEvent(new Event('localStorageChange'));
-      }
-    };
-    
-    window.addEventListener('localStorageChange', checkToken);
+    // Não sobrescrever Storage.prototype.setItem pois pode causar problemas
+    // Em vez disso, usar um MutationObserver ou verificar periodicamente
+    // O intervalo de 200ms já é suficiente para detectar mudanças rapidamente
     
     return () => {
       clearInterval(interval);
       window.removeEventListener('storage', checkToken);
-      window.removeEventListener('localStorageChange', checkToken);
-      // Restaurar método original
-      Storage.prototype.setItem = originalSetItem;
     };
   }, [hasToken]);
   

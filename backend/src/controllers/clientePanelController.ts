@@ -97,6 +97,7 @@ export async function listarMeusAgendamentos(req: AuthRequestCliente, res: Respo
       where.status = status;
     }
 
+    // Limitar a 100 agendamentos mais recentes para melhor performance
     const agendamentos = await prisma.agendamento.findMany({
       where,
       include: {
@@ -119,6 +120,7 @@ export async function listarMeusAgendamentos(req: AuthRequestCliente, res: Respo
           },
         },
         profissionais: {
+          take: 1, // Limitar a 1 profissional por agendamento (geralmente só tem 1)
           include: {
             profissional: {
               select: {
@@ -131,6 +133,7 @@ export async function listarMeusAgendamentos(req: AuthRequestCliente, res: Respo
         },
       },
       orderBy: { data: 'desc' },
+      take: 100, // Limitar a 100 agendamentos mais recentes
     });
 
     res.json(agendamentos);

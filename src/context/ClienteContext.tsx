@@ -72,6 +72,10 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     },
     progressoProximoNivel: 0,
   });
+  
+  // Cache simples: última vez que os dados foram carregados
+  const [ultimoCarregamento, setUltimoCarregamento] = useState<number | null>(null);
+  const CACHE_DURATION = 60000; // 1 minuto de cache
 
   // Carregar dados do cliente do localStorage e do banco
   useEffect(() => {
@@ -127,20 +131,33 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      carregarDados().catch((err) => {
-        console.error('❌ Erro ao carregar dados do cliente:', err);
+      // Verificar cache: só recarregar se passou mais de 1 minuto desde o último carregamento
+      const agora = Date.now();
+      const deveRecarregar = !ultimoCarregamento || (agora - ultimoCarregamento) > CACHE_DURATION;
+      
+      if (deveRecarregar) {
+        console.log('🔄 Cache expirado ou primeiro carregamento, buscando dados do servidor...');
+        carregarDados().catch((err) => {
+          console.error('❌ Erro ao carregar dados do cliente:', err);
+          setLoading(false);
+        });
+      } else {
+        console.log('✅ Usando cache (dados carregados há menos de 1 minuto)');
         setLoading(false);
-      });
+      }
 
-      // Carregar todas as barbearias ativas automaticamente ao fazer login
-      buscarBarbearias().catch((err) => {
-        console.warn('⚠️ Erro ao carregar barbearias iniciais:', err);
-      });
+      // Carregar barbearias em background (não bloqueia o carregamento principal)
+      // Usar setTimeout para não bloquear o carregamento inicial
+      setTimeout(() => {
+        buscarBarbearias().catch((err) => {
+          console.warn('⚠️ Erro ao carregar barbearias iniciais:', err);
+        });
+      }, 1000); // Aguardar 1 segundo antes de carregar barbearias
     } else if (isClienteRoute && !token) {
       console.warn('⚠️ Token não encontrado. Redirecionando para login...');
       window.location.href = '/login?tab=client';
     }
-  }, []);
+  }, [ultimoCarregamento]);
 
   const carregarDados = async () => {
     try {
@@ -149,37 +166,58 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       console.log('📥 [CLIENTE] Token presente:', !!localStorage.getItem('token'));
       console.log('📥 [CLIENTE] UserType:', localStorage.getItem('userType'));
 
-      // Timeout de 10 segundos para cada requisição
+      // Timeout reduzido para 5 segundos
       const timeout = (ms: number) => new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`Timeout após ${ms}ms`)), ms)
       );
 
-      // Carregar perfil do cliente com timeout
+      // Carregar perfil e agendamentos EM PARALELO para melhor performance
       let perfil: Cliente | null = null;
+      let agendamentosData: any[] = [];
+
       try {
-        perfil = await Promise.race([
-          apiGet<Cliente>('/cliente/perfil'),
-          timeout(10000)
-        ]) as Cliente;
-        console.log('✅ [CLIENTE] Perfil carregado:', perfil?.nome);
-      } catch (err: any) {
-        console.error('❌ [CLIENTE] Erro ao carregar perfil:', err);
-        console.error('❌ [CLIENTE] Erro detalhado:', {
-          message: err?.message,
-          status: err?.status,
-          stack: err?.stack
-        });
-        // Se erro 401, token inválido
-        if (err?.status === 401 || err?.message?.includes('401')) {
-          console.error('❌ [CLIENTE] Token inválido ou expirado');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('userType');
-          window.location.href = '/login?tab=client';
-          return;
+        // Fazer requisições em paralelo
+        const [perfilResult, agendamentosResult] = await Promise.allSettled([
+          Promise.race([
+            apiGet<Cliente>('/cliente/perfil'),
+            timeout(5000)
+          ]),
+          Promise.race([
+            apiGet<any[]>('/cliente/agendamentos'),
+            timeout(5000)
+          ])
+        ]);
+
+        // Processar resultado do perfil
+        if (perfilResult.status === 'fulfilled') {
+          perfil = perfilResult.value as Cliente;
+          console.log('✅ [CLIENTE] Perfil carregado:', perfil?.nome);
+        } else {
+          console.error('❌ [CLIENTE] Erro ao carregar perfil:', perfilResult.reason);
+          const err = perfilResult.reason;
+          if (err?.status === 401 || err?.message?.includes('401')) {
+            console.error('❌ [CLIENTE] Token inválido ou expirado');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userType');
+            window.location.href = '/login?tab=client';
+            return;
+          }
         }
+
+        // Processar resultado dos agendamentos
+        if (agendamentosResult.status === 'fulfilled') {
+          agendamentosData = agendamentosResult.value as any[];
+          console.log('✅ [CLIENTE] Agendamentos carregados:', agendamentosData.length);
+        } else {
+          console.error('❌ [CLIENTE] Erro ao carregar agendamentos:', agendamentosResult.reason);
+          agendamentosData = [];
+        }
+      } catch (err: any) {
+        console.error('❌ [CLIENTE] Erro geral ao carregar dados:', err);
       }
 
+      // Atualizar perfil
       if (perfil) {
         setCliente(perfil);
         localStorage.setItem('user', JSON.stringify(perfil));
@@ -204,19 +242,6 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
             console.error('❌ [CLIENTE] Erro ao parsear localStorage:', parseError);
           }
         }
-      }
-
-      // Carregar agendamentos com timeout
-      let agendamentosData: any[] = [];
-      try {
-        agendamentosData = await Promise.race([
-          apiGet<any[]>('/cliente/agendamentos'),
-          timeout(10000)
-        ]) as any[];
-        console.log('✅ [CLIENTE] Agendamentos carregados:', agendamentosData.length);
-      } catch (err: any) {
-        console.error('❌ [CLIENTE] Erro ao carregar agendamentos:', err);
-        agendamentosData = [];
       }
 
       // Transformar agendamentos do banco para o formato do frontend
@@ -293,6 +318,9 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         },
         progressoProximoNivel: (proximoCorte / 5) * 100,
       });
+
+      // Atualizar timestamp do cache
+      setUltimoCarregamento(Date.now());
 
       console.log('✅ [CLIENTE] Dados carregados:', {
         perfil: !!perfil,

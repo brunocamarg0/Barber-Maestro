@@ -102,17 +102,33 @@ const Login = () => {
 
         toast.success('Login realizado com sucesso!');
 
-        // Pequeno delay para garantir que os dados sejam salvos no localStorage
+        // Verificar se os dados foram salvos corretamente
+        const tokenVerificado = localStorage.getItem('token');
+        const userTypeVerificado = localStorage.getItem('userType');
+        console.log('✅ [LOGIN] Verificação pós-salvamento:');
+        console.log('   Token salvo:', !!tokenVerificado);
+        console.log('   UserType salvo:', userTypeVerificado);
+        console.log('   Token (primeiros 30 chars):', tokenVerificado ? tokenVerificado.substring(0, 30) + '...' : 'N/A');
+
+        // Delay maior para garantir que os dados sejam salvos no localStorage
+        // e que o navegador tenha tempo de processar
         console.log('✅ [LOGIN] Redirecionando para:', redirectPath);
         setTimeout(() => {
           try {
+            // Verificar novamente antes de navegar
+            const tokenFinal = localStorage.getItem('token');
+            if (!tokenFinal) {
+              console.error('❌ [LOGIN] Token não encontrado antes de navegar!');
+              toast.error('Erro ao salvar token. Tente fazer login novamente.');
+              return;
+            }
             navigate(redirectPath);
           } catch (navError) {
             console.error('❌ [LOGIN] Erro ao navegar:', navError);
             // Fallback: recarregar a página
             window.location.href = redirectPath;
           }
-        }, 100);
+        }, 300);
       } else {
         console.error('❌ [LOGIN] Token não recebido na resposta');
         throw new Error('Token não recebido');

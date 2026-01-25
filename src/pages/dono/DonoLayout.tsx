@@ -47,21 +47,40 @@ function DonoLayoutContent() {
 
   // Verificar autenticação ao montar o componente (apenas uma vez)
   useEffect(() => {
+    let attempts = 0;
+    const maxAttempts = 10; // Tentar por até 5 segundos (10 tentativas x 500ms)
+    
     const checkAuth = () => {
+      attempts++;
       const token = localStorage.getItem('token');
       const userType = localStorage.getItem('userType');
       
-      console.log('🔐 [DONO LAYOUT] Verificando autenticação...');
+      console.log(`🔐 [DONO LAYOUT] Verificando autenticação (tentativa ${attempts}/${maxAttempts})...`);
       console.log('   Token presente:', !!token);
       console.log('   Token (primeiros 30 chars):', token ? token.substring(0, 30) + '...' : 'N/A');
       console.log('   UserType:', userType);
       console.log('   Path:', location.pathname);
+      console.log('   localStorage completo:', {
+        token: !!localStorage.getItem('token'),
+        userType: localStorage.getItem('userType'),
+        user: !!localStorage.getItem('user'),
+        barbearia: !!localStorage.getItem('barbearia'),
+      });
       
-      // Se não há token ou userType não é 'dono', redirecionar para login
+      // Se não há token ou userType não é 'dono'
       if (!token || userType !== 'dono') {
-        console.warn('⚠️ [DONO LAYOUT] Token não encontrado ou tipo de usuário incorreto. Redirecionando...');
+        // Se ainda não atingiu o máximo de tentativas, tentar novamente
+        if (attempts < maxAttempts) {
+          console.log(`⏳ [DONO LAYOUT] Token ainda não encontrado, tentando novamente em 500ms...`);
+          setTimeout(checkAuth, 500);
+          return;
+        }
+        
+        // Se atingiu o máximo de tentativas, redirecionar para login
+        console.warn('⚠️ [DONO LAYOUT] Token não encontrado após múltiplas tentativas. Redirecionando...');
         console.warn('   Token:', token);
         console.warn('   UserType:', userType);
+        console.warn('   Tentativas:', attempts);
         setIsCheckingAuth(false);
         window.location.href = '/login?tab=owner';
         return;
@@ -71,9 +90,10 @@ function DonoLayoutContent() {
       setIsCheckingAuth(false);
     };
 
-    // Delay menor para verificar mais rapidamente após o login
-    // Mas ainda dar tempo para o localStorage ser atualizado
-    const timer = setTimeout(checkAuth, 300);
+    // Começar a verificar imediatamente, mas dar tempo para o localStorage ser atualizado
+    // Após o login, o token é salvo e depois há um delay de 100ms antes do navigate
+    // Então vamos começar a verificar após 200ms para dar tempo suficiente
+    const timer = setTimeout(checkAuth, 200);
     return () => clearTimeout(timer);
   }, [location.pathname]);
 

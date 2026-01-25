@@ -115,6 +115,29 @@ router.put('/', async (req: AuthRequest, res) => {
       return res.status(401).json({ error: 'Barbearia não identificada' });
     }
 
+    // Validação: bairro e cidade são obrigatórios para que clientes possam encontrar a barbearia
+    // Se estiverem sendo atualizados, devem ter valor
+    if (dados.bairro !== undefined && !dados.bairro) {
+      return res.status(400).json({ error: 'Bairro é obrigatório para que clientes possam encontrar sua barbearia' });
+    }
+    if (dados.cidade !== undefined && !dados.cidade) {
+      return res.status(400).json({ error: 'Cidade é obrigatória para que clientes possam encontrar sua barbearia' });
+    }
+    
+    // Se não estiverem sendo atualizados, verificar se já existem no banco
+    if (dados.bairro === undefined || dados.cidade === undefined) {
+      const barbeariaAtual = await prisma.barbearia.findUnique({
+        where: { id: barbeariaId },
+        select: { bairro: true, cidade: true },
+      });
+      
+      if (!barbeariaAtual?.bairro || !barbeariaAtual?.cidade) {
+        return res.status(400).json({ 
+          error: 'Bairro e Cidade são obrigatórios. Por favor, preencha esses campos para que clientes possam encontrar sua barbearia.' 
+        });
+      }
+    }
+
     console.log('💾 [CONFIG BACKEND] Atualizando barbearia no banco...');
     
     // Preparar dados de atualização

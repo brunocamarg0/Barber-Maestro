@@ -173,6 +173,16 @@ export default function ConfiguracoesBarbearia() {
         return;
       }
 
+      // Validação: bairro e cidade são obrigatórios
+      if (!formData.bairro || !formData.cidade) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Bairro e Cidade são obrigatórios para que clientes possam encontrar sua barbearia.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Preparar dados para envio (sem campos que não devem ser enviados)
       const dadosParaEnvio: Partial<ConfiguracaoBarbearia> = {
         nome: formData.nome,
@@ -524,6 +534,70 @@ export default function ConfiguracoesBarbearia() {
               value={formData.cnpjCpf || ""}
               onChange={(e) => setFormData({ ...formData, cnpjCpf: e.target.value })}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">E-mail</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email || ""}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="telefone">Telefone</Label>
+            <Input
+              id="telefone"
+              value={formData.telefone || ""}
+              onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+              placeholder="(11) 96123-4567"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="endereco">Endereço (Rua e Número)</Label>
+            <Input
+              id="endereco"
+              value={formData.endereco || ""}
+              onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+              placeholder="Rua, número, complemento"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="bairro">Bairro *</Label>
+              <Input
+                id="bairro"
+                value={formData.bairro || ""}
+                onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                placeholder="Bairro"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Obrigatório para que clientes encontrem sua barbearia
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade *</Label>
+              <Input
+                id="cidade"
+                value={formData.cidade || ""}
+                onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                placeholder="Cidade"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Obrigatório para que clientes encontrem sua barbearia
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cep">CEP</Label>
+              <Input
+                id="cep"
+                value={formData.cep || ""}
+                onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+                placeholder="00000-000"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

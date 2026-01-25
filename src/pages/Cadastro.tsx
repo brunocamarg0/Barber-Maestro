@@ -31,6 +31,10 @@ const Cadastro = () => {
     telefone: "",
     email: "",
     senha: "",
+    endereco: "",
+    bairro: "",
+    cidade: "",
+    cep: "",
   });
   
   // Formulário para cliente
@@ -66,6 +70,13 @@ const Cadastro = () => {
           return;
         }
 
+        // Validação de campos obrigatórios
+        if (!formDono.bairro || !formDono.cidade) {
+          toast.error("Bairro e Cidade são obrigatórios para que clientes possam encontrar sua barbearia.");
+          setIsLoading(false);
+          return;
+        }
+
         url = `${API_URL}/auth/dono/cadastro-direto`;
         body = {
           nomeBarbearia: formDono.nomeBarbearia,
@@ -73,6 +84,10 @@ const Cadastro = () => {
           telefone: formDono.telefone,
           email: formDono.email,
           senha: formDono.senha,
+          endereco: formDono.endereco || null,
+          bairro: formDono.bairro,
+          cidade: formDono.cidade,
+          cep: formDono.cep || null,
         };
         redirectPath = '/dono';
       } else {
@@ -267,6 +282,55 @@ const Cadastro = () => {
                           minLength={6}
                           maxLength={15}
                           required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Campos de Localização - Obrigatórios para busca */}
+                    <div className="space-y-2 mt-4">
+                      <Label htmlFor="endereco">Endereço (Rua e Número)</Label>
+                      <Input
+                        id="endereco"
+                        value={formDono.endereco}
+                        onChange={(e) => setFormDono({ ...formDono, endereco: e.target.value })}
+                        placeholder="Rua, número, complemento"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="bairro">Bairro *</Label>
+                        <Input
+                          id="bairro"
+                          value={formDono.bairro}
+                          onChange={(e) => setFormDono({ ...formDono, bairro: e.target.value })}
+                          placeholder="Bairro"
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Obrigatório para que clientes encontrem sua barbearia
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cidade">Cidade *</Label>
+                        <Input
+                          id="cidade"
+                          value={formDono.cidade}
+                          onChange={(e) => setFormDono({ ...formDono, cidade: e.target.value })}
+                          placeholder="Cidade"
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Obrigatório para que clientes encontrem sua barbearia
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cep">CEP</Label>
+                        <Input
+                          id="cep"
+                          value={formDono.cep}
+                          onChange={(e) => setFormDono({ ...formDono, cep: e.target.value })}
+                          placeholder="00000-000"
                         />
                       </div>
                     </div>

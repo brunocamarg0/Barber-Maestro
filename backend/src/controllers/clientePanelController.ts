@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { AuthRequestCliente } from '../middleware/authCliente';
+import { hashSenha, compararSenha } from '../utils/password';
 
 /**
  * Obter perfil do cliente logado
@@ -518,6 +519,168 @@ export async function cancelarMeuAgendamento(req: AuthRequestCliente, res: Respo
   } catch (error) {
     console.error('Erro ao cancelar agendamento do cliente:', error);
     res.status(500).json({ error: 'Erro ao cancelar agendamento' });
+  }
+}
+
+/**
+ * Alterar senha do cliente
+ */
+export async function alterarSenha(req: AuthRequestCliente, res: Response) {
+  try {
+    console.log('🔐 [CLIENTE PANEL] Alterar senha: Iniciando...');
+    
+    const clienteId = req.userId;
+    const { senhaAtual, novaSenha } = req.body;
+
+    if (!clienteId) {
+      console.error('❌ [CLIENTE PANEL] Cliente não autenticado');
+      return res.status(401).json({ error: 'Cliente não autenticado' });
+    }
+
+    if (!senhaAtual || !novaSenha) {
+      console.error('❌ [CLIENTE PANEL] Campos obrigatórios faltando');
+      return res.status(400).json({ error: 'Senha atual e nova senha são obrigatórias' });
+    }
+
+    if (novaSenha.length < 6) {
+      console.error('❌ [CLIENTE PANEL] Nova senha muito curta');
+      return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres' });
+    }
+
+    console.log('🔐 [CLIENTE PANEL] Buscando cliente no banco...');
+    // Buscar cliente
+    const cliente = await prisma.cliente.findUnique({
+      where: { id: clienteId },
+      select: {
+        id: true,
+        email: true,
+        senha: true,
+      },
+    });
+
+    if (!cliente) {
+      console.error('❌ [CLIENTE PANEL] Cliente não encontrado no banco');
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    console.log('🔐 [CLIENTE PANEL] Cliente encontrado:', cliente.email);
+
+    if (!cliente.senha) {
+      console.error('❌ [CLIENTE PANEL] Conta não possui senha cadastrada');
+      return res.status(400).json({ error: 'Esta conta não possui senha cadastrada. Use o login com Google.' });
+    }
+
+    console.log('🔐 [CLIENTE PANEL] Verificando senha atual...');
+    // Verificar senha atual
+    const senhaValida = await compararSenha(senhaAtual, cliente.senha);
+
+    if (!senhaValida) {
+      console.error('❌ [CLIENTE PANEL] Senha atual incorreta');
+      return res.status(401).json({ error: 'Senha atual incorreta' });
+    }
+
+    console.log('🔐 [CLIENTE PANEL] Senha atual válida, gerando hash da nova senha...');
+    // Hash da nova senha
+    const novaSenhaHash = await hashSenha(novaSenha);
+
+    console.log('🔐 [CLIENTE PANEL] Atualizando senha no banco...');
+    // Atualizar senha
+    await prisma.cliente.update({
+      where: { id: clienteId },
+      data: { senha: novaSenhaHash },
+    });
+
+    console.log('✅ [CLIENTE PANEL] Senha alterada com sucesso!');
+    res.json({
+      sucesso: true,
+      mensagem: 'Senha alterada com sucesso!',
+    });
+  } catch (error: any) {
+    console.error('❌ [CLIENTE PANEL] Erro ao alterar senha:', error);
+    console.error('   Stack:', error.stack);
+    console.error('   Mensagem:', error.message);
+    
+    res.status(500).json({ 
+      error: 'Erro ao alterar senha',
+      detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+
+/**
+ * Excluir conta do cliente (LGPD)
+ */
+export async function excluirConta(req: AuthRequestCliente, res: Response) {
+  try {
+    console.log('🗑️ [CLIENTE PANEL] Excluir conta: Iniciando...');
+    
+    const clienteId = req.userId;
+
+    if (!clienteId) {
+      console.error('❌ [CLIENTE PANEL] Cliente não autenticado');
+      return res.status(401).json({ error: 'Cliente não autenticado' });
+    }
+
+    console.log('🔍 [CLIENTE PANEL] Verificando se cliente existe...');
+    // Verificar se cliente existe
+    const cliente = await prisma.cliente.findUnique({
+      where: { id: clienteId },
+      select: {
+        id: true,
+        email: true,
+        nome: true,
+      },
+    });
+
+    if (!cliente) {
+      console.error('❌ [CLIENTE PANEL] Cliente não encontrado');
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    console.log('🗑️ [CLIENTE PANEL] Excluindo agendamentos do cliente...');
+    // Excluir agendamentos relacionados (cascade)
+    await prisma.agendamento.deleteMany({
+      where: { clienteId },
+    });
+
+    console.log('🗑️ [CLIENTE PANEL] Excluindo pagamentos relacionados...');
+    // Excluir pagamentos relacionados através dos agendamentos
+    // (já devem ser excluídos em cascade, mas garantindo)
+    const agendamentosIds = await prisma.agendamento.findMany({
+      where: { clienteId },
+      select: { id: true },
+    });
+
+    if (agendamentosIds.length > 0) {
+      await prisma.pagamento.deleteMany({
+        where: {
+          agendamentoId: {
+            in: agendamentosIds.map(a => a.id),
+          },
+        },
+      });
+    }
+
+    console.log('🗑️ [CLIENTE PANEL] Excluindo conta do cliente...');
+    // Excluir conta do cliente
+    await prisma.cliente.delete({
+      where: { id: clienteId },
+    });
+
+    console.log('✅ [CLIENTE PANEL] Conta excluída com sucesso!');
+    res.json({
+      sucesso: true,
+      mensagem: 'Conta excluída com sucesso conforme LGPD',
+    });
+  } catch (error: any) {
+    console.error('❌ [CLIENTE PANEL] Erro ao excluir conta:', error);
+    console.error('   Stack:', error.stack);
+    console.error('   Mensagem:', error.message);
+    
+    res.status(500).json({ 
+      error: 'Erro ao excluir conta',
+      detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 

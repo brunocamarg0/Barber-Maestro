@@ -51,6 +51,8 @@ const Login = () => {
         redirectPath = '/admin';
       }
 
+      console.log('🔐 [LOGIN] Iniciando login...', { endpoint, activeTab });
+      
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: {
@@ -59,38 +61,60 @@ const Login = () => {
         body: JSON.stringify(formData[activeTab as keyof typeof formData]),
       });
 
-      const data = await response.json();
+      console.log('🔐 [LOGIN] Resposta recebida:', { status: response.status, ok: response.ok });
+
+      let data;
+      try {
+        data = await response.json();
+        console.log('🔐 [LOGIN] Dados recebidos:', { 
+          temToken: !!data.token, 
+          temUsuario: !!data.usuario, 
+          temBarbearia: !!data.barbearia,
+          sucesso: data.sucesso 
+        });
+      } catch (parseError) {
+        console.error('❌ [LOGIN] Erro ao parsear resposta JSON:', parseError);
+        const text = await response.text();
+        console.error('❌ [LOGIN] Resposta como texto:', text);
+        throw new Error('Resposta inválida do servidor');
+      }
 
       if (!response.ok) {
+        console.error('❌ [LOGIN] Erro na resposta:', data);
         throw new Error(data.error || 'Erro ao fazer login');
       }
 
       // Salvar token e dados do usuário
       if (data.token) {
+        console.log('✅ [LOGIN] Token recebido, salvando no localStorage...');
         localStorage.setItem('token', data.token);
         localStorage.setItem('userType', activeTab === 'owner' ? 'dono' : activeTab === 'client' ? 'cliente' : 'admin');
 
         if (data.usuario) {
+          console.log('✅ [LOGIN] Salvando dados do usuário:', data.usuario);
           localStorage.setItem('user', JSON.stringify(data.usuario));
         }
 
         if (data.barbearia) {
+          console.log('✅ [LOGIN] Salvando dados da barbearia:', data.barbearia);
           localStorage.setItem('barbearia', JSON.stringify(data.barbearia));
         }
 
         toast.success('Login realizado com sucesso!');
 
         // Pequeno delay para garantir que os dados sejam salvos no localStorage
+        console.log('✅ [LOGIN] Redirecionando para:', redirectPath);
         setTimeout(() => {
           try {
             navigate(redirectPath);
           } catch (navError) {
-            console.error('Erro ao navegar:', navError);
+            console.error('❌ [LOGIN] Erro ao navegar:', navError);
             // Fallback: recarregar a página
             window.location.href = redirectPath;
           }
         }, 100);
       } else {
+        console.error('❌ [LOGIN] Token não recebido na resposta');
         throw new Error('Token não recebido');
       }
     } catch (error: any) {

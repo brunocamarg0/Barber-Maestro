@@ -479,6 +479,7 @@ export async function loginDono(req: Request, res: Response) {
       id: dono.id,
       email: dono.email,
       tipo: 'dono',
+      barbeariaId: dono.barbeariaId,
     });
 
     res.json({

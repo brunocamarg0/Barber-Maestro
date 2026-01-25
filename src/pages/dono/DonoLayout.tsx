@@ -53,12 +53,16 @@ function DonoLayoutContent() {
       
       console.log('🔐 [DONO LAYOUT] Verificando autenticação...');
       console.log('   Token presente:', !!token);
+      console.log('   Token (primeiros 30 chars):', token ? token.substring(0, 30) + '...' : 'N/A');
       console.log('   UserType:', userType);
       console.log('   Path:', location.pathname);
       
       // Se não há token ou userType não é 'dono', redirecionar para login
       if (!token || userType !== 'dono') {
         console.warn('⚠️ [DONO LAYOUT] Token não encontrado ou tipo de usuário incorreto. Redirecionando...');
+        console.warn('   Token:', token);
+        console.warn('   UserType:', userType);
+        setIsCheckingAuth(false);
         window.location.href = '/login?tab=owner';
         return;
       }
@@ -67,9 +71,9 @@ function DonoLayoutContent() {
       setIsCheckingAuth(false);
     };
 
-    // Delay maior para garantir que o token foi salvo após o login
-    // E que todas as requisições iniciais foram processadas
-    const timer = setTimeout(checkAuth, 1000);
+    // Delay menor para verificar mais rapidamente após o login
+    // Mas ainda dar tempo para o localStorage ser atualizado
+    const timer = setTimeout(checkAuth, 300);
     return () => clearTimeout(timer);
   }, [location.pathname]);
 

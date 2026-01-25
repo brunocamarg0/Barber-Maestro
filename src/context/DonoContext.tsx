@@ -334,16 +334,36 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   // Verificar se há token antes de fazer requisições
   // Usar useState para garantir que seja recalculado quando o token mudar
-  const [hasToken, setHasToken] = useState(() => 
-    typeof window !== 'undefined' && !!localStorage.getItem('token')
-  );
+  const [hasToken, setHasToken] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const token = localStorage.getItem('token');
+    const userType = localStorage.getItem('userType');
+    const hasValidToken = !!token && userType === 'dono';
+    console.log('🔐 [DONO CONTEXT] Estado inicial do token:', {
+      token: !!token,
+      userType,
+      hasValidToken
+    });
+    return hasValidToken;
+  });
   
   // Atualizar hasToken quando o token mudar
   useEffect(() => {
     const checkToken = () => {
-      const tokenPresent = typeof window !== 'undefined' && !!localStorage.getItem('token');
+      if (typeof window === 'undefined') return;
+      
+      const token = localStorage.getItem('token');
+      const userType = localStorage.getItem('userType');
+      const tokenPresent = !!token && userType === 'dono';
+      
       if (tokenPresent !== hasToken) {
-        console.log('🔄 [DONO CONTEXT] Token mudou, atualizando hasToken:', tokenPresent);
+        console.log('🔄 [DONO CONTEXT] Token mudou, atualizando hasToken:', {
+          de: hasToken,
+          para: tokenPresent,
+          token: !!token,
+          userType,
+          tokenValue: token ? token.substring(0, 30) + '...' : 'N/A'
+        });
         setHasToken(tokenPresent);
       }
     };
@@ -351,15 +371,31 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     // Verificar imediatamente
     checkToken();
     
-    // Verificar periodicamente (a cada 1 segundo) para pegar mudanças no localStorage
-    const interval = setInterval(checkToken, 1000);
+    // Verificar mais frequentemente (a cada 200ms) para pegar mudanças no localStorage rapidamente
+    const interval = setInterval(checkToken, 200);
     
-    // Listener para mudanças no localStorage (pode não funcionar em todas as abas)
+    // Listener para mudanças no localStorage (funciona entre abas)
     window.addEventListener('storage', checkToken);
+    
+    // Listener customizado para detectar mudanças no localStorage na mesma aba
+    // Isso é necessário porque o evento 'storage' só dispara em outras abas
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key: string, value: string) {
+      originalSetItem.apply(this, [key, value]);
+      if (key === 'token' || key === 'userType') {
+        // Disparar evento customizado
+        window.dispatchEvent(new Event('localStorageChange'));
+      }
+    };
+    
+    window.addEventListener('localStorageChange', checkToken);
     
     return () => {
       clearInterval(interval);
       window.removeEventListener('storage', checkToken);
+      window.removeEventListener('localStorageChange', checkToken);
+      // Restaurar método original
+      Storage.prototype.setItem = originalSetItem;
     };
   }, [hasToken]);
   

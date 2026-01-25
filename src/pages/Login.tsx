@@ -102,13 +102,25 @@ const Login = () => {
 
         toast.success('Login realizado com sucesso!');
 
-        // Verificar se os dados foram salvos corretamente
-        const tokenVerificado = localStorage.getItem('token');
-        const userTypeVerificado = localStorage.getItem('userType');
-        console.log('✅ [LOGIN] Verificação pós-salvamento:');
+        // Verificar se os dados foram salvos corretamente - múltiplas verificações
+        let tokenVerificado = localStorage.getItem('token');
+        let userTypeVerificado = localStorage.getItem('userType');
+        console.log('✅ [LOGIN] Verificação pós-salvamento (1ª tentativa):');
         console.log('   Token salvo:', !!tokenVerificado);
         console.log('   UserType salvo:', userTypeVerificado);
         console.log('   Token (primeiros 30 chars):', tokenVerificado ? tokenVerificado.substring(0, 30) + '...' : 'N/A');
+        
+        // Se não encontrou, tentar salvar novamente
+        if (!tokenVerificado) {
+          console.warn('⚠️ [LOGIN] Token não encontrado na primeira verificação, tentando salvar novamente...');
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('userType', activeTab === 'owner' ? 'dono' : activeTab === 'client' ? 'cliente' : 'admin');
+          tokenVerificado = localStorage.getItem('token');
+          userTypeVerificado = localStorage.getItem('userType');
+          console.log('✅ [LOGIN] Verificação pós-salvamento (2ª tentativa):');
+          console.log('   Token salvo:', !!tokenVerificado);
+          console.log('   UserType salvo:', userTypeVerificado);
+        }
 
         // Delay maior para garantir que os dados sejam salvos no localStorage
         // e que o navegador tenha tempo de processar
@@ -117,18 +129,42 @@ const Login = () => {
           try {
             // Verificar novamente antes de navegar
             const tokenFinal = localStorage.getItem('token');
-            if (!tokenFinal) {
-              console.error('❌ [LOGIN] Token não encontrado antes de navegar!');
-              toast.error('Erro ao salvar token. Tente fazer login novamente.');
-              return;
+            const userTypeFinal = localStorage.getItem('userType');
+            
+            console.log('✅ [LOGIN] Verificação final antes de navegar:');
+            console.log('   Token:', !!tokenFinal);
+            console.log('   UserType:', userTypeFinal);
+            console.log('   Token (primeiros 30 chars):', tokenFinal ? tokenFinal.substring(0, 30) + '...' : 'N/A');
+            
+            if (!tokenFinal || userTypeFinal !== (activeTab === 'owner' ? 'dono' : activeTab === 'client' ? 'cliente' : 'admin')) {
+              console.error('❌ [LOGIN] Token ou userType não encontrado antes de navegar!');
+              console.error('   Token:', tokenFinal);
+              console.error('   UserType:', userTypeFinal);
+              console.error('   Esperado:', activeTab === 'owner' ? 'dono' : activeTab === 'client' ? 'cliente' : 'admin');
+              
+              // Tentar salvar uma última vez
+              localStorage.setItem('token', data.token);
+              localStorage.setItem('userType', activeTab === 'owner' ? 'dono' : activeTab === 'client' ? 'cliente' : 'admin');
+              
+              // Verificar novamente
+              const tokenUltimaTentativa = localStorage.getItem('token');
+              if (!tokenUltimaTentativa) {
+                toast.error('Erro ao salvar token. Tente fazer login novamente.');
+                setIsLoading(false);
+                return;
+              }
             }
+            
+            // Forçar atualização do estado antes de navegar
+            window.dispatchEvent(new Event('localStorageChange'));
+            
             navigate(redirectPath);
           } catch (navError) {
             console.error('❌ [LOGIN] Erro ao navegar:', navError);
             // Fallback: recarregar a página
             window.location.href = redirectPath;
           }
-        }, 300);
+        }, 500);
       } else {
         console.error('❌ [LOGIN] Token não recebido na resposta');
         throw new Error('Token não recebido');

@@ -74,7 +74,12 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   });
   
   // Cache simples: última vez que os dados foram carregados
-  const [ultimoCarregamento, setUltimoCarregamento] = useState<number | null>(null);
+  const [ultimoCarregamento, setUltimoCarregamento] = useState<number | null>(() => {
+    // Inicializar com valor do localStorage se existir
+    const cacheKey = 'cliente_ultimo_carregamento';
+    const cached = localStorage.getItem(cacheKey);
+    return cached ? parseInt(cached, 10) : null;
+  });
   const CACHE_DURATION = 60000; // 1 minuto de cache
 
   // Carregar dados do cliente do localStorage e do banco
@@ -133,7 +138,10 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
 
       // Verificar cache: só recarregar se passou mais de 1 minuto desde o último carregamento
       const agora = Date.now();
-      const deveRecarregar = !ultimoCarregamento || (agora - ultimoCarregamento) > CACHE_DURATION;
+      const cacheKey = 'cliente_ultimo_carregamento';
+      const ultimoCarregamentoCache = localStorage.getItem(cacheKey);
+      const ultimoCarregamentoTimestamp = ultimoCarregamentoCache ? parseInt(ultimoCarregamentoCache, 10) : null;
+      const deveRecarregar = !ultimoCarregamentoTimestamp || (agora - ultimoCarregamentoTimestamp) > CACHE_DURATION;
       
       if (deveRecarregar) {
         console.log('🔄 Cache expirado ou primeiro carregamento, buscando dados do servidor...');
@@ -157,7 +165,8 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       console.warn('⚠️ Token não encontrado. Redirecionando para login...');
       window.location.href = '/login?tab=client';
     }
-  }, [ultimoCarregamento]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const carregarDados = async () => {
     try {
@@ -319,7 +328,8 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         progressoProximoNivel: (proximoCorte / 5) * 100,
       });
 
-      // Atualizar timestamp do cache
+      // Atualizar timestamp do cache no localStorage
+      localStorage.setItem('cliente_ultimo_carregamento', Date.now().toString());
       setUltimoCarregamento(Date.now());
 
       console.log('✅ [CLIENTE] Dados carregados:', {

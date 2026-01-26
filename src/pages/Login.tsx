@@ -61,36 +61,61 @@ const Login = () => {
 
       const data = await response.json();
 
+      console.log('🔐 [LOGIN] Resposta da API:', {
+        ok: response.ok,
+        status: response.status,
+        hasToken: !!data.token,
+        hasUsuario: !!data.usuario,
+        hasBarbearia: !!data.barbearia,
+        dataKeys: Object.keys(data),
+      });
+
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao fazer login');
       }
 
       // Salvar token e dados do usuário
       if (data.token) {
+        console.log('🔐 [LOGIN] Salvando token no localStorage...');
         localStorage.setItem('token', data.token);
-        localStorage.setItem('userType', activeTab === 'owner' ? 'dono' : activeTab === 'client' ? 'cliente' : 'admin');
+        const userType = activeTab === 'owner' ? 'dono' : activeTab === 'client' ? 'cliente' : 'admin';
+        localStorage.setItem('userType', userType);
+        console.log('🔐 [LOGIN] Token salvo:', !!localStorage.getItem('token'));
+        console.log('🔐 [LOGIN] UserType salvo:', localStorage.getItem('userType'));
 
         if (data.usuario) {
           localStorage.setItem('user', JSON.stringify(data.usuario));
+          console.log('🔐 [LOGIN] Usuário salvo:', data.usuario.email);
         }
 
         if (data.barbearia) {
           localStorage.setItem('barbearia', JSON.stringify(data.barbearia));
+          console.log('🔐 [LOGIN] Barbearia salva:', data.barbearia.id);
+        }
+
+        // Verificar se o token foi salvo corretamente
+        const tokenVerificado = localStorage.getItem('token');
+        const userTypeVerificado = localStorage.getItem('userType');
+        console.log('🔐 [LOGIN] Verificação final - Token:', !!tokenVerificado, 'UserType:', userTypeVerificado);
+
+        if (!tokenVerificado || userTypeVerificado !== userType) {
+          console.error('❌ [LOGIN] Token não foi salvo corretamente!');
+          console.error('   Token esperado:', !!data.token);
+          console.error('   Token salvo:', !!tokenVerificado);
+          console.error('   UserType esperado:', userType);
+          console.error('   UserType salvo:', userTypeVerificado);
+          throw new Error('Erro ao salvar dados de autenticação');
         }
 
         toast.success('Login realizado com sucesso!');
 
-        // Pequeno delay para garantir que os dados sejam salvos no localStorage
-        setTimeout(() => {
-          try {
-            navigate(redirectPath);
-          } catch (navError) {
-            console.error('Erro ao navegar:', navError);
-            // Fallback: recarregar a página
-            window.location.href = redirectPath;
-          }
-        }, 100);
+        // Usar window.location.href para garantir que a navegação aconteça
+        // e que o localStorage seja preservado (navigate pode ter problemas)
+        console.log('🔐 [LOGIN] Navegando para:', redirectPath);
+        console.log('🔐 [LOGIN] Token antes de navegar:', !!localStorage.getItem('token'));
+        window.location.href = redirectPath;
       } else {
+        console.error('❌ [LOGIN] Token não recebido na resposta:', data);
         throw new Error('Token não recebido');
       }
     } catch (error: any) {

@@ -47,18 +47,33 @@ function DonoLayoutContent() {
 
   // Verificar autenticação ao montar o componente (apenas uma vez)
   useEffect(() => {
+    let attempts = 0;
+    const maxAttempts = 5; // Tentar por até 2.5 segundos (5 tentativas x 500ms)
+    
     const checkAuth = () => {
+      attempts++;
       const token = localStorage.getItem('token');
       const userType = localStorage.getItem('userType');
       
-      console.log('🔐 [DONO LAYOUT] Verificando autenticação...');
+      console.log(`🔐 [DONO LAYOUT] Verificando autenticação (tentativa ${attempts}/${maxAttempts})...`);
       console.log('   Token presente:', !!token);
+      console.log('   Token valor:', token ? `${token.substring(0, 20)}...` : 'null');
       console.log('   UserType:', userType);
       console.log('   Path:', location.pathname);
       
-      // Se não há token ou userType não é 'dono', redirecionar para login
+      // Se não há token ou userType não é 'dono'
       if (!token || userType !== 'dono') {
-        console.warn('⚠️ [DONO LAYOUT] Token não encontrado ou tipo de usuário incorreto. Redirecionando...');
+        // Se ainda não atingiu o máximo de tentativas, tentar novamente
+        if (attempts < maxAttempts) {
+          console.warn(`⚠️ [DONO LAYOUT] Token não encontrado (tentativa ${attempts}). Tentando novamente em 500ms...`);
+          setTimeout(checkAuth, 500);
+          return;
+        }
+        
+        // Se atingiu o máximo de tentativas, redirecionar para login
+        console.error('❌ [DONO LAYOUT] Token não encontrado após múltiplas tentativas. Redirecionando para login...');
+        console.error('   Token final:', !!localStorage.getItem('token'));
+        console.error('   UserType final:', localStorage.getItem('userType'));
         window.location.href = '/login?tab=owner';
         return;
       }
@@ -67,9 +82,9 @@ function DonoLayoutContent() {
       setIsCheckingAuth(false);
     };
 
-    // Delay maior para garantir que o token foi salvo após o login
-    // E que todas as requisições iniciais foram processadas
-    const timer = setTimeout(checkAuth, 1000);
+    // Começar a verificação imediatamente e também após um delay
+    checkAuth(); // Primeira verificação imediata
+    const timer = setTimeout(checkAuth, 500); // Segunda verificação após 500ms
     return () => clearTimeout(timer);
   }, [location.pathname]);
 

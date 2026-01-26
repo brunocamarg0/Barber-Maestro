@@ -299,10 +299,39 @@ const Login = () => {
         console.log('🔐 [LOGIN] Token antes de navegar (última verificação):', !!localStorage.getItem('token'));
         console.log('🔐 [LOGIN] UserType antes de navegar:', localStorage.getItem('userType'));
         
+        // Verificar uma última vez antes de navegar
+        const tokenAntesNavegar = localStorage.getItem('token');
+        const userTypeAntesNavegar = localStorage.getItem('userType');
+        console.log('🔐 [LOGIN] ÚLTIMA VERIFICAÇÃO antes de navegar:');
+        console.log('   Token:', !!tokenAntesNavegar, tokenAntesNavegar ? tokenAntesNavegar.substring(0, 30) + '...' : 'null');
+        console.log('   UserType:', userTypeAntesNavegar);
+        console.log('   Barbearia:', !!localStorage.getItem('barbearia'));
+        
+        if (!tokenAntesNavegar || userTypeAntesNavegar !== userType) {
+          console.error('❌ [LOGIN] Token foi perdido ANTES de navegar!');
+          console.error('   Tentando salvar novamente...');
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userType', userType);
+            if (data.usuario) localStorage.setItem('user', JSON.stringify(data.usuario));
+            if (data.barbearia) localStorage.setItem('barbearia', JSON.stringify(data.barbearia));
+          }
+        }
+        
         // Usar setTimeout para garantir que o localStorage foi atualizado
         setTimeout(() => {
+          // Verificar novamente antes de navegar
+          const tokenFinal = localStorage.getItem('token');
+          console.log('🔐 [LOGIN] Verificação FINAL antes de window.location.href:');
+          console.log('   Token:', !!tokenFinal);
+          if (!tokenFinal && data.token) {
+            console.error('❌ [LOGIN] Token foi perdido no setTimeout! Salvando novamente...');
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userType', userType);
+          }
+          console.log('🔐 [LOGIN] Navegando para:', redirectPath);
           window.location.href = redirectPath;
-        }, 100);
+        }, 200); // Aumentado para 200ms
       } else {
         console.error('❌ [LOGIN] Token não recebido na resposta:', data);
         throw new Error('Token não recebido');

@@ -11,6 +11,11 @@ import { toast } from "sonner";
 const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
 
 const Login = () => {
+  // Log quando o componente é montado
+  useEffect(() => {
+    console.log('🔐 [LOGIN COMPONENT] Componente Login montado');
+    console.log('   API_URL:', API_URL);
+  }, []);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

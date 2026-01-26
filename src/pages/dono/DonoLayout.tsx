@@ -48,7 +48,7 @@ function DonoLayoutContent() {
   // Verificar autenticação ao montar o componente (apenas uma vez)
   useEffect(() => {
     let attempts = 0;
-    const maxAttempts = 10; // Tentar por até 5 segundos (10 tentativas x 500ms)
+    const maxAttempts = 20; // Aumentado para 10 segundos (20 tentativas x 500ms)
     
     const checkAuth = () => {
       attempts++;
@@ -56,10 +56,18 @@ function DonoLayoutContent() {
       let token = localStorage.getItem('token');
       let userType = localStorage.getItem('userType');
       
+      console.log(`🔐 [DONO LAYOUT] Verificando autenticação (tentativa ${attempts}/${maxAttempts})...`);
+      console.log('   Token no localStorage:', !!token);
+      console.log('   UserType no localStorage:', userType);
+      
       // Se não encontrou no localStorage, tentar sessionStorage (backup)
       if (!token) {
+        console.log('   Token não encontrado no localStorage, verificando sessionStorage...');
         token = sessionStorage.getItem('token') || sessionStorage.getItem('token_backup');
         userType = sessionStorage.getItem('userType') || sessionStorage.getItem('userType_backup');
+        
+        console.log('   Token no sessionStorage:', !!token);
+        console.log('   UserType no sessionStorage:', userType);
         
         // Se encontrou no sessionStorage, copiar para localStorage
         if (token && userType) {
@@ -67,6 +75,12 @@ function DonoLayoutContent() {
           try {
             localStorage.setItem('token', token);
             localStorage.setItem('userType', userType);
+            console.log('✅ [DONO LAYOUT] Token copiado com sucesso!');
+            
+            // Verificar se foi salvo corretamente
+            const tokenVerificado = localStorage.getItem('token');
+            const userTypeVerificado = localStorage.getItem('userType');
+            console.log('   Verificação após copiar - Token:', !!tokenVerificado, 'UserType:', userTypeVerificado);
           } catch (e) {
             console.error('❌ [DONO LAYOUT] Erro ao copiar token do sessionStorage para localStorage:', e);
           }

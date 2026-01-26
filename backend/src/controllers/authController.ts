@@ -188,10 +188,15 @@ export async function loginCliente(req: Request, res: Response) {
  */
 export async function cadastroDiretoDono(req: Request, res: Response) {
   try {
-    const { nomeBarbearia, nomeContato, telefone, email, senha } = req.body;
+    const { nomeBarbearia, nomeContato, telefone, email, senha, endereco, bairro, cidade, cep } = req.body;
 
     if (!nomeBarbearia || !nomeContato || !telefone || !email || !senha) {
       return res.status(400).json({ error: 'Campos obrigatórios: nomeBarbearia, nomeContato, telefone, email, senha' });
+    }
+
+    // Bairro e cidade são obrigatórios para que clientes possam encontrar a barbearia
+    if (!bairro || !cidade) {
+      return res.status(400).json({ error: 'Bairro e Cidade são obrigatórios para que clientes possam encontrar sua barbearia' });
     }
 
     // Validação de senha (6-15 caracteres)
@@ -226,7 +231,10 @@ export async function cadastroDiretoDono(req: Request, res: Response) {
           plano: 'basico', // Plano padrão
           email: email,
           telefone: telefone,
-          // cidade, bairro e cep podem ser adicionados depois nas configurações
+          endereco: endereco || null,
+          bairro: bairro,
+          cidade: cidade,
+          cep: cep || null,
           dataVencimento,
           status: 'em_teste',
         },
@@ -471,6 +479,7 @@ export async function loginDono(req: Request, res: Response) {
       id: dono.id,
       email: dono.email,
       tipo: 'dono',
+      barbeariaId: dono.barbeariaId,
     });
 
     res.json({

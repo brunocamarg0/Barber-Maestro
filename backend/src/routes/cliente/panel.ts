@@ -11,6 +11,12 @@ router.use(autenticarCliente);
 router.get('/perfil', clientePanelController.obterPerfil);
 router.put('/perfil', clientePanelController.atualizarPerfil);
 
+// Alterar senha
+router.put('/alterar-senha', clientePanelController.alterarSenha);
+
+// Excluir conta (LGPD)
+router.delete('/conta', clientePanelController.excluirConta);
+
 // Agendamentos
 router.get('/agendamentos', clientePanelController.listarMeusAgendamentos);
 router.get('/agendamentos/:id', clientePanelController.buscarMeuAgendamento);

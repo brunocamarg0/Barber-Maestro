@@ -55,6 +55,13 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('🔐 [LOGIN] ========== INICIANDO LOGIN ==========');
+    console.log('   Tab ativo:', activeTab);
+    console.log('   Email:', formData[activeTab as keyof typeof formData].email);
+    console.log('   Timestamp:', new Date().toISOString());
+    console.log('═══════════════════════════════════════════════════════════');
 
     try {
       let endpoint = '';

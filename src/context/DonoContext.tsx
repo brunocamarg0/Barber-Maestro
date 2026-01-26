@@ -383,22 +383,42 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     // Interceptar chamadas diretas ao localStorage.setItem para detectar mudanças imediatamente
     // Isso é necessário porque o evento 'storage' não dispara na mesma aba
     const originalSetItem = Storage.prototype.setItem;
+    const originalRemoveItem = Storage.prototype.removeItem;
+    const originalClear = Storage.prototype.clear;
+    
     Storage.prototype.setItem = function(key: string, value: string) {
       const result = originalSetItem.apply(this, [key, value]);
       // Se o token ou userType foi alterado, verificar imediatamente
       if (key === 'token' || key === 'userType') {
         console.log(`🔔 [DONO CONTEXT] localStorage.${key} foi alterado, verificando token...`);
+        console.log(`   Valor: ${key === 'token' ? (value.substring(0, 30) + '...') : value}`);
         // Usar setTimeout para garantir que o valor foi realmente salvo
         setTimeout(checkToken, 0);
       }
       return result;
     };
     
+    Storage.prototype.removeItem = function(key: string) {
+      if (key === 'token' || key === 'userType') {
+        console.error(`❌ [DONO CONTEXT] localStorage.${key} foi REMOVIDO!`);
+        console.trace('Stack trace:');
+      }
+      return originalRemoveItem.apply(this, [key]);
+    };
+    
+    Storage.prototype.clear = function() {
+      console.error('❌ [DONO CONTEXT] localStorage.clear() foi chamado - TODO O LOCALSTORAGE FOI LIMPO!');
+      console.trace('Stack trace:');
+      return originalClear.apply(this);
+    };
+    
     return () => {
       clearInterval(interval);
       window.removeEventListener('storage', checkToken);
-      // Restaurar o método original
+      // Restaurar os métodos originais
       Storage.prototype.setItem = originalSetItem;
+      Storage.prototype.removeItem = originalRemoveItem;
+      Storage.prototype.clear = originalClear;
     };
   }, [hasToken]);
   

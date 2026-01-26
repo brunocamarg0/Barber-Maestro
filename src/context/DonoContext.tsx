@@ -371,19 +371,34 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     // Verificar imediatamente
     checkToken();
     
-    // Verificar mais frequentemente (a cada 200ms) para pegar mudanças no localStorage rapidamente
-    const interval = setInterval(checkToken, 200);
+    // Verificar mais frequentemente (a cada 100ms) para pegar mudanças no localStorage rapidamente
+    // Reduzido para 100ms para detectar mudanças mais rapidamente após login
+    const interval = setInterval(checkToken, 100);
     
     // Listener para mudanças no localStorage (funciona entre abas)
+    // IMPORTANTE: O evento 'storage' só dispara quando há mudanças de OUTRA aba/janela
+    // Para mudanças na mesma aba, precisamos verificar periodicamente
     window.addEventListener('storage', checkToken);
     
-    // Não sobrescrever Storage.prototype.setItem pois pode causar problemas
-    // Em vez disso, usar um MutationObserver ou verificar periodicamente
-    // O intervalo de 200ms já é suficiente para detectar mudanças rapidamente
+    // Interceptar chamadas diretas ao localStorage.setItem para detectar mudanças imediatamente
+    // Isso é necessário porque o evento 'storage' não dispara na mesma aba
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key: string, value: string) {
+      const result = originalSetItem.apply(this, [key, value]);
+      // Se o token ou userType foi alterado, verificar imediatamente
+      if (key === 'token' || key === 'userType') {
+        console.log(`🔔 [DONO CONTEXT] localStorage.${key} foi alterado, verificando token...`);
+        // Usar setTimeout para garantir que o valor foi realmente salvo
+        setTimeout(checkToken, 0);
+      }
+      return result;
+    };
     
     return () => {
       clearInterval(interval);
       window.removeEventListener('storage', checkToken);
+      // Restaurar o método original
+      Storage.prototype.setItem = originalSetItem;
     };
   }, [hasToken]);
   

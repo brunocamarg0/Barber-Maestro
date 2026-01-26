@@ -237,11 +237,25 @@ const Login = () => {
 
         // Salvar novamente antes de navegar (garantia extra)
         if (data.token) {
+          console.log('🔐 [LOGIN] Salvando dados finais antes de navegar...');
           localStorage.setItem('token', data.token);
           localStorage.setItem('userType', userType);
           if (data.usuario) localStorage.setItem('user', JSON.stringify(data.usuario));
           if (data.barbearia) localStorage.setItem('barbearia', JSON.stringify(data.barbearia));
+          
+          // Verificar uma última vez após salvar
+          const tokenAposSalvar = localStorage.getItem('token');
+          const userTypeAposSalvar = localStorage.getItem('userType');
+          console.log('🔐 [LOGIN] Verificação após salvar - Token:', !!tokenAposSalvar, 'UserType:', userTypeAposSalvar);
+          
+          if (!tokenAposSalvar || userTypeAposSalvar !== userType) {
+            console.error('❌ [LOGIN] Token não foi salvo corretamente mesmo após múltiplas tentativas!');
+            throw new Error('Erro ao salvar dados de autenticação. Tente novamente.');
+          }
         }
+
+        // Aguardar um pouco mais para garantir que o localStorage foi atualizado
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         // Usar window.location.href para garantir que a navegação aconteça
         // e que o localStorage seja preservado (navigate pode ter problemas)

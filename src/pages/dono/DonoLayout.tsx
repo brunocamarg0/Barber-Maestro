@@ -158,10 +158,6 @@ function DonoLayoutContent() {
     return () => {
       clearInterval(timer);
     };
-    
-    return () => {
-      clearTimeout(initialDelay);
-    };
   }, [location.pathname]);
 
   // Se ainda está verificando autenticação, mostrar loading

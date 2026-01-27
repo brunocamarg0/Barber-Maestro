@@ -284,7 +284,6 @@ const Login = () => {
           }
         }
 
-<<<<<<< HEAD
         // Verificar uma última vez antes de navegar
         const tokenFinalCheck = localStorage.getItem('token');
         const userTypeFinalCheck = localStorage.getItem('userType');
@@ -332,7 +331,6 @@ const Login = () => {
         // Usar window.location.href para garantir navegação completa e evitar problemas com SPA
         // O navigate do react-router pode não funcionar corretamente em alguns casos
         window.location.href = redirectPath;
->>>>>>> 7e6d4bc (fix: corrigir problema de redirecionamento apÃ³s login do dono)
       } else {
         console.error('❌ [LOGIN] Token não recebido na resposta:', data);
         throw new Error('Token não recebido');

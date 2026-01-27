@@ -17,13 +17,15 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as firestoreUtils from "@/lib/firestoreUtils";
+import { db } from "@/lib/firebase";
+import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 
 // Função para decodificar JWT e obter dados do token
 function obterDadosDoToken(): { id: string; email: string; tipo: string; barbeariaId?: string } | null {
   try {
     const token = localStorage.getItem('token');
     if (!token) return null;
-    
+
     // Decodificar JWT (sem verificar assinatura, apenas para obter dados)
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload;
@@ -43,13 +45,13 @@ function obterBarbeariaIdDoToken(): string | null {
       const barbearia = JSON.parse(barbeariaStr);
       return barbearia.id || null;
     }
-    
+
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const user = JSON.parse(userStr);
       return user.barbeariaId || null;
     }
-    
+
     return null;
   } catch (error) {
     console.error('Erro ao obter barbeariaId:', error);
@@ -73,46 +75,46 @@ interface DonoContextType {
   produtos: ProdutoDono[];
   notificacoes: NotificacaoDono[];
   configuracao: ConfiguracaoBarbearia;
-  
+
   // Funções
   criarAgendamento: (agendamento: Omit<AgendamentoDono, "id" | "dataCriacao">) => Promise<void>;
   atualizarAgendamento: (id: string, dados: Partial<AgendamentoDono>) => Promise<void>;
   cancelarAgendamento: (id: string) => Promise<void>;
   confirmarAgendamento: (id: string) => Promise<void>;
   recusarAgendamento: (id: string, motivo?: string) => Promise<void>;
-  
+
   adicionarProfissional: (profissional: Omit<ProfissionalDono, "id" | "dataAdmissao" | "avaliacaoMedia" | "totalAvaliacoes" | "faturamentoTotal" | "faltas">) => Promise<void>;
   atualizarProfissional: (id: string, dados: Partial<ProfissionalDono>) => Promise<void>;
   removerProfissional: (id: string) => Promise<void>;
-  
+
   adicionarCliente: (cliente: Omit<ClienteDono, "id" | "dataCadastro" | "totalAgendamentos" | "ticketMedio" | "frequencia">) => Promise<void>;
   atualizarCliente: (id: string, dados: Partial<ClienteDono>) => Promise<void>;
   removerCliente: (id: string) => Promise<void>;
   marcarClienteVIP: (id: string, vip: boolean) => void;
-  
+
   // Funções de serviços
   servicos: any[];
   adicionarServico: (servico: { nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }) => Promise<void>;
   atualizarServico: (id: string, dados: Partial<{ nome: string; descricao?: string; preco: number; duracao: number; tipo?: string; ordem?: number; ativo?: boolean }>) => Promise<void>;
   removerServico: (id: string) => Promise<void>;
   toggleServicoAtivo: (id: string) => Promise<void>;
-  
+
   registrarPagamento: (pagamento: Omit<PagamentoDono, "id">) => Promise<void>;
   registrarPagamentoManual: (agendamentoId: string, valor: number, metodo: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito', observacao?: string) => Promise<void>;
-  
+
   criarPromocao: (promocao: Omit<PromocaoDono, "id">) => Promise<void>;
   atualizarPromocao: (id: string, dados: Partial<PromocaoDono>) => Promise<void>;
-  
+
   responderAvaliacao: (id: string, resposta: string) => Promise<void>;
-  
+
   adicionarProduto: (produto: Omit<ProdutoDono, "id">) => Promise<void>;
   atualizarProduto: (id: string, dados: Partial<ProdutoDono>) => Promise<void>;
   atualizarEstoque: (id: string, quantidade: number) => Promise<void>;
-  
+
   marcarNotificacaoLida: (id: string) => Promise<void>;
-  
+
   atualizarConfiguracao: (dados: Partial<ConfiguracaoBarbearia>) => void;
-  
+
   gerarRelatorio: (dataInicio: string, dataFim: string) => RelatorioDono;
 }
 
@@ -232,13 +234,13 @@ const produtosIniciais: ProdutoDono[] = [
 const converterDataParaBrasilia = (dataUTC: string | Date): string => {
   try {
     const data = typeof dataUTC === 'string' ? new Date(dataUTC) : dataUTC;
-    
+
     // Se a data foi salva como T12:00:00.000Z (noon UTC), a data UTC é a correta
     // Usar métodos UTC para extrair ano, mês e dia
     const ano = data.getUTCFullYear();
     const mes = String(data.getUTCMonth() + 1).padStart(2, '0');
     const dia = String(data.getUTCDate()).padStart(2, '0');
-    
+
     // Retornar no formato YYYY-MM-DD
     return `${ano}-${mes}-${dia}`;
   } catch (error) {
@@ -281,7 +283,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   const getBarbeariaIdFromStorage = (): string | null => {
     try {
       console.log('🔍 [DONO CONTEXT] Buscando barbeariaId no localStorage...');
-      
+
       // Primeiro tenta obter do objeto barbearia salvo no login
       const barbeariaStr = localStorage.getItem('barbearia');
       if (barbeariaStr) {
@@ -289,7 +291,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         console.log('✅ [DONO CONTEXT] barbeariaId encontrado em localStorage.barbearia:', barbearia.id);
         return barbearia.id || null;
       }
-      
+
       // Fallback: tenta obter do objeto user
       const userStr = localStorage.getItem('user');
       if (userStr) {
@@ -299,7 +301,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           return user.barbeariaId;
         }
       }
-      
+
       console.warn('⚠️ [DONO CONTEXT] barbeariaId não encontrado no localStorage');
       console.warn('   localStorage.barbearia:', localStorage.getItem('barbearia'));
       console.warn('   localStorage.user:', localStorage.getItem('user'));
@@ -346,16 +348,16 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     });
     return hasValidToken;
   });
-  
+
   // Atualizar hasToken quando o token mudar
   useEffect(() => {
     const checkToken = () => {
       if (typeof window === 'undefined') return;
-      
+
       const token = localStorage.getItem('token');
       const userType = localStorage.getItem('userType');
       const tokenPresent = !!token && userType === 'dono';
-      
+
       if (tokenPresent !== hasToken) {
         console.log('🔄 [DONO CONTEXT] Token mudou, atualizando hasToken:', {
           de: hasToken,
@@ -367,26 +369,26 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         setHasToken(tokenPresent);
       }
     };
-    
+
     // Verificar imediatamente
     checkToken();
-    
+
     // Verificar mais frequentemente (a cada 100ms) para pegar mudanças no localStorage rapidamente
     // Reduzido para 100ms para detectar mudanças mais rapidamente após login
     const interval = setInterval(checkToken, 100);
-    
+
     // Listener para mudanças no localStorage (funciona entre abas)
     // IMPORTANTE: O evento 'storage' só dispara quando há mudanças de OUTRA aba/janela
     // Para mudanças na mesma aba, precisamos verificar periodicamente
     window.addEventListener('storage', checkToken);
-    
+
     // Interceptar chamadas diretas ao localStorage.setItem para detectar mudanças imediatamente
     // Isso é necessário porque o evento 'storage' não dispara na mesma aba
     const originalSetItem = Storage.prototype.setItem;
     const originalRemoveItem = Storage.prototype.removeItem;
     const originalClear = Storage.prototype.clear;
-    
-    Storage.prototype.setItem = function(key: string, value: string) {
+
+    Storage.prototype.setItem = function (key: string, value: string) {
       const result = originalSetItem.apply(this, [key, value]);
       // Se o token ou userType foi alterado, verificar imediatamente
       if (key === 'token' || key === 'userType') {
@@ -397,21 +399,21 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       }
       return result;
     };
-    
-    Storage.prototype.removeItem = function(key: string) {
+
+    Storage.prototype.removeItem = function (key: string) {
       if (key === 'token' || key === 'userType') {
         console.error(`❌ [DONO CONTEXT] localStorage.${key} foi REMOVIDO!`);
         console.trace('Stack trace:');
       }
       return originalRemoveItem.apply(this, [key]);
     };
-    
-    Storage.prototype.clear = function() {
+
+    Storage.prototype.clear = function () {
       console.error('❌ [DONO CONTEXT] localStorage.clear() foi chamado - TODO O LOCALSTORAGE FOI LIMPO!');
       console.trace('Stack trace:');
       return originalClear.apply(this);
     };
-    
+
     return () => {
       clearInterval(interval);
       window.removeEventListener('storage', checkToken);
@@ -421,13 +423,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       Storage.prototype.clear = originalClear;
     };
   }, [hasToken]);
-  
+
   // Log para debug - FORÇAR LOG VISÍVEL
   useEffect(() => {
     const tokenPresent = typeof window !== 'undefined' && !!localStorage.getItem('token');
     const userTypePresent = typeof window !== 'undefined' && localStorage.getItem('userType') === 'dono';
     const shouldHaveToken = tokenPresent && userTypePresent;
-    
+
     console.log('═══════════════════════════════════════════════════════════');
     console.log('🔍 [DONO CONTEXT] Estado atual:');
     console.log('   barbeariaId:', barbeariaId);
@@ -442,7 +444,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     console.log('   Query habilitada (produtos):', !!barbeariaId && hasToken);
     console.log('   Query habilitada (pagamentos):', !!barbeariaId && hasToken);
     console.log('═══════════════════════════════════════════════════════════');
-    
+
     // Se hasToken está false mas o token está presente E userType é 'dono', forçar atualização
     if (!hasToken && shouldHaveToken) {
       console.warn('⚠️ [DONO CONTEXT] hasToken está false mas token está presente! Forçando atualização...');
@@ -450,37 +452,37 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       console.warn('   UserType:', localStorage.getItem('userType'));
       setHasToken(true);
     }
-    
+
     // Se hasToken está true mas o token não está presente, forçar atualização
     if (hasToken && !shouldHaveToken) {
       console.warn('⚠️ [DONO CONTEXT] hasToken está true mas token não está presente! Forçando atualização...');
       setHasToken(false);
     }
   }, [barbeariaId, hasToken]);
-  
+
   // Verificação adicional: se o token está presente mas hasToken é false, forçar atualização
   // Isso é necessário porque pode haver um problema de timing
   useEffect(() => {
     const checkAndFix = () => {
       if (typeof window === 'undefined') return;
-      
+
       const token = localStorage.getItem('token');
       const userType = localStorage.getItem('userType');
       const shouldHaveToken = !!token && userType === 'dono';
-      
+
       if (shouldHaveToken && !hasToken) {
         console.warn('🔧 [DONO CONTEXT] CORREÇÃO: Token presente mas hasToken é false. Corrigindo...');
         setHasToken(true);
       }
     };
-    
+
     // Verificar imediatamente e depois periodicamente
     checkAndFix();
     const interval = setInterval(checkAndFix, 500);
-    
+
     return () => clearInterval(interval);
   }, [hasToken]);
-  
+
   // Hook para buscar KPIs
   const { data: kpisData, isLoading: loadingKpi, error: errorKpi } = useQuery({
     queryKey: ['kpis', barbeariaId],
@@ -499,7 +501,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2; // Tentar no máximo 2 vezes
     },
   });
-  
+
   // Log de erros nas queries
   useEffect(() => {
     if (errorKpi) {
@@ -528,7 +530,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2;
     },
   });
-  
+
   // Log quando a query é habilitada/desabilitada
   useEffect(() => {
     console.log('🔧 [QUERY PROFISSIONAIS] Estado:', {
@@ -540,7 +542,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       hasError: !!errorProfs,
     });
   }, [queryEnabledProfs, loadingProfs, qProfissionais, errorProfs, barbeariaId, hasToken]);
-  
+
   useEffect(() => {
     if (errorProfs) {
       console.error('❌ [QUERY PROFISSIONAIS] Erro ao buscar profissionais:', errorProfs);
@@ -568,7 +570,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2;
     },
   });
-  
+
   // Log quando a query é habilitada/desabilitada
   useEffect(() => {
     console.log('🔧 [QUERY CLIENTES] Estado:', {
@@ -580,7 +582,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       hasError: !!errorClientes,
     });
   }, [queryEnabledClientes, loadingClis, qClientes, errorClientes, barbeariaId, hasToken]);
-  
+
   useEffect(() => {
     if (errorClientes) {
       console.error('❌ [QUERY CLIENTES] Erro ao buscar clientes:', errorClientes);
@@ -595,13 +597,14 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     queryKey: ['agendamentos', barbeariaId],
     queryFn: () => apiGet<any[]>(`/agendamentos/barbearia/${barbeariaId}`),
     enabled: !!barbeariaId && hasToken,
-    staleTime: 1000 * 60 * 2, // Agendamentos expiram mais rápido
+    staleTime: 1000 * 30, // 30 segundos de stale time para agendamentos
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.message?.includes('401')) {
         return false;
       }
       return failureCount < 2;
     },
+    refetchOnWindowFocus: true,
   });
 
   // Hook para buscar Serviços
@@ -622,7 +625,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2;
     },
   });
-  
+
   // Log quando a query é habilitada/desabilitada
   useEffect(() => {
     console.log('🔧 [QUERY SERVIÇOS] Estado:', {
@@ -634,7 +637,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       hasError: !!errorServicos,
     });
   }, [queryEnabledServicos, loadingSrvs, qServicos, errorServicos, barbeariaId, hasToken]);
-  
+
   useEffect(() => {
     if (errorServicos) {
       console.error('❌ [QUERY SERVIÇOS] Erro ao buscar serviços:', errorServicos);
@@ -661,7 +664,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2;
     },
   });
-  
+
   // Log quando a query é habilitada/desabilitada
   useEffect(() => {
     console.log('🔧 [QUERY PRODUTOS] Estado:', {
@@ -673,7 +676,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       hasError: !!errorProdutos,
     });
   }, [queryEnabledProdutos, loadingProdutos, qProdutos, errorProdutos, barbeariaId, hasToken]);
-  
+
   useEffect(() => {
     if (errorProdutos) {
       console.error('❌ [QUERY PRODUTOS] Erro ao buscar produtos:', errorProdutos);
@@ -730,7 +733,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       return failureCount < 2;
     },
   });
-  
+
   // Log quando a query é habilitada/desabilitada
   useEffect(() => {
     console.log('🔧 [QUERY PAGAMENTOS] Estado:', {
@@ -746,21 +749,21 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // --- SINCRONIZAÇÃO DOS DADOS DO REACT QUERY COM O ESTADO DO CONTEXTO ---
 
   useEffect(() => {
-      if (kpisData) {
-        setKpi({
-          faturamentoHoje: kpisData.faturamentoHoje || 0,
-          faturamentoSemana: kpisData.faturamentoSemana || 0,
-          faturamentoMes: kpisData.faturamentoMes || 0,
-          agendamentosHoje: kpisData.agendamentosHoje || 0,
-          cancelamentos: kpisData.cancelamentos || 0,
-          clientesRecorrentes: kpisData.clientesRecorrentes || kpisData.totalClientes || 0,
-          notaMedia: kpisData.notaMedia || 0,
-          totalAvaliacoes: kpisData.totalAvaliacoes || 0,
-          variacaoHoje: kpisData.variacaoHoje || 0,
-          variacaoSemana: kpisData.variacaoSemana || 0,
-          variacaoMes: kpisData.variacaoMes || 0,
-        });
-      }
+    if (kpisData) {
+      setKpi({
+        faturamentoHoje: kpisData.faturamentoHoje || 0,
+        faturamentoSemana: kpisData.faturamentoSemana || 0,
+        faturamentoMes: kpisData.faturamentoMes || 0,
+        agendamentosHoje: kpisData.agendamentosHoje || 0,
+        cancelamentos: kpisData.cancelamentos || 0,
+        clientesRecorrentes: kpisData.clientesRecorrentes || kpisData.totalClientes || 0,
+        notaMedia: kpisData.notaMedia || 0,
+        totalAvaliacoes: kpisData.totalAvaliacoes || 0,
+        variacaoHoje: kpisData.variacaoHoje || 0,
+        variacaoSemana: kpisData.variacaoSemana || 0,
+        variacaoMes: kpisData.variacaoMes || 0,
+      });
+    }
   }, [kpisData]);
 
   useEffect(() => {
@@ -820,7 +823,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       const transformados = qAgendamentos.map((ag: any) => {
         // Converter data para timezone de Brasília corretamente
         const dataFormatada = converterDataParaBrasilia(ag.data);
-        
+
         // Para o horário, usar o horário salvo ou extrair do campo data
         let horarioFormatado = ag.horario;
         if (!horarioFormatado && ag.data) {
@@ -834,7 +837,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           });
           horarioFormatado = formatterHora.format(dataObj);
         }
-        
+
         return {
           id: ag.id,
           clienteId: ag.clienteId || '',
@@ -912,15 +915,15 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         metodo: pag.metodo as 'pix' | 'cartao_credito' | 'cartao_debito' | 'dinheiro',
         status: pag.status as 'pago' | 'pendente' | 'reembolsado',
         taxaGateway: pag.taxaGateway || 0,
-        dataPagamento: pag.dataPagamento 
-          ? (typeof pag.dataPagamento === 'string' 
-              ? pag.dataPagamento 
-              : new Date(pag.dataPagamento).toISOString())
+        dataPagamento: pag.dataPagamento
+          ? (typeof pag.dataPagamento === 'string'
+            ? pag.dataPagamento
+            : new Date(pag.dataPagamento).toISOString())
           : undefined,
-        dataVencimento: pag.dataVencimento 
+        dataVencimento: pag.dataVencimento
           ? (typeof pag.dataVencimento === 'string'
-              ? pag.dataVencimento
-              : new Date(pag.dataVencimento).toISOString())
+            ? pag.dataVencimento
+            : new Date(pag.dataVencimento).toISOString())
           : undefined,
       }));
       setPagamentos(transformados);
@@ -963,20 +966,65 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     };
   }, [barbeariaId]);
 
-  // Auto-refresh dos dados a cada 10 segundos para reduzir delay
+  // --- REAL-TIME FIRESTORE LISTENERS ---
+  useEffect(() => {
+    if (!barbeariaId) return;
+
+    console.log('🔥 [Firestore] Iniciando listeners em tempo real para barbearia:', barbeariaId);
+
+    // Listener para Agendamentos
+    const qAgendamentosFirebase = query(
+      collection(db, `barbearias/${barbeariaId}/agendamentos`),
+      orderBy('updatedAt', 'desc')
+    );
+
+    const unsubscribeAgendamentos = onSnapshot(qAgendamentosFirebase, (snapshot) => {
+      // Ignorar a primeira carga se necessário, ou sempre invalidar
+      if (!snapshot.empty) {
+        console.log('🔥 [Firestore] Mudança detectada nos agendamentos, atualizando...');
+        queryClient.invalidateQueries({ queryKey: ['agendamentos', barbeariaId] });
+        queryClient.invalidateQueries({ queryKey: ['kpis', barbeariaId] });
+      }
+    }, (error) => {
+      console.error('❌ [Firestore] Erro no listener de agendamentos:', error);
+    });
+
+    // Listener para Notificações
+    const qNotificacoesFirebase = query(
+      collection(db, `barbearias/${barbeariaId}/notificacoes`),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribeNotificacoes = onSnapshot(qNotificacoesFirebase, (snapshot) => {
+      if (!snapshot.empty) {
+        console.log('🔥 [Firestore] Nova notificação detectada!');
+        queryClient.invalidateQueries({ queryKey: ['notificacoes', barbeariaId] });
+      }
+    }, (error) => {
+      console.error('❌ [Firestore] Erro no listener de notificações:', error);
+    });
+
+    return () => {
+      console.log('🔥 [Firestore] Parando listeners...');
+      unsubscribeAgendamentos();
+      unsubscribeNotificacoes();
+    };
+  }, [barbeariaId, queryClient]);
+
+  // Auto-refresh dos dados a cada 30 segundos como fallback secundário
   useEffect(() => {
     if (!barbeariaId) return;
 
     const refreshInterval = setInterval(() => {
       // Só recarrega se não estiver carregando e se a página estiver visível
       if (!loading && document.visibilityState === 'visible') {
-        console.log('🔄 [AUTO-REFRESH] Atualizando dados do painel...');
-        queryClient.invalidateQueries({ queryKey: [barbeariaId] });
+        console.log('🔄 [AUTO-REFRESH] Validando dados do painel...');
+        queryClient.invalidateQueries({ queryKey: ['kpis', barbeariaId] });
       }
-    }, 10000); // 10 segundos
+    }, 30000); // 30 segundos (aumentado pois Firestore já cuida do tempo real)
 
     return () => clearInterval(refreshInterval);
-  }, [barbeariaId, loading]);
+  }, [barbeariaId, loading, queryClient]);
 
   // Não verificar token periodicamente - isso pode causar redirecionamentos prematuros
   // O DonoLayout já faz a verificação inicial
@@ -1016,7 +1064,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       const agendamentosTransformados: AgendamentoDono[] = agendamentosData.map((ag: any) => {
         // Converter data para timezone de Brasília corretamente
         const dataFormatada = converterDataParaBrasilia(ag.data);
-        
+
         // Para o horário, usar o horário salvo ou extrair do campo data
         let horarioFormatado = ag.horario;
         if (!horarioFormatado && ag.data) {
@@ -1030,7 +1078,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           });
           horarioFormatado = formatterHora.format(dataObj);
         }
-        
+
         return {
           id: ag.id,
           clienteId: ag.clienteId || '',
@@ -1055,15 +1103,15 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         // Comparar por IDs e quantidade
         const prevIds = new Set(prev.map(a => a.id));
         const newIds = new Set(agendamentosTransformados.map(a => a.id));
-        
+
         // Se quantidade ou IDs forem diferentes, atualizar
-        if (prev.length !== agendamentosTransformados.length || 
-            ![...newIds].every(id => prevIds.has(id)) ||
-            ![...prevIds].every(id => newIds.has(id))) {
+        if (prev.length !== agendamentosTransformados.length ||
+          ![...newIds].every(id => prevIds.has(id)) ||
+          ![...prevIds].every(id => newIds.has(id))) {
           console.log('🔄 [POLLING] Novos agendamentos detectados! Atualizando...');
           return agendamentosTransformados;
         }
-        
+
         return prev;
       });
     } catch (error) {
@@ -1079,7 +1127,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     const checkAndUpdate = () => {
       const currentPath = window.location.pathname;
       const isDonoRoute = currentPath.startsWith('/dono');
-      
+
       // Só fazer polling se estiver na página do dono e a página estiver visível
       if (isDonoRoute && !document.hidden) {
         recarregarAgendamentos();
@@ -1124,7 +1172,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     try {
       // Combinar data e horário
       const dataHora = new Date(`${agendamento.data}T${agendamento.horario}`);
-      
+
       const novoAgendamento = await apiPost<any>('/agendamentos', {
         barbeariaId,
         clienteId: agendamento.clienteId || null,
@@ -1141,13 +1189,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       if (novoAgendamento.agendamento) {
         // Converter data para timezone de Brasília corretamente
         const dataFormatada = converterDataParaBrasilia(novoAgendamento.agendamento.data);
-        
+
         // Para o horário, usar o horário salvo ou extrair do campo data
         let horarioFormatado = novoAgendamento.agendamento.horario;
         if (!horarioFormatado && novoAgendamento.agendamento.data) {
           // Extrair horário no timezone de Brasília
-          const dataObj = typeof novoAgendamento.agendamento.data === 'string' 
-            ? new Date(novoAgendamento.agendamento.data) 
+          const dataObj = typeof novoAgendamento.agendamento.data === 'string'
+            ? new Date(novoAgendamento.agendamento.data)
             : novoAgendamento.agendamento.data;
           const formatterHora = new Intl.DateTimeFormat('pt-BR', {
             timeZone: 'America/Sao_Paulo',
@@ -1157,7 +1205,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           });
           horarioFormatado = formatterHora.format(dataObj);
         }
-        
+
         const agendamentoTransformado: AgendamentoDono = {
           id: novoAgendamento.agendamento.id,
           clienteId: novoAgendamento.agendamento.clienteId || '',
@@ -1175,7 +1223,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           observacoes: novoAgendamento.agendamento.observacao,
           dataCriacao: novoAgendamento.agendamento.createdAt,
         };
-        
+
         setAgendamentos(prev => [...prev, agendamentoTransformado]);
 
         // Salvar no Firestore para atualização em tempo real
@@ -1190,7 +1238,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         const agendamentosTransformados: AgendamentoDono[] = agendamentosData.map((ag: any) => {
           // Converter data para timezone de Brasília corretamente
           const dataFormatada = converterDataParaBrasilia(ag.data);
-          
+
           // Para o horário, usar o horário salvo ou extrair do campo data
           let horarioFormatado = ag.horario;
           if (!horarioFormatado && ag.data) {
@@ -1204,7 +1252,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
             });
             horarioFormatado = formatterHora.format(dataObj);
           }
-          
+
           return {
             id: ag.id,
             clienteId: ag.clienteId || '',
@@ -1225,7 +1273,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         });
         setAgendamentos(agendamentosTransformados);
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       toast.success('Agendamento criado com sucesso');
     } catch (error: any) {
@@ -1310,7 +1358,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         comissaoTipo: profissional.comissao.tipo,
         comissaoValor: profissional.comissao.valor,
       });
-      
+
       console.log('✅ Profissional adicionado:', novoProfissional);
 
       queryClient.invalidateQueries({ queryKey: ['profissionais'] });
@@ -1393,9 +1441,9 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         foto: cliente.foto,
         dataNascimento: cliente.dataNascimento,
       });
-      
+
       console.log('✅ [ADICIONAR CLIENTE] Cliente adicionado ao banco:', resultado);
-      
+
       if (resultado && resultado.id) {
         const novoCliente: ClienteDono = {
           id: resultado.id,
@@ -1410,7 +1458,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           frequencia: 0,
           dataCadastro: resultado.createdAt ? (typeof resultado.createdAt === 'string' ? resultado.createdAt.split('T')[0] : new Date(resultado.createdAt).toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
         };
-        
+
         queryClient.invalidateQueries({ queryKey: ['clientes'] });
 
         // Salvar no Firestore
@@ -1422,7 +1470,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
         console.log('✅ [ADICIONAR CLIENTE] Cliente adicionado à lista local');
       }
-      
+
       toast.success('Cliente adicionado com sucesso!');
     } catch (error: any) {
       console.error('❌ [ADICIONAR CLIENTE] Erro:', error);
@@ -1610,8 +1658,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
   // Registrar pagamento manual/presencial
   const registrarPagamentoManual = async (
-    agendamentoId: string, 
-    valor: number, 
+    agendamentoId: string,
+    valor: number,
     metodo: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito',
     observacao?: string
   ): Promise<void> => {
@@ -1639,18 +1687,18 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           metodo: response.pagamento.metodo,
           status: response.pagamento.status || 'pago',
           taxaGateway: response.pagamento.taxaGateway || 0,
-          dataPagamento: response.pagamento.dataPagamento 
-            ? (typeof response.pagamento.dataPagamento === 'string' 
-                ? response.pagamento.dataPagamento 
-                : new Date(response.pagamento.dataPagamento).toISOString())
+          dataPagamento: response.pagamento.dataPagamento
+            ? (typeof response.pagamento.dataPagamento === 'string'
+              ? response.pagamento.dataPagamento
+              : new Date(response.pagamento.dataPagamento).toISOString())
             : new Date().toISOString(),
-          dataVencimento: response.pagamento.dataVencimento 
+          dataVencimento: response.pagamento.dataVencimento
             ? (typeof response.pagamento.dataVencimento === 'string'
-                ? response.pagamento.dataVencimento
-                : new Date(response.pagamento.dataVencimento).toISOString())
+              ? response.pagamento.dataVencimento
+              : new Date(response.pagamento.dataVencimento).toISOString())
             : undefined,
         };
-        
+
         // Adicionar ao início da lista para aparecer imediatamente
         setPagamentos(prev => {
           // Verificar se já existe para evitar duplicatas
@@ -1658,15 +1706,15 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           if (existe) return prev;
           return [novoPagamento, ...prev];
         });
-        
+
         // Invalidar queries para garantir sincronização completa
         queryClient.invalidateQueries({ queryKey: ['agendamentos', barbeariaId] });
         queryClient.invalidateQueries({ queryKey: ['pagamentos', barbeariaId] });
         queryClient.invalidateQueries({ queryKey: ['kpis', barbeariaId] });
-        
+
         // Forçar refetch imediato da query de pagamentos
         queryClient.refetchQueries({ queryKey: ['pagamentos', barbeariaId] });
-        
+
         toast.success('Pagamento registrado com sucesso!');
       } else {
         throw new Error(response.error || 'Erro ao registrar pagamento');
@@ -1813,7 +1861,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // Funções de configuração
   const atualizarConfiguracao = async (dados: Partial<ConfiguracaoBarbearia>) => {
     try {
-      console.log('💾 [CONFIG] Atualizando configuração:', { 
+      console.log('💾 [CONFIG] Atualizando configuração:', {
         campos: Object.keys(dados),
         temFoto: !!dados.foto,
         tamanhoFoto: dados.foto ? dados.foto.length : 0
@@ -1829,13 +1877,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       if (!token) {
         throw new Error('Token não encontrado. Faça login novamente.');
       }
-      
+
       console.log('💾 [CONFIG] Enviando requisição PUT para /dono/configuracao');
       console.log('💾 [CONFIG] Token presente:', !!token);
-      
+
       const response = await apiPut('/dono/configuracao', dados);
       console.log('✅ [CONFIG] Configuração atualizada com sucesso');
-      
+
       queryClient.invalidateQueries({ queryKey: ['configuracao'] });
       queryClient.invalidateQueries({ queryKey: [barbeariaId] });
 
@@ -1845,7 +1893,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
           console.warn('⚠️ Erro ao atualizar configuração no Firestore (não crítico):', err)
         );
       }
-      
+
       toast.success('Configurações atualizadas com sucesso!');
       return response;
     } catch (error: any) {
@@ -1856,14 +1904,14 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         endpoint: error?.endpoint,
         stack: error?.stack
       });
-      
+
       // Se for erro 401, mensagem mais específica
       if (error?.status === 401) {
         const errorMessage = error?.message || 'Token inválido ou expirado. Faça login novamente.';
         toast.error(errorMessage);
         throw error;
       }
-      
+
       const errorMessage = error?.message || error?.error || 'Erro ao salvar configurações';
       toast.error(errorMessage);
       throw error; // Re-lançar para que o componente possa tratar

@@ -72,33 +72,33 @@ export async function registrarCliente(req: Request, res: Response) {
     console.error('❌ Stack:', error.stack);
     console.error('❌ Código do erro:', error.code);
     console.error('❌ Mensagem:', error.message);
-    
+
     // Erros específicos do Prisma
     if (error.code === 'P2002') {
       // Violação de constraint única
       const campo = error.meta?.target?.[0] || 'campo';
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: `Este ${campo} já está em uso`,
-        detalhes: error.meta 
+        detalhes: error.meta
       });
     }
-    
+
     if (error.code === 'P2003') {
       // Foreign key constraint
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Erro de relacionamento no banco de dados',
-        detalhes: error.meta 
+        detalhes: error.meta
       });
     }
-    
+
     if (error.message?.includes('does not exist')) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Tabelas não criadas no banco de dados. Execute as migrações: npm run prisma:push',
-        detalhes: error.message 
+        detalhes: error.message
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Erro ao registrar cliente',
       detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -299,33 +299,33 @@ export async function cadastroDiretoDono(req: Request, res: Response) {
     console.error('❌ Stack:', error.stack);
     console.error('❌ Código do erro:', error.code);
     console.error('❌ Mensagem:', error.message);
-    
+
     // Erros específicos do Prisma
     if (error.code === 'P2002') {
       // Violação de constraint única
       const campo = error.meta?.target?.[0] || 'campo';
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: `Este ${campo} já está em uso`,
-        detalhes: error.meta 
+        detalhes: error.meta
       });
     }
-    
+
     if (error.code === 'P2003') {
       // Foreign key constraint
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Erro de relacionamento no banco de dados',
-        detalhes: error.meta 
+        detalhes: error.meta
       });
     }
-    
+
     if (error.message?.includes('does not exist')) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Tabelas não criadas no banco de dados. Execute as migrações: npm run prisma:push',
-        detalhes: error.message 
+        detalhes: error.message
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Erro ao realizar cadastro',
       detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -631,7 +631,7 @@ export async function loginAdmin(req: Request, res: Response) {
 export async function alterarSenhaDono(req: Request, res: Response) {
   try {
     console.log('🔐 alterarSenhaDono: Iniciando processo...');
-    
+
     const { senhaAtual, novaSenha } = req.body;
     // O middleware autenticarDono já adiciona userId ao req
     const donoId = (req as any).userId;
@@ -703,10 +703,10 @@ export async function alterarSenhaDono(req: Request, res: Response) {
     console.error('❌ Stack:', error.stack);
     console.error('❌ Código:', error.code);
     console.error('❌ Mensagem:', error.message);
-    
+
     // Retornar mensagem de erro mais específica
     const errorMessage = error.message || 'Erro ao alterar senha';
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao alterar senha',
       detalhes: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     });
@@ -743,15 +743,15 @@ export async function esqueciMinhaSenhaDono(req: Request, res: Response) {
     // Isso previne enumeração de emails
     if (!dono) {
       console.log('⚠️ Tentativa de recuperação de senha para email não cadastrado (dono):', email);
-      return res.status(200).json({ 
-        message: 'Se o email estiver cadastrado, você receberá uma nova senha por email' 
+      return res.status(200).json({
+        message: 'Se o email estiver cadastrado, você receberá uma nova senha por email'
       });
     }
 
     if (!dono.ativo) {
       console.log('⚠️ Tentativa de recuperação de senha para conta inativa (dono):', email);
-      return res.status(200).json({ 
-        message: 'Se o email estiver cadastrado, você receberá uma nova senha por email' 
+      return res.status(200).json({
+        message: 'Se o email estiver cadastrado, você receberá uma nova senha por email'
       });
     }
 
@@ -789,13 +789,13 @@ export async function esqueciMinhaSenhaDono(req: Request, res: Response) {
 
     // Retornar resposta imediatamente, sem esperar o email
     console.log('✅ Retornando resposta de sucesso');
-    return res.status(200).json({ 
-      message: 'Se o email estiver cadastrado, você receberá uma nova senha por email' 
+    return res.status(200).json({
+      message: 'Se o email estiver cadastrado, você receberá uma nova senha por email'
     });
   } catch (error: any) {
     console.error('❌ Erro ao recuperar senha do dono:', error);
-    return res.status(500).json({ 
-      error: 'Erro ao processar solicitação de recuperação de senha' 
+    return res.status(500).json({
+      error: 'Erro ao processar solicitação de recuperação de senha'
     });
   }
 }
@@ -851,15 +851,15 @@ export async function esqueciMinhaSenhaCliente(req: Request, res: Response) {
     // Isso previne enumeração de emails
     if (!cliente) {
       console.log('⚠️ Tentativa de recuperação de senha para email não cadastrado (cliente):', email);
-      return res.status(200).json({ 
-        message: 'Se o email estiver cadastrado, você receberá uma nova senha por email' 
+      return res.status(200).json({
+        message: 'Se o email estiver cadastrado, você receberá uma nova senha por email'
       });
     }
 
     if (!cliente.ativo) {
       console.log('⚠️ Tentativa de recuperação de senha para conta inativa (cliente):', email);
-      return res.status(200).json({ 
-        message: 'Se o email estiver cadastrado, você receberá uma nova senha por email' 
+      return res.status(200).json({
+        message: 'Se o email estiver cadastrado, você receberá uma nova senha por email'
       });
     }
 
@@ -911,13 +911,13 @@ export async function esqueciMinhaSenhaCliente(req: Request, res: Response) {
 
     // Retornar resposta imediatamente, sem esperar o email
     console.log('✅ Retornando resposta de sucesso');
-    return res.status(200).json({ 
-      message: 'Se o email estiver cadastrado, você receberá uma nova senha por email' 
+    return res.status(200).json({
+      message: 'Se o email estiver cadastrado, você receberá uma nova senha por email'
     });
   } catch (error: any) {
     console.error('❌ Erro ao recuperar senha do cliente:', error);
-    return res.status(500).json({ 
-      error: 'Erro ao processar solicitação de recuperação de senha' 
+    return res.status(500).json({
+      error: 'Erro ao processar solicitação de recuperação de senha'
     });
   }
 }

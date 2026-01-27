@@ -1,6 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+// Carregar variáveis de ambiente PRIMEIRO (antes de qualquer import que use process.env)
+dotenv.config();
+
 import session from 'express-session';
 import passport from 'passport';
 import adminBarbeariasRoutes from './routes/admin/barbearias';
@@ -40,8 +44,7 @@ try {
   console.error('⚠️  Erro ao carregar Passport (OAuth pode não estar configurado):', error);
   // Continuar mesmo se Passport falhar
 }
-// Carregar variáveis de ambiente PRIMEIRO (antes de qualquer import que use process.env)
-dotenv.config();
+
 
 import * as cron from 'node-cron';
 import { enviarLembretesAgendamento } from './jobs/lembretesAgendamento';
@@ -88,7 +91,7 @@ if (smtpConfigurado) {
 export const app = express();
 
 // Middleware CORS
-const allowedOrigins = process.env.FRONTEND_URL 
+const allowedOrigins = process.env.FRONTEND_URL
   ? [process.env.FRONTEND_URL, 'https://groom-guru-platform.vercel.app']
   : ['http://localhost:5173', 'http://localhost:8080', 'https://groom-guru-platform.vercel.app'];
 
@@ -103,9 +106,9 @@ app.use(cors({
       console.log('🔧 CORS - Requisição sem origin, permitindo');
       return callback(null, true);
     }
-    
+
     console.log('🔧 CORS - Origin recebida:', origin);
-    
+
     // Permitir origens específicas ou todas em desenvolvimento
     if (allowedOrigins.indexOf(origin) !== -1) {
       console.log('🔧 CORS - Origin permitida (na lista)');
@@ -151,8 +154,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Esta rota deve responder SEMPRE, mesmo se o banco de dados estiver offline
 app.get('/api/health', (req, res) => {
   // Não fazer log aqui para evitar spam nos logs
-  res.status(200).json({ 
-    status: 'API is running', 
+  res.status(200).json({
+    status: 'API is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     port: process.env.PORT || '3001'
@@ -248,15 +251,15 @@ app.use((req, res, next) => {
     console.log('   Base URL:', req.baseUrl);
     console.log('   Headers:', JSON.stringify(req.headers, null, 2));
     console.log('   Rotas registradas: /api/auth, /api/dono, /api/admin');
-    
+
     // Log específico para rotas de clientes
     if (req.path.includes('/clientes')) {
       console.log('⚠️ [404] Requisição para rota de clientes não encontrada!');
       console.log('⚠️ [404] Verifique se a rota DELETE /api/dono/clientes/:id está registrada');
       console.log('⚠️ [404] Verifique se o middleware de autenticação está permitindo a requisição');
     }
-    
-    return res.status(404).json({ 
+
+    return res.status(404).json({
       error: 'Rota não encontrada',
       path: req.originalUrl,
       method: req.method,
@@ -273,29 +276,29 @@ app.use((req, res, next) => {
 if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
   // Railway define PORT automaticamente, usar 3001 como fallback apenas para desenvolvimento local
   const PORT = parseInt(process.env.PORT || '3001', 10);
-  
+
   console.log(`🔧 Tentando iniciar servidor na porta ${PORT}...`);
   console.log(`🔧 PORT da env: ${process.env.PORT}`);
-  
+
   // Tratamento de erros para evitar crash
   process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught Exception:', error);
     console.error('❌ Stack:', error.stack);
     // Não encerrar o processo imediatamente, apenas logar
   });
-  
+
   process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
     // Não encerrar o processo imediatamente, apenas logar
   });
-  
+
   // Iniciar servidor imediatamente, sem try-catch que possa esconder erros
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server is running on http://0.0.0.0:${PORT}`);
     console.log(`✅ API Health: http://0.0.0.0:${PORT}/api/health`);
     console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✅ Health check endpoint ready at /api/health`);
-    
+
     // Configurar jobs agendados (apenas em ambiente local)
     try {
       configurarJobs();
@@ -304,21 +307,21 @@ if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
       // Não encerrar o processo se jobs falharem
     }
   });
-  
+
   // Tratamento de erro no servidor
   server.on('error', (error: any) => {
     console.error('❌ Server error:', error);
     console.error('❌ Error code:', error.code);
     console.error('❌ Error message:', error.message);
   });
-  
+
   // Garantir que o servidor está escutando
   server.on('listening', () => {
     const address = server.address();
     console.log(`✅ Server listening on:`, address);
     console.log(`✅ Health check disponível em: http://0.0.0.0:${PORT}/api/health`);
   });
-  
+
 } else {
   // Em produção na Vercel, jobs agendados devem ser configurados via Vercel Cron
   console.log('✅ Running as serverless function on Vercel');

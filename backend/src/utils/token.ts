@@ -14,7 +14,7 @@ export function gerarTokenConvite(): string {
 export function calcularDataVencimento(plano: string): Date {
   const hoje = new Date();
   const vencimento = new Date(hoje);
-  
+
   switch (plano) {
     case 'basico':
       vencimento.setMonth(vencimento.getMonth() + 1); // 1 mês
@@ -28,7 +28,7 @@ export function calcularDataVencimento(plano: string): Date {
     default:
       vencimento.setDate(vencimento.getDate() + 7); // 7 dias (trial)
   }
-  
+
   return vencimento;
 }
 
@@ -44,7 +44,7 @@ export function validarToken(token: string): boolean {
  * IMPORTANTE: Este secret deve ser o mesmo em todos os lugares
  */
 export function obterJWTSecret(): string {
-  return process.env.JWT_SECRET || 'seu-secret-super-seguro-aqui-mude-em-producao';
+  return process.env.JWT_SECRET || 'fallback-secret';
 }
 
 /**
@@ -64,6 +64,7 @@ export function verificarTokenJWT(token: string): { id: string; email: string; t
   const secret = obterJWTSecret();
   return jwt.verify(token, secret) as { id: string; email: string; tipo: 'dono' | 'cliente' | 'admin'; barbeariaId?: string };
 }
+
 
 
 

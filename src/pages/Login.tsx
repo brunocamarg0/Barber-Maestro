@@ -39,7 +39,6 @@ const Login = () => {
   const tabFromUrl = searchParams.get('tab');
   const getInitialTab = () => {
     if (tabFromUrl === 'client') return 'client';
-    if (tabFromUrl === 'admin') return 'admin';
     return 'owner';
   };
 
@@ -49,7 +48,6 @@ const Login = () => {
   const [formData, setFormData] = useState({
     owner: { email: "", senha: "" },
     client: { email: "", senha: "" },
-    admin: { email: "", senha: "" },
   });
 
   // Listener para detectar quando o localStorage é modificado (debug)
@@ -89,10 +87,6 @@ const Login = () => {
       endpoint = '/auth/cliente/login';
       redirectPath = '/cliente';
       expectedUserType = 'cliente';
-    } else if (currentTab === 'admin') {
-      endpoint = '/auth/admin/login';
-      redirectPath = '/admin';
-      expectedUserType = 'admin';
     }
     
     console.log('🔐 [LOGIN] ========== INÍCIO DO PROCESSO DE LOGIN ==========');
@@ -273,10 +267,9 @@ const Login = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="owner">Dono</TabsTrigger>
             <TabsTrigger value="client">Cliente</TabsTrigger>
-            <TabsTrigger value="admin">Admin</TabsTrigger>
           </TabsList>
 
           <TabsContent value="owner">
@@ -404,51 +397,6 @@ const Login = () => {
                       </Link>
                     </p>
                   </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="admin">
-            <Card className="bg-card border-2 border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground font-black uppercase text-xl">Portal Admin</CardTitle>
-                <CardDescription className="text-muted-foreground font-medium">
-                  Acesso restrito para administradores do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-email">Email</Label>
-                    <Input
-                      id="admin-email"
-                      type="email"
-                      placeholder="admin@barbermaster.com"
-                      value={formData.admin.email}
-                      onChange={(e) => setFormData({ ...formData, admin: { ...formData.admin, email: e.target.value } })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-password">Senha</Label>
-                    <Input
-                      id="admin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={formData.admin.senha}
-                      onChange={(e) => setFormData({ ...formData, admin: { ...formData.admin, senha: e.target.value } })}
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    variant="hero"
-                    className="w-full"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Entrando..." : "Entrar"}
-                  </Button>
                 </form>
               </CardContent>
             </Card>

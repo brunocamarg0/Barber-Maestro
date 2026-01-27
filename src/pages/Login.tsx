@@ -328,8 +328,47 @@ const Login = () => {
         
         console.log('✅ [LOGIN] Tudo verificado! Navegando para:', redirectPath);
         
+        // Salvar também no sessionStorage como backup antes de navegar
+        try {
+          sessionStorage.setItem('token', data.token);
+          sessionStorage.setItem('userType', userType);
+          sessionStorage.setItem('token_backup', data.token);
+          sessionStorage.setItem('userType_backup', userType);
+          if (data.usuario) sessionStorage.setItem('user_backup', JSON.stringify(data.usuario));
+          if (data.barbearia) sessionStorage.setItem('barbearia_backup', JSON.stringify(data.barbearia));
+          console.log('✅ [LOGIN] Backup salvo no sessionStorage');
+        } catch (e) {
+          console.warn('⚠️ [LOGIN] Não foi possível salvar backup no sessionStorage:', e);
+        }
+        
+        // Aguardar um pouco mais antes de navegar para garantir que tudo foi salvo
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Verificação final antes de navegar
+        const tokenFinal = localStorage.getItem('token');
+        const userTypeFinal = localStorage.getItem('userType');
+        console.log('🔐 [LOGIN] ÚLTIMA VERIFICAÇÃO antes de navegar:');
+        console.log('   Token:', !!tokenFinal);
+        console.log('   UserType:', userTypeFinal);
+        
+        if (!tokenFinal || userTypeFinal !== userType) {
+          console.error('❌ [LOGIN] Token perdido! Restaurando do sessionStorage...');
+          const tokenBackup = sessionStorage.getItem('token') || sessionStorage.getItem('token_backup');
+          const userTypeBackup = sessionStorage.getItem('userType') || sessionStorage.getItem('userType_backup');
+          
+          if (tokenBackup && userTypeBackup) {
+            localStorage.setItem('token', tokenBackup);
+            localStorage.setItem('userType', userTypeBackup);
+            console.log('✅ [LOGIN] Token restaurado do sessionStorage');
+          } else {
+            console.error('❌ [LOGIN] Token não encontrado nem no localStorage nem no sessionStorage!');
+            throw new Error('Erro ao salvar dados de autenticação. Tente novamente.');
+          }
+        }
+        
         // Usar window.location.href para garantir navegação completa e evitar problemas com SPA
         // O navigate do react-router pode não funcionar corretamente em alguns casos
+        console.log('🚀 [LOGIN] Iniciando navegação para:', redirectPath);
         window.location.href = redirectPath;
       } else {
         console.error('❌ [LOGIN] Token não recebido na resposta:', data);

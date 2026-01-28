@@ -74,47 +74,57 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
     let barbearias;
     try {
       barbearias = await prisma.barbearia.findMany({
-      where: Object.keys(where).length > 0 ? where : {},
-      include: {
-        servicos: {
-          where: {
-            ativo: true, // Apenas serviços ativos
+        where: Object.keys(where).length > 0 ? where : {},
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true,
+          endereco: true,
+          cidade: true,
+          bairro: true,
+          cep: true,
+          foto: true,
+          status: true,
+          servicos: {
+            where: {
+              ativo: true, // Apenas serviços ativos
+            },
+            orderBy: {
+              ordem: 'asc',
+            },
           },
-          orderBy: {
-            ordem: 'asc',
+          profissionais: {
+            where: {
+              ativo: true, // Apenas profissionais ativos
+            },
+            select: {
+              id: true,
+              nome: true,
+              foto: true,
+              especialidades: true,
+            },
           },
-        },
-        profissionais: {
-          where: {
-            ativo: true, // Apenas profissionais ativos
-          },
-          select: {
-            id: true,
-            nome: true,
-            foto: true,
-            especialidades: true,
-          },
-        },
-        _count: {
-          select: {
-            agendamentos: {
-              where: {
-                status: {
-                  in: ['confirmado', 'concluido'],
+          _count: {
+            select: {
+              agendamentos: {
+                where: {
+                  status: {
+                    in: ['confirmado', 'concluido'],
+                  },
+                },
+              },
+              servicos: {
+                where: {
+                  ativo: true,
                 },
               },
             },
-            servicos: {
-              where: {
-                ativo: true,
-              },
-            },
           },
         },
-      },
-      orderBy: {
-        nome: 'asc',
-      },
+        orderBy: {
+          nome: 'asc',
+        },
       });
     } catch (queryError: any) {
       // Se a query falhar com mode: 'insensitive', tentar sem ele
@@ -142,7 +152,17 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
       
       barbearias = await prisma.barbearia.findMany({
         where: Object.keys(whereFallback).length > 0 ? whereFallback : {},
-        include: {
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true,
+          endereco: true,
+          cidade: true,
+          bairro: true,
+          cep: true,
+          foto: true,
+          status: true,
           servicos: {
             where: {
               ativo: true,

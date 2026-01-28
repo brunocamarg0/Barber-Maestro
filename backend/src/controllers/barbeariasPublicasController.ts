@@ -285,12 +285,24 @@ export async function buscarBarbeariaPublica(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
+    console.log('🔧 [BARBEARIAS] buscarBarbeariaPublica chamado para ID:', id);
+
     const barbearia = await prisma.barbearia.findFirst({
       where: {
         id,
         // Não filtrar por status - mostrar qualquer barbearia pelo ID
       },
-      include: {
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        telefone: true,
+        endereco: true,
+        cidade: true,
+        bairro: true,
+        cep: true,
+        foto: true,
+        status: true,
         servicos: {
           where: {
             ativo: true,
@@ -326,8 +338,11 @@ export async function buscarBarbeariaPublica(req: Request, res: Response) {
     });
 
     if (!barbearia || !barbearia.id || !barbearia.nome) {
+      console.warn('⚠️ [BARBEARIAS] Barbearia não encontrada:', id);
       return res.status(404).json({ error: 'Barbearia não encontrada ou não está disponível' });
     }
+
+    console.log('✅ [BARBEARIAS] Barbearia encontrada:', barbearia.nome);
 
     // Formatar resposta
     const barbeariaFormatada = {
@@ -354,9 +369,22 @@ export async function buscarBarbeariaPublica(req: Request, res: Response) {
     };
 
     res.json(barbeariaFormatada);
-  } catch (error) {
-    console.error('Erro ao buscar barbearia pública:', error);
-    res.status(500).json({ error: 'Erro ao buscar barbearia' });
+  } catch (error: any) {
+    console.error('❌ [BARBEARIAS] Erro ao buscar barbearia pública:', error);
+    console.error('❌ [BARBEARIAS] Stack:', error?.stack);
+    console.error('❌ [BARBEARIAS] Message:', error?.message);
+    console.error('❌ [BARBEARIAS] Name:', error?.name);
+    console.error('❌ [BARBEARIAS] Code:', error?.code);
+    console.error('❌ [BARBEARIAS] Meta:', error?.meta);
+    
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? `Erro ao buscar barbearia: ${error?.message || 'Erro desconhecido'}`
+      : 'Erro ao buscar barbearia';
+    
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    });
   }
 }
 

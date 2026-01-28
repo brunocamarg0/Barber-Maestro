@@ -348,3 +348,136 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     faturamentoMensal: 0, // Implementar depois
   };
 }
+
+// ===== SUPORTE / TICKETS =====
+
+export interface TicketSuporte {
+  id: string;
+  categoria: string;
+  assunto: string;
+  mensagem: string;
+  status: string;
+  prioridade: string;
+  clienteId?: string;
+  clienteNome: string;
+  clienteEmail: string;
+  resposta?: string;
+  respondidoPor?: string;
+  respondidoEm?: string;
+  resolvidoEm?: string;
+  createdAt: string;
+  updatedAt: string;
+  cliente?: {
+    id: string;
+    nome: string;
+    email: string;
+    telefone?: string;
+  };
+}
+
+export interface TicketEstatisticas {
+  total: number;
+  abertos: number;
+  emAndamento: number;
+  resolvidos: number;
+}
+
+export async function listarTicketsAdmin(status?: string): Promise<TicketSuporte[]> {
+  const token = localStorage.getItem('token');
+  const url = status 
+    ? `${API_URL}/admin/suporte?status=${status}`
+    : `${API_URL}/admin/suporte`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Erro ao listar tickets' }));
+    throw new Error(error.error || 'Erro ao listar tickets');
+  }
+
+  return response.json();
+}
+
+export async function buscarTicketAdmin(id: string): Promise<TicketSuporte> {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_URL}/admin/suporte/${id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Erro ao buscar ticket' }));
+    throw new Error(error.error || 'Erro ao buscar ticket');
+  }
+
+  return response.json();
+}
+
+export async function atualizarStatusTicket(id: string, status: string, prioridade?: string): Promise<TicketSuporte> {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_URL}/admin/suporte/${id}/status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify({ status, prioridade }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Erro ao atualizar ticket' }));
+    throw new Error(error.error || 'Erro ao atualizar ticket');
+  }
+
+  return response.json();
+}
+
+export async function responderTicketAdmin(id: string, resposta: string, respondidoPor?: string): Promise<any> {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_URL}/admin/suporte/${id}/responder`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify({ resposta, respondidoPor }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Erro ao responder ticket' }));
+    throw new Error(error.error || 'Erro ao responder ticket');
+  }
+
+  return response.json();
+}
+
+export async function getTicketEstatisticas(): Promise<TicketEstatisticas> {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_URL}/admin/suporte/estatisticas`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Erro ao buscar estatísticas' }));
+    throw new Error(error.error || 'Erro ao buscar estatísticas');
+  }
+
+  return response.json();
+}

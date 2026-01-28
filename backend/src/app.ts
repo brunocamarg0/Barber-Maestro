@@ -32,6 +32,8 @@ import donoRelatoriosRoutes from './routes/dono/relatorios';
 import donoConfiguracaoRoutes from './routes/dono/configuracao';
 import donoComissoesRoutes from './routes/dono/comissoes';
 import clientePanelRoutes from './routes/cliente/panel';
+import clienteSuporteRoutes from './routes/cliente/suporte';
+import adminSuporteRoutes from './routes/admin/suporte';
 import barbeariasPublicasRoutes from './routes/barbeariasPublicas';
 import emergencyRoutes from './routes/emergency';
 import pagamentosRoutes from './routes/pagamentos';
@@ -223,8 +225,9 @@ app.use('/api/dono/relatorios', donoRelatoriosRoutes);
 app.use('/api/dono/configuracao', donoConfiguracaoRoutes);
 app.use('/api/dono/comissoes', donoComissoesRoutes);
 
-// Rotas do cliente (requerem autenticação)
+// Rotas do cliente (requerem autenticação para painel, mas suporte é público)
 app.use('/api/cliente', clientePanelRoutes);
+app.use('/api/cliente/suporte', clienteSuporteRoutes); // Rota pública para abrir tickets
 
 // ⚠️ ROTA DE EMERGÊNCIA - Para resetar senha sem email
 // Remover após resolver problema de email
@@ -237,6 +240,7 @@ app.use('/api/admin', corrigirAdminRoutes); // /api/admin/corrigir-admin
 app.use('/api/admin', adminUsuariosRoutes); // /api/admin/barbearias/:id/dono
 app.use('/api/admin', adminConvitesRoutes); // /api/admin/barbearias/:id/convite
 app.use('/api/admin/barbearias', adminBarbeariasRoutes); // /api/admin/barbearias
+app.use('/api/admin/suporte', adminSuporteRoutes); // /api/admin/suporte - Tickets de suporte
 
 // Handler para rotas não encontradas (404) - DEVE SER O ÚLTIMO
 // Retorna JSON em vez de HTML para APIs

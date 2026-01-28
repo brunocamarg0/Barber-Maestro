@@ -57,6 +57,8 @@ model Barbearia {
   cep               String?
   modoConfirmacao   String   @default("hibrido") // automatico, manual, hibrido
   foto              String?  // URL ou base64 da foto da barbearia
+  latitude          Float?   // Coordenada para mapa
+  longitude         Float?   // Coordenada para mapa
   
   // Relacionamentos
   dono              UsuarioDono?  @relation("BarbeariaDono")

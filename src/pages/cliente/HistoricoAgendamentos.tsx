@@ -349,31 +349,31 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Data</p>
-                  <p className="font-medium">
+                  <p className="font-medium text-gray-900">
                     {formatarData(agendamentoSelecionado.data)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Horário</p>
-                  <p className="font-medium">
+                  <p className="font-medium text-gray-900">
                     {agendamentoSelecionado.hora || agendamentoSelecionado.horario || 'N/A'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Serviço</p>
-                  <p className="font-medium">
+                  <p className="font-medium text-gray-900">
                     {agendamentoSelecionado.servico?.nome || agendamentoSelecionado.servicoNome || 'N/A'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Valor</p>
-                  <p className="font-medium">
+                  <p className="font-medium text-gray-900">
                     {formatarMoeda(agendamentoSelecionado.servico?.preco || agendamentoSelecionado.valor || 0)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Profissional</p>
-                  <p className="font-medium">
+                  <p className="font-medium text-gray-900">
                     {agendamentoSelecionado.profissionalNome || 'A definir'}
                   </p>
                 </div>
@@ -388,7 +388,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
               {agendamentoSelecionado.observacoes && (
                 <div>
                   <p className="text-sm text-muted-foreground">Observações</p>
-                  <p className="font-medium">{agendamentoSelecionado.observacoes}</p>
+                  <p className="font-medium text-gray-900">{agendamentoSelecionado.observacoes}</p>
                 </div>
               )}
 

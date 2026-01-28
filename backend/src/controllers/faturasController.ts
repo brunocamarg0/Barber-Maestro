@@ -206,7 +206,7 @@ export async function criarLinkPagamento(req: AuthRequest, res: Response) {
       initPoint: response.init_point,
       sandboxInitPoint: response.sandbox_init_point,
       linkPagamento: response.init_point || response.sandbox_init_point,
-      qrCodePix: response.qr_code, // Se for PIX
+      // QR Code PIX será retornado separadamente se necessário
     });
   } catch (error: any) {
     console.error('Erro ao criar link de pagamento:', error);
@@ -295,7 +295,10 @@ export async function webhookPagamento(req: Request, res: Response) {
             status: novoStatus,
             mercadoPagoPaymentId: paymentId,
             mercadoPagoStatus: data.status,
-            mercadoPagoPaymentType: data.payment_type_id,
+            // payment_type_id pode ser armazenado em metodoPagamento se necessário
+            ...(data.payment_type_id && {
+              metodoPagamento: data.payment_type_id,
+            }),
             ...(novoStatus === 'paga' && {
               dataPagamento: new Date(),
             }),

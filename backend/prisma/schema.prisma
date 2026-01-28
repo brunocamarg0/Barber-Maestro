@@ -22,16 +22,33 @@ model UsuarioAdmin {
   updatedAt DateTime @updatedAt
 }
 
+// Plano de assinatura
+model Plano {
+  id                String      @id @default(uuid())
+  nome              String      // Básico, Premium, Enterprise
+  descricao         String?
+  valorMensal       Float
+  limiteBarbeiros   Int         @default(1)
+  limiteAgendamentos Int        @default(100)
+  recursos          String[]    @default([]) // Array de recursos disponíveis
+  ativo             Boolean     @default(true)
+  
+  assinaturas       Assinatura[]
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
 // Barbearia cadastrada no sistema
 model Barbearia {
   id                String    @id @default(uuid())
   nome              String
   cnpjCpf           String
   responsavel       String    // Nome do responsável legal
-  plano             String    // basico, premium, enterprise
+  plano             String    // basico, premium, enterprise (mantido para compatibilidade)
   status            String    @default("em_teste") // ativa, em_teste, bloqueada, cancelada
   dataCriacao       DateTime  @default(now())
-  dataVencimento    DateTime
+  dataVencimento    DateTime  // Mantido para compatibilidade
   email             String?
   telefone          String?
   endereco          String?
@@ -43,6 +60,7 @@ model Barbearia {
   
   // Relacionamentos
   dono              UsuarioDono?  @relation("BarbeariaDono")
+  assinatura        Assinatura?   // Assinatura ativa
   convites          Convite[]
   servicos          Servico[]
   agendamentos      Agendamento[]
@@ -55,6 +73,60 @@ model Barbearia {
   
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+}
+
+// Assinatura da barbearia
+model Assinatura {
+  id                String      @id @default(uuid())
+  barbearia         Barbearia   @relation(fields: [barbeariaId], references: [id], onDelete: Cascade)
+  barbeariaId       String      @unique
+  plano             Plano       @relation(fields: [planoId], references: [id])
+  planoId           String
+  
+  status            String      @default("ativa") // ativa, suspensa, cancelada, vencida
+  dataInicio        DateTime    @default(now())
+  dataVencimento    DateTime
+  proximoVencimento DateTime
+  
+  // Pagamento recorrente
+  pagamentoRecorrente Boolean   @default(false) // Se tem pagamento automático configurado
+  mercadoPagoSubscriptionId String? // ID da assinatura no Mercado Pago
+  
+  faturas            Fatura[]
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+// Fatura mensal da assinatura
+model Fatura {
+  id                String      @id @default(uuid())
+  assinatura        Assinatura  @relation(fields: [assinaturaId], references: [id], onDelete: Cascade)
+  assinaturaId      String
+  
+  valor             Float
+  dataVencimento    DateTime
+  dataPagamento     DateTime?
+  status            String      @default("pendente") // pendente, paga, vencida, cancelada
+  
+  // Integração com gateway
+  metodoPagamento   String?     // pix, boleto, cartao_credito, cartao_debito
+  mercadoPagoPreferenceId String? // ID da preferência no Mercado Pago
+  mercadoPagoPaymentId    String? // ID do pagamento quando aprovado
+  mercadoPagoStatus       String? // approved, pending, rejected
+  
+  // Dados do pagamento
+  linkPagamento     String?     // Link para pagar a fatura
+  qrCodePix         String?     // QR Code PIX (base64)
+  codigoBoleto      String?     // Código de barras do boleto
+  
+  observacoes       String?
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  @@index([assinaturaId, status])
+  @@index([dataVencimento])
 }
 
 // Usuário Dono da barbearia (criado via convite)

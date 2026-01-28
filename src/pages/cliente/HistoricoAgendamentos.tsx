@@ -119,17 +119,20 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   };
 
   const renderAgendamentoRow = (agendamento: any) => {
-    const status = getStatusConfig(agendamento.status);
-    const horario = agendamento.hora || agendamento.horario || '';
+    const status = getStatusConfig(agendamento.status || 'pendente');
+    const horario = agendamento.horario || agendamento.hora || '';
+    const profissionalNome = agendamento.profissionais?.[0]?.profissional?.nome || agendamento.profissionalNome || 'A definir';
+    const servicoNome = agendamento.servico?.nome || 'N/A';
+    const valor = agendamento.servico?.preco || agendamento.pagamento?.valor || 0;
     
     return (
       <TableRow key={agendamento.id}>
         <TableCell>
-          {formatarData(agendamento.data, horario)}
+          {agendamento.data ? formatarData(agendamento.data, horario) : 'N/A'}
         </TableCell>
-        <TableCell>{agendamento.servico?.nome || agendamento.servicoNome || 'N/A'}</TableCell>
-        <TableCell>{agendamento.profissionalNome || 'A definir'}</TableCell>
-        <TableCell>{formatarMoeda(agendamento.servico?.preco || agendamento.valor || 0)}</TableCell>
+        <TableCell>{servicoNome}</TableCell>
+        <TableCell>{profissionalNome}</TableCell>
+        <TableCell>{formatarMoeda(valor)}</TableCell>
         <TableCell>
           <Badge variant={status.variant}>{status.label}</Badge>
         </TableCell>
@@ -295,15 +298,18 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
                         </TableRow>
                       ) : (
                         filtered.map((agendamento) => {
-                          const horario = agendamento.hora || agendamento.horario || '';
+                          const horario = agendamento.horario || agendamento.hora || '';
+                          const profissionalNome = agendamento.profissionais?.[0]?.profissional?.nome || agendamento.profissionalNome || 'A definir';
+                          const servicoNome = agendamento.servico?.nome || 'N/A';
+                          const valor = agendamento.servico?.preco || agendamento.pagamento?.valor || 0;
                           return (
                             <TableRow key={agendamento.id}>
                               <TableCell>
-                                {formatarData(agendamento.data, horario)}
+                                {agendamento.data ? formatarData(agendamento.data, horario) : 'N/A'}
                               </TableCell>
-                              <TableCell>{agendamento.servico?.nome || agendamento.servicoNome || 'N/A'}</TableCell>
-                              <TableCell>{agendamento.profissionalNome || 'A definir'}</TableCell>
-                              <TableCell>{formatarMoeda(agendamento.servico?.preco || agendamento.valor || 0)}</TableCell>
+                              <TableCell>{servicoNome}</TableCell>
+                              <TableCell>{profissionalNome}</TableCell>
+                              <TableCell>{formatarMoeda(valor)}</TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
                                   <Button 
@@ -344,51 +350,101 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
               Informações completas do agendamento
             </DialogDescription>
           </DialogHeader>
-          {agendamentoSelecionado && (
+          {agendamentoSelecionado ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Data</p>
                   <p className="font-medium">
-                    {formatarData(agendamentoSelecionado.data)}
+                    {agendamentoSelecionado.data 
+                      ? formatarData(agendamentoSelecionado.data) 
+                      : 'N/A'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Horário</p>
                   <p className="font-medium">
-                    {agendamentoSelecionado.hora || agendamentoSelecionado.horario || 'N/A'}
+                    {agendamentoSelecionado.horario || agendamentoSelecionado.hora || 'N/A'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Serviço</p>
                   <p className="font-medium">
-                    {agendamentoSelecionado.servico?.nome || agendamentoSelecionado.servicoNome || 'N/A'}
+                    {agendamentoSelecionado.servico?.nome || 'N/A'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Valor</p>
                   <p className="font-medium">
-                    {formatarMoeda(agendamentoSelecionado.servico?.preco || agendamentoSelecionado.valor || 0)}
+                    {formatarMoeda(
+                      agendamentoSelecionado.servico?.preco || 
+                      agendamentoSelecionado.pagamento?.valor || 
+                      0
+                    )}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Profissional</p>
                   <p className="font-medium">
-                    {agendamentoSelecionado.profissionalNome || 'A definir'}
+                    {agendamentoSelecionado.profissionais?.[0]?.profissional?.nome || 
+                     agendamentoSelecionado.profissionalNome || 
+                     'A definir'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge variant={getStatusConfig(agendamentoSelecionado.status).variant}>
-                    {getStatusConfig(agendamentoSelecionado.status).label}
+                  <Badge variant={getStatusConfig(agendamentoSelecionado.status || 'pendente').variant}>
+                    {getStatusConfig(agendamentoSelecionado.status || 'pendente').label}
                   </Badge>
                 </div>
               </div>
+
+              {agendamentoSelecionado.servico?.descricao && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Descrição do Serviço</p>
+                  <p className="font-medium">{agendamentoSelecionado.servico.descricao}</p>
+                </div>
+              )}
+
+              {agendamentoSelecionado.servico?.duracao && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Duração</p>
+                  <p className="font-medium">{agendamentoSelecionado.servico.duracao} minutos</p>
+                </div>
+              )}
+
+              {agendamentoSelecionado.pagamento && (
+                <div className="pt-2 border-t">
+                  <p className="text-sm font-semibold mb-2">Informações de Pagamento</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Método</p>
+                      <p className="font-medium">
+                        {agendamentoSelecionado.pagamento.metodo || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status do Pagamento</p>
+                      <p className="font-medium">
+                        {agendamentoSelecionado.pagamento.status || 'N/A'}
+                      </p>
+                    </div>
+                    {agendamentoSelecionado.pagamento.dataPagamento && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Data do Pagamento</p>
+                        <p className="font-medium">
+                          {new Date(agendamentoSelecionado.pagamento.dataPagamento).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               
-              {agendamentoSelecionado.observacoes && (
+              {agendamentoSelecionado.observacao && (
                 <div>
                   <p className="text-sm text-muted-foreground">Observações</p>
-                  <p className="font-medium">{agendamentoSelecionado.observacoes}</p>
+                  <p className="font-medium">{agendamentoSelecionado.observacao}</p>
                 </div>
               )}
 

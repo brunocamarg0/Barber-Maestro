@@ -433,7 +433,15 @@ export default function AgendamentoOnline() {
                         )}
                       </div>
                     )}
-                    <Button className="w-full mt-4" variant="default" size="sm">
+                    <Button 
+                      className="w-full mt-4" 
+                      variant="default" 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelecionarBarbearia(barbeariaItem.id);
+                      }}
+                    >
                       <Clock className="h-4 w-4 mr-2" />
                       Agendar Agora
                     </Button>

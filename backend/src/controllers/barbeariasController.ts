@@ -8,8 +8,25 @@ import { enviarEmailConvite } from '../services/emailService';
  */
 export async function listarBarbearias(req: Request, res: Response) {
   try {
+    // Usar `select` para evitar quebrar caso o banco esteja temporariamente sem colunas novas
+    // (ex: foto/latitude/longitude/assinatura) durante migrações em produção.
     const barbearias = await prisma.barbearia.findMany({
-      include: {
+      select: {
+        id: true,
+        nome: true,
+        cnpjCpf: true,
+        responsavel: true,
+        plano: true,
+        status: true,
+        email: true,
+        telefone: true,
+        endereco: true,
+        cidade: true,
+        bairro: true,
+        cep: true,
+        dataVencimento: true,
+        createdAt: true,
+        updatedAt: true,
         dono: {
           select: {
             id: true,
@@ -44,9 +61,21 @@ export async function listarBarbearias(req: Request, res: Response) {
     });
 
     res.json(barbearias);
-  } catch (error) {
-    console.error('Erro ao listar barbearias:', error);
-    res.status(500).json({ error: 'Erro ao listar barbearias' });
+  } catch (error: any) {
+    console.error('❌ [ADMIN BARBEARIAS] Erro ao listar barbearias:', error);
+    console.error('❌ [ADMIN BARBEARIAS] Stack:', error?.stack);
+    console.error('❌ [ADMIN BARBEARIAS] Message:', error?.message);
+    console.error('❌ [ADMIN BARBEARIAS] Code:', error?.code);
+    console.error('❌ [ADMIN BARBEARIAS] Meta:', error?.meta);
+
+    const errorMessage = process.env.NODE_ENV === 'development'
+      ? `Erro ao listar barbearias: ${error?.message || 'Erro desconhecido'}`
+      : 'Erro ao listar barbearias';
+
+    res.status(500).json({
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+    });
   }
 }
 
@@ -59,7 +88,22 @@ export async function buscarBarbearia(req: Request, res: Response) {
 
     const barbearia = await prisma.barbearia.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        nome: true,
+        cnpjCpf: true,
+        responsavel: true,
+        plano: true,
+        status: true,
+        email: true,
+        telefone: true,
+        endereco: true,
+        cidade: true,
+        bairro: true,
+        cep: true,
+        dataVencimento: true,
+        createdAt: true,
+        updatedAt: true,
         dono: {
           select: {
             id: true,
@@ -90,9 +134,21 @@ export async function buscarBarbearia(req: Request, res: Response) {
     }
 
     res.json(barbearia);
-  } catch (error) {
-    console.error('Erro ao buscar barbearia:', error);
-    res.status(500).json({ error: 'Erro ao buscar barbearia' });
+  } catch (error: any) {
+    console.error('❌ [ADMIN BARBEARIAS] Erro ao buscar barbearia:', error);
+    console.error('❌ [ADMIN BARBEARIAS] Stack:', error?.stack);
+    console.error('❌ [ADMIN BARBEARIAS] Message:', error?.message);
+    console.error('❌ [ADMIN BARBEARIAS] Code:', error?.code);
+    console.error('❌ [ADMIN BARBEARIAS] Meta:', error?.meta);
+
+    const errorMessage = process.env.NODE_ENV === 'development'
+      ? `Erro ao buscar barbearia: ${error?.message || 'Erro desconhecido'}`
+      : 'Erro ao buscar barbearia';
+
+    res.status(500).json({
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+    });
   }
 }
 

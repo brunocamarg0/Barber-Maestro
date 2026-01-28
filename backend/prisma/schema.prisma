@@ -155,6 +155,7 @@ model Cliente {
   // Relacionamentos
   agendamentos Agendamento[]
   avaliacoes   Avaliacao[]
+  tickets      TicketSuporte[]
   
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -351,4 +352,31 @@ model ComissaoPaga {
   @@unique([agendamentoId, profissionalId])
   @@index([profissionalId, mesReferencia])
   @@index([barbeariaId, mesReferencia])
+}
+
+// Ticket de suporte (chamado aberto pelo cliente)
+model TicketSuporte {
+  id          String   @id @default(uuid())
+  categoria   String   // agendamento, pagamento, fidelidade, conta, outro
+  assunto     String
+  mensagem    String
+  status      String   @default("aberto") // aberto, em_andamento, resolvido, fechado
+  prioridade  String   @default("media") // baixa, media, alta, urgente
+  
+  // Dados do cliente
+  clienteId   String?
+  cliente     Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  clienteNome String
+  clienteEmail String
+  
+  // Resposta do admin
+  resposta    String?
+  respondidoPor String?
+  respondidoEm DateTime?
+  
+  // Resolução
+  resolvidoEm DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

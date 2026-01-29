@@ -837,8 +837,7 @@ export default function AgendamentoOnline() {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Data:</span>
                 <span className="font-medium">
-                  {formData.data &&
-                    new Date(formData.data).toLocaleDateString("pt-BR")} às {formData.hora}
+                  {formatarDataBR(formData.data as string)} às {formData.hora}
                 </span>
               </div>
               <div className="flex items-center justify-between font-bold text-lg pt-2 border-t">

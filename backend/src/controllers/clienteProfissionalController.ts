@@ -17,7 +17,11 @@ export async function listarClientesProfissionais(req: AuthRequest, res: Respons
 
     const where: any = {
       cliente: {
-        barbeariaId,
+        agendamentos: {
+          some: {
+            barbeariaId,
+          },
+        },
       },
       profissional: {
         barbeariaId,
@@ -81,11 +85,15 @@ export async function criarClienteProfissional(req: AuthRequest, res: Response) 
       });
     }
 
-    // Verificar se cliente pertence à barbearia
+    // Verificar se cliente pertence à barbearia (através de agendamentos)
     const cliente = await prisma.cliente.findFirst({
       where: {
         id: clienteId,
-        barbeariaId,
+        agendamentos: {
+          some: {
+            barbeariaId,
+          },
+        },
       },
     });
 
@@ -167,7 +175,11 @@ export async function removerClienteProfissional(req: AuthRequest, res: Response
       where: {
         id,
         cliente: {
-          barbeariaId,
+          agendamentos: {
+            some: {
+              barbeariaId,
+            },
+          },
         },
         profissional: {
           barbeariaId,
@@ -213,7 +225,11 @@ export async function listarClientesDoProfissional(req: AuthRequest, res: Respon
         profissionalId: id,
         ativo: true,
         cliente: {
-          barbeariaId,
+          agendamentos: {
+            some: {
+              barbeariaId,
+            },
+          },
         },
       },
       include: {

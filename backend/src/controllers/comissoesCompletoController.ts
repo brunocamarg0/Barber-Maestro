@@ -42,7 +42,11 @@ export async function relatorioComissoesCompleto(req: AuthRequest, res: Response
         profissionalId,
         ativo: true,
         cliente: {
-          barbeariaId,
+          agendamentos: {
+            some: {
+              barbeariaId,
+            },
+          },
         },
       },
       include: {
@@ -70,7 +74,7 @@ export async function relatorioComissoesCompleto(req: AuthRequest, res: Response
       include: {
         agendamento: {
           include: {
-            cliente: {
+            clienteRel: {
               select: {
                 id: true,
                 nome: true,
@@ -160,7 +164,13 @@ export async function relatorioComissoesCompleto(req: AuthRequest, res: Response
       })),
       comissoesServicos: comissoesServicos.map(c => ({
         id: c.id,
-        cliente: c.agendamento.cliente,
+        cliente: c.agendamento.clienteRel ? {
+          id: c.agendamento.clienteRel.id,
+          nome: c.agendamento.clienteRel.nome,
+        } : {
+          id: '',
+          nome: c.agendamento.cliente, // Nome do cliente como string
+        },
         servico: c.agendamento.servico,
         valorTotal: c.valorTotal,
         valorComissao: c.valorComissao,

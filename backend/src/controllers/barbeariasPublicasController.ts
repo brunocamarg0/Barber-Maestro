@@ -7,8 +7,6 @@ import prisma from '../lib/prisma';
  */
 export async function listarBarbeariasPublicas(req: Request, res: Response) {
   try {
-    console.log('🔧 [BARBEARIAS] listarBarbeariasPublicas chamado');
-    console.log('🔧 [BARBEARIAS] Query params:', req.query);
     const { busca, cidade, bairro } = req.query;
 
     const where: any = {
@@ -67,8 +65,6 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
         mode: 'insensitive',
       };
     }
-
-    console.log('🔧 [BARBEARIAS] Where clause:', JSON.stringify(where, null, 2));
     
     // Tentar executar a query
     let barbearias;
@@ -128,7 +124,9 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
       });
     } catch (queryError: any) {
       // Se a query falhar com mode: 'insensitive', tentar sem ele
-      console.warn('⚠️ [BARBEARIAS] Erro na query com mode: insensitive, tentando sem ele:', queryError?.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️ [BARBEARIAS] Erro na query com mode: insensitive, tentando sem ele:', queryError?.message);
+      }
       
       // Recriar where clause sem mode: 'insensitive'
       const whereFallback: any = {};
@@ -204,31 +202,6 @@ export async function listarBarbeariasPublicas(req: Request, res: Response) {
         },
       });
     }
-
-    console.log('🔧 [BARBEARIAS] Total de barbearias encontradas:', barbearias.length);
-    
-    // Log detalhado de cada barbearia encontrada
-    if (barbearias.length > 0) {
-      console.log('\n📋 [BARBEARIAS] BARBEARIAS CADASTRADAS NO SISTEMA:');
-      console.log('═'.repeat(80));
-      barbearias.forEach((b, index) => {
-        console.log(`\n${index + 1}. ${b.nome}`);
-        console.log(`   ID: ${b.id}`);
-        console.log(`   Status: ${b.status}`);
-        console.log(`   Email: ${b.email || 'Não informado'}`);
-        console.log(`   Telefone: ${b.telefone || 'Não informado'}`);
-        console.log(`   Cidade: ${b.cidade || 'Não informado'}`);
-        console.log(`   Bairro: ${b.bairro || 'Não informado'}`);
-        console.log(`   Serviços: ${b.servicos.length} ativos`);
-        console.log(`   Profissionais: ${b.profissionais.length} ativos`);
-        console.log(`   Total Agendamentos: ${b._count.agendamentos}`);
-      });
-      console.log('\n═'.repeat(80));
-      console.log(`\n✅ Total: ${barbearias.length} barbearia(s) disponível(is) para agendamento\n`);
-    } else {
-      console.log('⚠️ [BARBEARIAS] NENHUMA BARBEARIA ENCONTRADA!');
-      console.log('⚠️ [BARBEARIAS] Verifique se há barbearias cadastradas no banco de dados.');
-    }
     
     // Formatar resposta para o frontend
     const barbeariasFormatadas = barbearias
@@ -285,8 +258,6 @@ export async function buscarBarbeariaPublica(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    console.log('🔧 [BARBEARIAS] buscarBarbeariaPublica chamado para ID:', id);
-
     const barbearia = await prisma.barbearia.findFirst({
       where: {
         id,
@@ -338,11 +309,8 @@ export async function buscarBarbeariaPublica(req: Request, res: Response) {
     });
 
     if (!barbearia || !barbearia.id || !barbearia.nome) {
-      console.warn('⚠️ [BARBEARIAS] Barbearia não encontrada:', id);
       return res.status(404).json({ error: 'Barbearia não encontrada ou não está disponível' });
     }
-
-    console.log('✅ [BARBEARIAS] Barbearia encontrada:', barbearia.nome);
 
     // Formatar resposta
     const barbeariaFormatada = {
@@ -401,14 +369,10 @@ export async function buscarHorariosOcupados(req: Request, res: Response) {
       return res.status(400).json({ error: 'Data é obrigatória (formato: YYYY-MM-DD)' });
     }
 
-    console.log(`🔧 [HORARIOS] Buscando horários ocupados para barbearia ${id} na data ${data}`);
-
     // Criar datas de início e fim do dia usando UTC
     // Isso garante consistência com o armazenamento ao meio-dia UTC
     const dataInicio = new Date(`${data}T00:00:00.000Z`);
     const dataFim = new Date(`${data}T23:59:59.999Z`);
-    
-    console.log(`🔧 [HORARIOS] Range de busca: ${dataInicio.toISOString()} até ${dataFim.toISOString()}`);
 
     // Buscar agendamentos confirmados ou pendentes para esta barbearia na data
     const agendamentos = await prisma.agendamento.findMany({
@@ -429,11 +393,6 @@ export async function buscarHorariosOcupados(req: Request, res: Response) {
           },
         },
       },
-    });
-
-    console.log(`🔧 [HORARIOS] Agendamentos encontrados: ${agendamentos.length}`);
-    agendamentos.forEach((a, i) => {
-      console.log(`   ${i + 1}. Horário: ${a.horario}, Status: ${a.status}, Duração serviço: ${a.servico?.duracao || 40}min`);
     });
 
     // Extrair apenas os horários ocupados
@@ -475,8 +434,6 @@ export async function buscarHorariosOcupados(req: Request, res: Response) {
 
     // Ordenar horários
     horariosOcupados.sort();
-
-    console.log(`✅ [HORARIOS] ${horariosOcupados.length} horário(s) ocupado(s): ${horariosOcupados.join(', ')}`);
 
     res.json({
       barbeariaId: id,

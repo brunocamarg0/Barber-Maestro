@@ -66,13 +66,9 @@ async function ensureTicketSuporteTableExists(): Promise<boolean> {
  */
 export async function criarTicket(req: Request, res: Response) {
   try {
-    console.log('🔧 [SUPORTE] Criar ticket chamado');
-    console.log('🔧 [SUPORTE] Body recebido:', JSON.stringify(req.body, null, 2));
-
     // Garante que a tabela existe antes de tentar criar o ticket
     const tableExists = await ensureTicketSuporteTableExists();
     if (!tableExists) {
-      console.error('❌ [SUPORTE] Não foi possível garantir que a tabela existe');
       return res.status(500).json({
         error: 'Erro de configuração do sistema. Contate o administrador.',
         details: 'TicketSuporte table could not be created',
@@ -83,7 +79,6 @@ export async function criarTicket(req: Request, res: Response) {
 
     // Validações
     if (!categoria) {
-      console.error('❌ [SUPORTE] Categoria não informada');
       return res.status(400).json({ 
         error: 'Categoria é obrigatória',
         required: ['categoria']
@@ -91,7 +86,6 @@ export async function criarTicket(req: Request, res: Response) {
     }
 
     if (!mensagem || !mensagem.trim()) {
-      console.error('❌ [SUPORTE] Mensagem não informada ou vazia');
       return res.status(400).json({ 
         error: 'Mensagem é obrigatória',
         required: ['mensagem']
@@ -99,7 +93,6 @@ export async function criarTicket(req: Request, res: Response) {
     }
 
     if (!clienteEmail || !clienteEmail.trim()) {
-      console.error('❌ [SUPORTE] Email do cliente não informado');
       return res.status(400).json({ 
         error: 'Email do cliente é obrigatório',
         required: ['clienteEmail']
@@ -116,11 +109,9 @@ export async function criarTicket(req: Request, res: Response) {
         });
         if (clienteExiste) {
           clienteIdValido = clienteId;
-        } else {
-          console.warn('⚠️ [SUPORTE] ClienteId fornecido não existe no banco:', clienteId);
         }
       } catch (err) {
-        console.warn('⚠️ [SUPORTE] Erro ao verificar clienteId:', err);
+        // ClienteId inválido, continuar sem ele
       }
     }
 
@@ -161,8 +152,6 @@ export async function criarTicket(req: Request, res: Response) {
       
       ticket = { id: ticketId };
     }
-
-    console.log('✅ [SUPORTE] Ticket criado com sucesso:', ticket.id);
 
     res.status(201).json({
       sucesso: true,
@@ -285,8 +274,6 @@ export async function atualizarStatus(req: Request, res: Response) {
       data,
     });
 
-    console.log('✅ [SUPORTE] Ticket atualizado:', id, data);
-
     res.json(ticket);
   } catch (error) {
     console.error('❌ [SUPORTE] Erro ao atualizar ticket:', error);
@@ -315,8 +302,6 @@ export async function responderTicket(req: Request, res: Response) {
         status: 'em_andamento', // Muda para em_andamento ao responder
       },
     });
-
-    console.log('✅ [SUPORTE] Ticket respondido:', id);
 
     // TODO: Enviar email/WhatsApp para o cliente com a resposta
     // Por enquanto, apenas retornamos o ticket atualizado

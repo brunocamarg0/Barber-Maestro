@@ -16,11 +16,8 @@ export async function listarPagamentos(req: AuthRequest, res: Response) {
     const { dataInicio, dataFim, metodo, status } = req.query;
 
     if (!barbeariaId) {
-      console.error('❌ [LISTAR PAGAMENTOS] Barbearia não identificada');
       return res.status(401).json({ error: 'Barbearia não identificada' });
     }
-    
-    console.log('✅ [LISTAR PAGAMENTOS] Barbearia identificada:', barbeariaId);
 
     const where: any = {
       agendamento: {
@@ -263,8 +260,6 @@ export async function registrarPagamentoManual(req: AuthRequest, res: Response) 
         },
       });
     }
-
-    console.log(`✅ Pagamento manual registrado: R$ ${valor} via ${metodo} para agendamento ${agendamentoId}`);
 
     res.status(201).json({
       success: true,

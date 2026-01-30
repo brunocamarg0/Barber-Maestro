@@ -518,12 +518,11 @@ function RelatorioCompletoComissoes({ mes, ano }: { mes: number; ano: number }) 
         </CardHeader>
         <CardContent>
           <div className="mb-4">
-            <Select value={profissionalSelecionado || ""} onValueChange={setProfissionalSelecionado}>
+            <Select value={profissionalSelecionado || undefined} onValueChange={(value) => setProfissionalSelecionado(value === "none" ? null : value)}>
               <SelectTrigger className="w-64">
                 <SelectValue placeholder="Selecione um profissional" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Selecione um profissional</SelectItem>
                 {profissionais.map((prof) => (
                   <SelectItem key={prof.id} value={prof.id}>
                     {prof.nome}
@@ -859,7 +858,7 @@ function ComissoesAssinatura({ mes, ano }: { mes: number; ano: number }) {
                 <SelectValue placeholder="Selecione um profissional" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os profissionais</SelectItem>
+                <SelectItem value="todos">Todos os profissionais</SelectItem>
                 {profissionais.map((prof) => (
                   <SelectItem key={prof.id} value={prof.id}>
                     {prof.nome}

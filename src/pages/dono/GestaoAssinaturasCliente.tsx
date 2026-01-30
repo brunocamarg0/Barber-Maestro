@@ -657,7 +657,7 @@ export default function GestaoAssinaturasCliente() {
                   <SelectValue placeholder="Selecione um profissional" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {profissionais.map((prof) => (
                     <SelectItem key={prof.id} value={prof.id}>
                       {prof.nome}

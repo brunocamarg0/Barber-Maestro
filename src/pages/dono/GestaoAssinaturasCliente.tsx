@@ -648,9 +648,9 @@ export default function GestaoAssinaturasCliente() {
             <div className="space-y-2">
               <Label htmlFor="profissional">Profissional (Opcional)</Label>
               <Select
-                value={formCriar.profissionalId}
+                value={formCriar.profissionalId || "none"}
                 onValueChange={(value) =>
-                  setFormCriar({ ...formCriar, profissionalId: value })
+                  setFormCriar({ ...formCriar, profissionalId: value === "none" ? "" : value })
                 }
               >
                 <SelectTrigger id="profissional">

@@ -853,7 +853,7 @@ function ComissoesAssinatura({ mes, ano }: { mes: number; ano: number }) {
         </CardHeader>
         <CardContent>
           <div className="mb-4">
-            <Select value={profissionalSelecionado || ""} onValueChange={setProfissionalSelecionado}>
+            <Select value={profissionalSelecionado || "todos"} onValueChange={(value) => setProfissionalSelecionado(value === "todos" ? null : value)}>
               <SelectTrigger className="w-64">
                 <SelectValue placeholder="Selecione um profissional" />
               </SelectTrigger>

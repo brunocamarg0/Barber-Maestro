@@ -92,7 +92,7 @@ interface PagamentoAssinatura {
 }
 
 export default function GestaoAssinaturasCliente() {
-  const { barbeariaId, profissionais, clientes } = useDono();
+  const { barbeariaId, profissionais, clientes: clientesContexto } = useDono();
   const { toast } = useToast();
   const [assinaturas, setAssinaturas] = useState<AssinaturaCliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +105,7 @@ export default function GestaoAssinaturasCliente() {
   const [loadingPagamentos, setLoadingPagamentos] = useState(false);
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
   const [planos, setPlanos] = useState<any[]>([]);
-  const [clientes, setClientes] = useState<any[]>([]);
+  const [clientesDisponiveis, setClientesDisponiveis] = useState<any[]>([]);
   const [formCriar, setFormCriar] = useState({
     clienteId: "",
     planoId: "",
@@ -131,7 +131,7 @@ export default function GestaoAssinaturasCliente() {
 
   const carregarClientes = () => {
     // Usar a lista de clientes do contexto
-    setClientes(clientes || []);
+    setClientesDisponiveis(clientesContexto || []);
   };
 
   const carregarAssinaturas = async () => {
@@ -615,7 +615,7 @@ export default function GestaoAssinaturasCliente() {
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clientes.map((cliente) => (
+                  {clientesDisponiveis.map((cliente) => (
                     <SelectItem key={cliente.id} value={cliente.id}>
                       {cliente.nome} - {cliente.email || cliente.telefone}
                     </SelectItem>

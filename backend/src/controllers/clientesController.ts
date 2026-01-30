@@ -86,6 +86,21 @@ export async function listarClientes(req: AuthRequest, res: Response) {
           },
           orderBy: { data: 'desc' },
         },
+        assinaturaCliente: {
+          where: {
+            status: 'ativa',
+          },
+          select: {
+            id: true,
+            status: true,
+            plano: {
+              select: {
+                nome: true,
+                valor: true,
+              },
+            },
+          },
+        },
         _count: {
           select: { 
             agendamentos: {
@@ -116,12 +131,22 @@ export async function listarClientes(req: AuthRequest, res: Response) {
         ? agendamentosBarbearia[0].data
         : null;
 
+      // Verificar se tem assinatura ativa
+      const temAssinatura = cliente.assinaturaCliente && cliente.assinaturaCliente.length > 0;
+      const assinatura = temAssinatura ? cliente.assinaturaCliente[0] : null;
+
       return {
         ...cliente,
         totalAgendamentos,
         ticketMedio,
         ultimoAgendamento,
         frequencia: totalAgendamentos, // Simplificado: total de agendamentos
+        temAssinatura,
+        assinatura: assinatura ? {
+          id: assinatura.id,
+          status: assinatura.status,
+          plano: assinatura.plano,
+        } : null,
       };
     });
 

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { AuthRequestCliente } from '../middleware/auth';
+import { AuthRequestCliente } from '../middleware/authCliente';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 // Configurar cliente do Mercado Pago
@@ -112,11 +112,14 @@ export async function comprarAssinatura(req: AuthRequestCliente, res: Response) 
         status: 'pendente', // Pendente até o pagamento ser confirmado
       },
       include: {
-        plano: true,
-        barbearia: {
-          select: {
-            id: true,
-            nome: true,
+        plano: {
+          include: {
+            barbearia: {
+              select: {
+                id: true,
+                nome: true,
+              },
+            },
           },
         },
       },
@@ -126,7 +129,7 @@ export async function comprarAssinatura(req: AuthRequestCliente, res: Response) 
     const pagamento = await prisma.pagamentoAssinatura.create({
       data: {
         assinaturaId: assinatura.id,
-        valor: plano.valor,
+        valor: assinatura.plano.valor,
         dataVencimento: dataInicio,
         status: 'pendente',
       },
@@ -135,15 +138,17 @@ export async function comprarAssinatura(req: AuthRequestCliente, res: Response) 
     // Criar preferência de pagamento no Mercado Pago
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     
+    const barbeariaNome = assinatura.plano.barbearia.nome;
+    
     const preferenceData = {
       items: [
         {
           id: assinatura.id,
-          title: `Assinatura ${plano.nome} - ${plano.barbearia.nome}`,
-          description: `Plano de ${plano.duracaoMeses} ${plano.duracaoMeses === 1 ? 'mês' : 'meses'}`,
+          title: `Assinatura ${assinatura.plano.nome} - ${assinatura.plano.barbearia.nome}`,
+          description: `Plano de ${assinatura.plano.duracaoMeses} ${assinatura.plano.duracaoMeses === 1 ? 'mês' : 'meses'}`,
           quantity: 1,
           currency_id: 'BRL',
-          unit_price: plano.valor,
+          unit_price: assinatura.plano.valor,
         },
       ],
       payer: {

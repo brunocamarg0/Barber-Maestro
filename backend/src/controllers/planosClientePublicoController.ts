@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { AuthRequestCliente } from '../middleware/auth';
+import { AuthRequestCliente } from '../middleware/authCliente';
 
 /**
  * GET /api/cliente/planos-disponiveis

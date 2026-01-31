@@ -51,6 +51,7 @@ import Fidelidade from "./pages/cliente/Fidelidade";
 import SuporteCliente from "./pages/cliente/SuporteCliente";
 import ConfiguracoesCliente from "./pages/cliente/ConfiguracoesCliente";
 import MinhaAssinatura from "./pages/cliente/MinhaAssinatura";
+import PlanosDisponiveis from "./pages/cliente/PlanosDisponiveis";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import DonoLayout from "./pages/dono/DonoLayout";
 import DonoDashboard from "./pages/dono/DonoDashboard";
@@ -154,6 +155,7 @@ const App = () => (
                                   <Route path="notificacoes" element={<ErrorBoundary><NotificacoesCliente /></ErrorBoundary>} />
                                   <Route path="fidelidade" element={<ErrorBoundary><Fidelidade /></ErrorBoundary>} />
                                   <Route path="assinatura" element={<ErrorBoundary><MinhaAssinatura /></ErrorBoundary>} />
+                                  <Route path="planos" element={<ErrorBoundary><PlanosDisponiveis /></ErrorBoundary>} />
                                   <Route path="suporte" element={<ErrorBoundary><SuporteCliente /></ErrorBoundary>} />
                                   <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesCliente /></ErrorBoundary>} />
                                   <Route path="*" element={<NotFound />} />

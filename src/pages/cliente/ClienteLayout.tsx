@@ -27,6 +27,7 @@ import {
   Settings,
   LogOut,
   Receipt,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -127,6 +128,11 @@ export default function ClienteLayout() {
       title: "Fidelidade",
       url: "/cliente/fidelidade",
       icon: Gift,
+    },
+    {
+      title: "Planos Disponíveis",
+      url: "/cliente/planos",
+      icon: Package,
     },
     {
       title: "Minha Assinatura",

@@ -30,5 +30,13 @@ router.post('/pagamentos', clientePanelController.criarPagamento);
 router.get('/assinatura', clientePanelController.obterMinhaAssinatura);
 router.get('/assinatura/pagamentos', clientePanelController.listarPagamentosAssinatura);
 
+// Planos e compra de assinaturas
+import * as planosClientePublicoController from '../../controllers/planosClientePublicoController';
+import * as assinaturasClientePublicoController from '../../controllers/assinaturasClientePublicoController';
+
+router.get('/planos-disponiveis', planosClientePublicoController.listarPlanosDisponiveis);
+router.get('/planos-disponiveis/:barbeariaId', planosClientePublicoController.listarPlanosPorBarbearia);
+router.post('/assinaturas/comprar', assinaturasClientePublicoController.comprarAssinatura);
+
 export default router;
 

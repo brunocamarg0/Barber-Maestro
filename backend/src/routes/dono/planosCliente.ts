@@ -4,6 +4,7 @@ import * as planosClienteController from '../../controllers/planosClienteControl
 import * as assinaturasClienteController from '../../controllers/assinaturasClienteController';
 import * as pagamentosAssinaturaController from '../../controllers/pagamentosAssinaturaController';
 import * as comissoesAssinaturaController from '../../controllers/comissoesAssinaturaController';
+import * as assinaturasClienteTesteController from '../../controllers/assinaturasClienteTesteController';
 
 const router = Router();
 
@@ -33,6 +34,9 @@ router.get('/comissoes-assinatura/resumo', comissoesAssinaturaController.listarR
 router.get('/comissoes-assinatura/:profissionalId', comissoesAssinaturaController.calcularComissoesAssinatura);
 router.post('/comissoes-assinatura/:id/marcar-pago', comissoesAssinaturaController.marcarComissaoAssinaturaComoPaga);
 router.post('/comissoes-assinatura/profissional/:profissionalId/marcar-todas-pagas', comissoesAssinaturaController.marcarTodasComissoesAssinaturaComoPagas);
+
+// Rotas de teste (apenas desenvolvimento)
+router.post('/assinaturas-cliente/:id/simular-pagamento', assinaturasClienteTesteController.simularPagamentoAssinatura);
 
 export default router;
 

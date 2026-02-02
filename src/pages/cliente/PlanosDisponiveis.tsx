@@ -20,6 +20,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/services/api";
 import { useNavigate } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface Plano {
   id: string;
@@ -42,6 +44,7 @@ export default function PlanosDisponiveis() {
   const [loading, setLoading] = useState(true);
   const [barbeariaSelecionada, setBarbeariaSelecionada] = useState<string | null>(null);
   const [comprando, setComprando] = useState<string | null>(null);
+  const [modoTeste, setModoTeste] = useState(false);
 
   useEffect(() => {
     carregarPlanos();
@@ -81,26 +84,45 @@ export default function PlanosDisponiveis() {
 
     setComprando(plano.id);
     try {
+      // Se modo teste, usar endpoint de teste
+      const endpoint = modoTeste 
+        ? "/cliente/assinaturas/comprar-teste"
+        : "/cliente/assinaturas/comprar";
+
       const response = await apiPost<{
         assinatura: any;
-        pagamento: {
+        pagamento?: {
           initPoint: string;
           linkPagamento: string;
         };
-      }>("/cliente/assinaturas/comprar", {
+        modo?: string;
+        mensagem?: string;
+      }>(endpoint, {
         planoId: plano.id,
         barbeariaId: plano.barbearia.id,
       });
 
-      // Redirecionar para o link de pagamento do Mercado Pago
-      if (response.pagamento?.linkPagamento) {
-        window.location.href = response.pagamento.linkPagamento;
-      } else {
+      if (modoTeste) {
+        // Modo teste: assinatura criada imediatamente
         toast({
-          title: "Erro",
-          description: "Não foi possível gerar o link de pagamento",
-          variant: "destructive",
+          title: "Sucesso!",
+          description: response.mensagem || "Assinatura criada em modo teste",
         });
+        // Recarregar página ou redirecionar
+        setTimeout(() => {
+          navigate("/cliente/assinatura");
+        }, 1500);
+      } else {
+        // Modo real: redirecionar para pagamento
+        if (response.pagamento?.linkPagamento) {
+          window.location.href = response.pagamento.linkPagamento;
+        } else {
+          toast({
+            title: "Erro",
+            description: "Não foi possível gerar o link de pagamento",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error: any) {
       console.error("Erro ao comprar plano:", error);
@@ -143,12 +165,38 @@ export default function PlanosDisponiveis() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Planos Disponíveis</h2>
-        <p className="text-muted-foreground">
-          Escolha o plano ideal para você e aproveite benefícios exclusivos
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Planos Disponíveis</h2>
+          <p className="text-muted-foreground">
+            Escolha o plano ideal para você e aproveite benefícios exclusivos
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch
+            id="modo-teste"
+            checked={modoTeste}
+            onCheckedChange={setModoTeste}
+          />
+          <Label htmlFor="modo-teste" className="cursor-pointer">
+            Modo Teste (sem pagamento real)
+          </Label>
+        </div>
       </div>
+
+      {modoTeste && (
+        <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+              <Package className="h-5 w-5" />
+              <p className="font-medium">
+                Modo Teste Ativado: As assinaturas serão criadas sem pagamento real. 
+                Use apenas para testes!
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {planos.length === 0 ? (
         <Card>

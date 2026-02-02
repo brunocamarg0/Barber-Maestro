@@ -573,11 +573,37 @@ export default function GestaoAssinaturasCliente() {
                                   )}
                                 </div>
                               </div>
-                              <div>
+                              <div className="flex items-center gap-2">
                                 {pagamento.status === "paga" ? (
                                   <CheckCircle className="h-5 w-5 text-green-600" />
                                 ) : (
-                                  <XCircle className="h-5 w-5 text-gray-400" />
+                                  <>
+                                    <XCircle className="h-5 w-5 text-gray-400" />
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={async () => {
+                                        try {
+                                          await apiPost(`/dono/planos-cliente/assinaturas-cliente/${assinaturaSelecionada.id}/simular-pagamento`);
+                                          toast({
+                                            title: "Sucesso",
+                                            description: "Pagamento simulado com sucesso",
+                                          });
+                                          await carregarPagamentos(assinaturaSelecionada.id);
+                                          // Recarregar assinaturas
+                                          carregarAssinaturas();
+                                        } catch (error: any) {
+                                          toast({
+                                            title: "Erro",
+                                            description: error.message || "Erro ao simular pagamento",
+                                            variant: "destructive",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      Simular Pagamento
+                                    </Button>
+                                  </>
                                 )}
                               </div>
                             </div>

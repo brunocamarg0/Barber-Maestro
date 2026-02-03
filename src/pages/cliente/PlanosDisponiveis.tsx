@@ -176,7 +176,7 @@ export default function PlanosDisponiveis() {
           <Switch
             id="modo-teste"
             checked={modoTeste}
-            onCheckedChange={setModoTeste}
+            onCheckedChange={(checked) => setModoTeste(checked)}
           />
           <Label htmlFor="modo-teste" className="cursor-pointer">
             Modo Teste (sem pagamento real)

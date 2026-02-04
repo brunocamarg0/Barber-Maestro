@@ -108,11 +108,14 @@ export async function criarClienteProfissional(req: AuthRequest, res: Response) 
       return res.status(404).json({ error: 'Profissional não encontrado' });
     }
 
-    // Desativar atribuições anteriores do cliente
+    // Desativar atribuições anteriores do cliente (exceto a do profissional atual)
     await prisma.clienteProfissional.updateMany({
       where: {
         clienteId,
         ativo: true,
+        NOT: {
+          profissionalId,
+        },
       },
       data: {
         ativo: false,
@@ -120,9 +123,20 @@ export async function criarClienteProfissional(req: AuthRequest, res: Response) 
       },
     });
 
-    // Criar nova atribuição
-    const atribuicao = await prisma.clienteProfissional.create({
-      data: {
+    // Usar upsert para criar ou reativar atribuição existente
+    const atribuicao = await prisma.clienteProfissional.upsert({
+      where: {
+        clienteId_profissionalId: {
+          clienteId,
+          profissionalId,
+        },
+      },
+      update: {
+        ativo: true,
+        dataFim: null,
+        dataInicio: new Date(),
+      },
+      create: {
         clienteId,
         profissionalId,
         ativo: true,

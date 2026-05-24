@@ -407,19 +407,19 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       ativo: s.ativo ?? true,
       barbearia_id: barbeariaId!,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Serviço adicionado");
     carregar();
   };
   const atualizarServico = async (id: string, dados: any) => {
     const { error } = await supabase.from("servicos").update(dados).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Serviço atualizado");
     carregar();
   };
   const removerServico = async (id: string) => {
     const { error } = await supabase.from("servicos").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Serviço removido");
     carregar();
   };
@@ -443,7 +443,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       ativo: p.ativo ?? true,
       barbearia_id: barbeariaId!,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Profissional adicionado");
     carregar();
   };
@@ -455,13 +455,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       delete payload.comissao;
     }
     const { error } = await supabase.from("profissionais").update(payload).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Profissional atualizado");
     carregar();
   };
   const removerProfissional = async (id: string) => {
     const { error } = await supabase.from("profissionais").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Profissional removido");
     carregar();
   };
@@ -476,7 +476,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       data_nascimento: c.dataNascimento ?? null,
       vip: c.vip ?? false,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Cliente cadastrado");
     carregar();
   };
@@ -489,13 +489,13 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     if ("dataNascimento" in dados) payload.data_nascimento = dados.dataNascimento;
     if ("foto" in dados) payload.foto = dados.foto;
     const { error } = await supabase.from("clientes").update(payload).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Cliente atualizado");
     carregar();
   };
   const removerCliente = async (id: string) => {
     const { error } = await supabase.from("clientes").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Cliente removido");
     carregar();
   };
@@ -522,7 +522,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       })
       .select()
       .single();
-    if (error || !ag) return toast.error(error?.message ?? "Erro ao criar agendamento");
+    if (error || !ag) { toast.error(error?.message ?? "Erro ao criar agendamento"); return; }
     if (a.profissionalId) {
       await supabase.from("agendamento_profissional").insert({
         agendamento_id: ag.id,
@@ -534,7 +534,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   };
   const atualizarAgendamento = async (id: string, dados: any) => {
     const { error } = await supabase.from("agendamentos").update(dados).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     carregar();
   };
   const cancelarAgendamento = async (id: string) => {
@@ -553,7 +553,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // Notificações
   const marcarNotificacaoLida = async (id: string) => {
     const { error } = await supabase.from("notificacoes").update({ lida: true }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setNotificacoes((prev) => prev.map((n) => (n.id === id ? { ...n, lida: true } : n)));
   };
 
@@ -571,7 +571,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     if (dados.foto) payload.foto = dados.foto;
     if (dados.modoConfirmacao) payload.modo_confirmacao = dados.modoConfirmacao;
     const { error } = await supabase.from("barbearias").update(payload).eq("id", barbeariaId);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Configuração salva");
     carregar();
   };

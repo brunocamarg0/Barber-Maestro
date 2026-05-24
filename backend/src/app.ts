@@ -10,8 +10,6 @@ import passport from 'passport';
 import adminBarbeariasRoutes from './routes/admin/barbearias';
 import adminConvitesRoutes from './routes/admin/convites';
 import adminUsuariosRoutes from './routes/admin/usuarios';
-import criarExemploRoutes from './routes/admin/criar-exemplo';
-import corrigirAdminRoutes from './routes/admin/corrigir-admin';
 import ativacaoRoutes from './routes/ativacao';
 import authRoutes from './routes/auth';
 import googleAuthRoutes from './routes/googleAuth';
@@ -40,7 +38,7 @@ import faturasRoutes from './routes/faturas';
 import clienteSuporteRoutes from './routes/cliente/suporte';
 import adminSuporteRoutes from './routes/admin/suporte';
 import barbeariasPublicasRoutes from './routes/barbeariasPublicas';
-import emergencyRoutes from './routes/emergency';
+
 import pagamentosRoutes from './routes/pagamentos';
 import testEmailRoutes from './routes/test-email';
 // Carregar configuração do Passport (pode falhar se OAuth não estiver configurado)

@@ -1433,6 +1433,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_horarios_ocupados: {
+        Args: { _barbearia_id: string; _data: string }
+        Returns: {
+          horario: string
+        }[]
+      }
       get_user_barbearia_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {

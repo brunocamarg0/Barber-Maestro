@@ -108,7 +108,7 @@ export default function AgendamentoOnline() {
     loadBarbearia();
   }, [formData.barbeariaId]);
 
-  // Carregar horários ocupados quando data mudar
+  // Carregar horários ocupados quando data mudar (via Supabase)
   useEffect(() => {
     const carregarHorariosOcupados = async () => {
       if (!formData.barbeariaId || !formData.data) {
@@ -118,24 +118,19 @@ export default function AgendamentoOnline() {
 
       setLoadingHorarios(true);
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
-        const response = await fetch(
-          `${API_URL}/barbearias/${formData.barbeariaId}/horarios-ocupados?data=${formData.data}`,
-          {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setHorariosOcupados(data.horariosOcupados || []);
-        } else {
-          // Se não encontrar endpoint, usar array vazio (compatibilidade)
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data, error } = await supabase.rpc("get_horarios_ocupados", {
+          _barbearia_id: formData.barbeariaId,
+          _data: formData.data,
+        });
+        if (error) {
+          console.warn("Erro ao carregar horários ocupados:", error.message);
           setHorariosOcupados([]);
+        } else {
+          setHorariosOcupados((data || []).map((r: any) => r.horario).filter(Boolean));
         }
       } catch (error) {
-        console.warn('Não foi possível carregar horários ocupados:', error);
+        console.warn("Não foi possível carregar horários ocupados:", error);
         setHorariosOcupados([]);
       } finally {
         setLoadingHorarios(false);

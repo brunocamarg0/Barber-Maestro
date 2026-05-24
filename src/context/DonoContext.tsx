@@ -455,6 +455,10 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       payload.comissao_valor = dados.comissao.valor;
       delete payload.comissao;
     }
+    if ("comissaoAssinatura" in payload) {
+      payload.comissao_assinatura = payload.comissaoAssinatura;
+      delete payload.comissaoAssinatura;
+    }
     const { error } = await supabase.from("profissionais").update(payload).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Profissional atualizado");

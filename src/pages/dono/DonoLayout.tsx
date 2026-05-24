@@ -90,8 +90,8 @@ function DonoLayoutContent() {
     
     let attempts = 0;
     const maxAttempts = 100; // Aumentado para 50 segundos (100 tentativas x 500ms) - dar MUITO mais tempo após login
-    let intervalId: NodeJS.Timeout | null = null;
-    let timeoutId: NodeJS.Timeout | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let hasBarbearia = false; // Flag para indicar se há barbearia (login recente)
     
     // Verificar imediatamente se há barbearia (indicador de login recente)

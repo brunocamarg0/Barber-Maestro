@@ -586,9 +586,9 @@ export default function ConfiguracoesBarbearia() {
                           ? `${end.cidade}${end.uf ? "/" + end.uf : ""}`
                           : prev.cidade,
                       }));
-                      toast.success("Endereço encontrado!");
+                      sonnerToast.success("Endereço encontrado!");
                     } else {
-                      toast.error("CEP não encontrado");
+                      sonnerToast.error("CEP não encontrado");
                     }
                   }
                 }}

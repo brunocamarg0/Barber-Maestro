@@ -155,20 +155,33 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true);
     try {
-      const [barb, srv, profs, clis, ags, pags, promos, avals, prods, notifs, agProfs, plCli, asCli, comms, asMine, fats] = await Promise.all([
+      // Carrega agendamentos primeiro para usar IDs nos filtros derivados
+      const ags = await supabase
+        .from("agendamentos")
+        .select("*")
+        .eq("barbearia_id", barbeariaId)
+        .order("data", { ascending: false });
+      const agendamentoIds = (ags.data ?? []).map((a: any) => a.id);
+
+      const [barb, srv, profs, clis, pags, promos, avals, prods, notifs, agProfs, plCli, asCli, comms, asMine, fats] = await Promise.all([
         supabase.from("barbearias").select("*").eq("id", barbeariaId).maybeSingle(),
         supabase.from("servicos").select("*").eq("barbearia_id", barbeariaId).order("ordem", { ascending: true }),
         supabase.from("profissionais").select("*").eq("barbearia_id", barbeariaId).order("nome"),
         supabase.from("clientes").select("*").order("nome"),
-        supabase.from("agendamentos").select("*").eq("barbearia_id", barbeariaId).order("data", { ascending: false }),
-        supabase.from("pagamentos").select("*"),
+        agendamentoIds.length
+          ? supabase.from("pagamentos").select("*").in("agendamento_id", agendamentoIds)
+          : Promise.resolve({ data: [] as any[] }),
         supabase.from("promocoes").select("*").eq("barbearia_id", barbeariaId),
-        supabase.from("avaliacoes").select("*"),
+        agendamentoIds.length
+          ? supabase.from("avaliacoes").select("*").in("agendamento_id", agendamentoIds)
+          : Promise.resolve({ data: [] as any[] }),
         supabase.from("produtos").select("*").eq("barbearia_id", barbeariaId),
         supabase.from("notificacoes").select("*").eq("barbearia_id", barbeariaId).order("data", { ascending: false }),
-        supabase.from("agendamento_profissional").select("*"),
+        agendamentoIds.length
+          ? supabase.from("agendamento_profissional").select("*").in("agendamento_id", agendamentoIds)
+          : Promise.resolve({ data: [] as any[] }),
         supabase.from("planos_cliente").select("*").eq("barbearia_id", barbeariaId).order("created_at", { ascending: false }),
-        supabase.from("assinaturas_cliente").select("*, plano:planos_cliente(*), cliente:clientes(*)").order("created_at", { ascending: false }),
+        supabase.from("assinaturas_cliente").select("*, plano:planos_cliente!inner(*), cliente:clientes(*)").eq("plano.barbearia_id", barbeariaId).order("created_at", { ascending: false }),
         supabase.from("comissoes_pagas").select("*").eq("barbearia_id", barbeariaId).order("created_at", { ascending: false }),
         supabase.from("assinaturas").select("*, plano:planos(*)").eq("barbearia_id", barbeariaId).maybeSingle(),
         supabase.from("faturas").select("*").order("created_at", { ascending: false }),

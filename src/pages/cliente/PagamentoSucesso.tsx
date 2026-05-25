@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function PagamentoSucesso() {
   const [searchParams] = useSearchParams();
@@ -18,35 +19,28 @@ export default function PagamentoSucesso() {
       return;
     }
 
-    // Verificar status do pagamento após alguns segundos
     const verificarStatus = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
-        const token = localStorage.getItem('token');
-
-        const response = await fetch(`${API_URL}/pagamentos/status/${agendamentoId}`, {
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === 'pago') {
-            toast({
-              title: "Pagamento confirmado!",
-              description: "Seu agendamento foi confirmado com sucesso.",
-            });
-          }
+        const { data } = await supabase
+          .from("pagamentos")
+          .select("status")
+          .eq("agendamento_id", agendamentoId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data?.status === "pago") {
+          toast({
+            title: "Pagamento confirmado!",
+            description: "Seu agendamento foi confirmado com sucesso.",
+          });
         }
-      } catch (error) {
-        console.error('Erro ao verificar status:', error);
+      } catch (err) {
+        console.error("Erro ao verificar status:", err);
       } finally {
         setVerificando(false);
       }
     };
 
-    // Aguardar 2 segundos antes de verificar (dar tempo para o webhook processar)
     setTimeout(verificarStatus, 2000);
   }, [agendamentoId, navigate, toast]);
 
@@ -58,9 +52,7 @@ export default function PagamentoSucesso() {
             <CheckCircle className="h-16 w-16 text-green-500" />
           </div>
           <CardTitle className="text-2xl">Pagamento Aprovado!</CardTitle>
-          <CardDescription>
-            Seu pagamento foi processado com sucesso
-          </CardDescription>
+          <CardDescription>Seu pagamento foi processado com sucesso</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {verificando ? (
@@ -73,7 +65,7 @@ export default function PagamentoSucesso() {
           ) : (
             <>
               <p className="text-center text-muted-foreground">
-                Seu agendamento foi confirmado e você receberá um e-mail com os detalhes.
+                Seu agendamento foi confirmado e você receberá os detalhes em breve.
               </p>
               <div className="flex gap-2">
                 <Button asChild className="flex-1">
@@ -90,4 +82,3 @@ export default function PagamentoSucesso() {
     </div>
   );
 }
-

@@ -470,7 +470,7 @@ export default function ComissoesBarbeiros() {
 
 // Componente para Relatório Completo de Comissões
 function RelatorioCompletoComissoes({ mes, ano }: { mes: number; ano: number }) {
-  const { profissionais } = useDono();
+  const { profissionais, barbeariaId } = useDono();
   const [profissionalSelecionado, setProfissionalSelecionado] = useState<string | null>(null);
   const [relatorio, setRelatorio] = useState<any>(null);
   const [carregando, setCarregando] = useState(false);
@@ -482,11 +482,11 @@ function RelatorioCompletoComissoes({ mes, ano }: { mes: number; ano: number }) 
   }, [profissionalSelecionado, mes, ano]);
 
   const carregarRelatorio = async () => {
-    if (!profissionalSelecionado) return;
+    if (!profissionalSelecionado || !barbeariaId) return;
 
     setCarregando(true);
     try {
-      const data = await apiGet<any>(`/dono/comissoes/completo/${profissionalSelecionado}?mes=${mes}&ano=${ano}`);
+      const data = await getRelatorioCompleto(barbeariaId, profissionalSelecionado, mes, ano);
       setRelatorio(data);
     } catch (error: any) {
       console.error("Erro ao carregar relatório completo:", error);

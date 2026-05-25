@@ -113,11 +113,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 4. registra em donos_barbearia (se a tabela exigir)
+    // 4. registra em donos_barbearia
     await admin.from("donos_barbearia").insert({
       user_id: userId,
       barbearia_id: barbearia.id,
-    }).then(() => {}).catch(() => {});
+    });
+
+    // 5. remove role 'client' criada automaticamente pelo trigger handle_new_user
+    await admin.from("user_roles").delete().eq("user_id", userId).eq("role", "client");
+    // remove registro em clientes (também criado pelo trigger)
+    await admin.from("clientes").delete().eq("user_id", userId);
+
 
     return new Response(
       JSON.stringify({ success: true, user_id: userId, barbearia_id: barbearia.id }),

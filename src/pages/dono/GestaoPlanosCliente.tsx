@@ -103,8 +103,13 @@ export default function GestaoPlanosCliente() {
 
     setLoading(true);
     try {
-      const data = await apiGet<PlanoCliente[]>("/dono/planos-cliente");
-      setPlanos(data);
+      const { data, error } = await supabase
+        .from("planos_cliente")
+        .select("*")
+        .eq("barbearia_id", barbeariaId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setPlanos((data || []).map(mapPlano));
     } catch (error: any) {
       console.error("Erro ao carregar planos:", error);
       toast({

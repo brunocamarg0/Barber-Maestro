@@ -30,6 +30,11 @@ interface DonoContextType {
   notificacoes: NotificacaoDono[];
   configuracao: ConfiguracaoBarbearia | null;
   servicos: any[];
+  planosCliente: any[];
+  assinaturasCliente: any[];
+  comissoes: any[];
+  minhaAssinatura: any | null;
+  faturas: any[];
 
   refresh: () => Promise<void>;
 
@@ -58,16 +63,24 @@ interface DonoContextType {
 
   criarPromocao: (p: any) => Promise<void>;
   atualizarPromocao: (id: string, dados: any) => Promise<void>;
+  removerPromocao: (id: string) => Promise<void>;
 
   responderAvaliacao: (id: string, resposta: string) => Promise<void>;
 
   adicionarProduto: (p: any) => Promise<void>;
   atualizarProduto: (id: string, dados: any) => Promise<void>;
+  removerProduto: (id: string) => Promise<void>;
   atualizarEstoque: (id: string, quantidade: number) => Promise<void>;
 
   marcarNotificacaoLida: (id: string) => Promise<void>;
 
   atualizarConfiguracao: (dados: Partial<ConfiguracaoBarbearia>) => Promise<void>;
+
+  criarPlanoCliente: (p: any) => Promise<void>;
+  atualizarPlanoCliente: (id: string, dados: any) => Promise<void>;
+  removerPlanoCliente: (id: string) => Promise<void>;
+
+  marcarComissaoPaga: (id: string, observacao?: string) => Promise<void>;
 
   gerarRelatorio: (dataInicio: string, dataFim: string) => RelatorioDono;
 }

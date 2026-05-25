@@ -79,6 +79,7 @@ import AuthCallback from "./pages/AuthCallback";
 import Funcionalidades from "./pages/Funcionalidades";
 import Cadastro from "./pages/Cadastro";
 import EsqueciSenha from "./pages/EsqueciSenha";
+import ResetPassword from "./pages/ResetPassword";
 import CheckoutAssinatura from "./pages/CheckoutAssinatura";
 import PagamentoAssinaturaSucesso from "./pages/PagamentoAssinaturaSucesso";
 import PagamentoAssinaturaFalha from "./pages/PagamentoAssinaturaFalha";
@@ -148,6 +149,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/ativar-conta" element={<AtivarConta />} />
             <Route path="/funcionalidades" element={<Funcionalidades />} />

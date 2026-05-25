@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,11 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Scissors, ArrowLeft, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-// Debug: Log da URL sendo usada
-const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
-console.log('🔍 API_URL configurada:', API_URL);
-console.log('🔍 VITE_API_URL env:', import.meta.env.VITE_API_URL);
 
 const Cadastro = () => {
   const navigate = useNavigate();
@@ -49,7 +46,6 @@ const Cadastro = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validações
     if (!aceiteTermos) {
       toast.error("Você precisa aceitar os termos de condição de uso para continuar.");
       return;
@@ -58,132 +54,85 @@ const Cadastro = () => {
     setIsLoading(true);
 
     try {
-      let url = '';
-      let body: any = {};
       let redirectPath = '';
 
       if (tipo === 'dono') {
-        // Validação específica para dono
         if (formDono.senha.length < 6 || formDono.senha.length > 15) {
           toast.error("A senha deve ter entre 6 e 15 caracteres.");
           setIsLoading(false);
           return;
         }
-
-        // Validação de campos obrigatórios
         if (!formDono.bairro || !formDono.cidade) {
           toast.error("Bairro e Cidade são obrigatórios para que clientes possam encontrar sua barbearia.");
           setIsLoading(false);
           return;
         }
 
-        url = `${API_URL}/auth/dono/cadastro-direto`;
-        body = {
-          nomeBarbearia: formDono.nomeBarbearia,
-          nomeContato: formDono.nomeContato,
-          telefone: formDono.telefone,
-          email: formDono.email,
-          senha: formDono.senha,
-          endereco: formDono.endereco || null,
-          bairro: formDono.bairro,
-          cidade: formDono.cidade,
-          cep: formDono.cep || null,
-        };
+        // Chama edge function que cria auth user + barbearia + role owner
+        const { data, error } = await supabase.functions.invoke('signup-dono', {
+          body: {
+            nomeBarbearia: formDono.nomeBarbearia,
+            nomeContato: formDono.nomeContato,
+            telefone: formDono.telefone,
+            email: formDono.email,
+            senha: formDono.senha,
+            endereco: formDono.endereco || null,
+            bairro: formDono.bairro,
+            cidade: formDono.cidade,
+            cep: formDono.cep || null,
+          },
+        });
+
+        if (error || (data as any)?.error) {
+          throw new Error((data as any)?.error || error?.message || 'Erro ao realizar cadastro');
+        }
+
+        // Login automático após cadastro
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: formDono.email.trim(),
+          password: formDono.senha,
+        });
+        if (signInErr) throw signInErr;
+
         redirectPath = '/dono';
       } else {
-        // Validação específica para cliente
         if (!formCliente.nome || !formCliente.email || !formCliente.senha) {
           toast.error("Preencha todos os campos obrigatórios.");
           setIsLoading(false);
           return;
         }
-
         if (formCliente.senha.length < 6) {
           toast.error("A senha deve ter no mínimo 6 caracteres.");
           setIsLoading(false);
           return;
         }
 
-        url = `${API_URL}/auth/cliente/registro`;
-        body = {
-          nome: formCliente.nome,
-          email: formCliente.email,
-          senha: formCliente.senha,
-          telefone: formCliente.telefone || null,
-          dataNascimento: formCliente.dataNascimento || null,
-        };
+        // Cliente: signUp normal (trigger handle_new_user cria role 'client' + clientes)
+        const { error } = await supabase.auth.signUp({
+          email: formCliente.email.trim(),
+          password: formCliente.senha,
+          options: {
+            emailRedirectTo: `${window.location.origin}/cliente`,
+            data: {
+              nome: formCliente.nome,
+              telefone: formCliente.telefone || null,
+              data_nascimento: formCliente.dataNascimento || null,
+            },
+          },
+        });
+
+        if (error) {
+          const msg = error.message?.toLowerCase().includes('already')
+            ? 'Este email já está cadastrado.'
+            : error.message;
+          throw new Error(msg || 'Erro ao realizar cadastro');
+        }
+
         redirectPath = '/cliente';
       }
 
-      console.log('🔍 Tentando conectar em:', url);
-      
-      let response;
-      try {
-        response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          mode: 'cors',
-          credentials: 'include',
-          body: JSON.stringify(body),
-        });
-      } catch (fetchError: any) {
-        // Erro de rede (backend não está rodando ou CORS)
-        console.error('Erro de conexão:', fetchError);
-        console.error('URL tentada:', url);
-        console.error('API_URL configurada:', API_URL);
-        console.error('VITE_API_URL:', import.meta.env.VITE_API_URL);
-        
-        // Mensagem mais específica
-        if (fetchError.message?.includes('CORS') || fetchError.message?.includes('Failed to fetch')) {
-          throw new Error(`Não foi possível conectar ao servidor. URL: ${url}. Verifique se o backend está online e se CORS está configurado.`);
-        }
-        throw new Error(`Não foi possível conectar ao servidor. URL: ${url}. Verifique se o backend está online.`);
-      }
-
-      if (!response) {
-        throw new Error('Erro ao conectar com o servidor');
-      }
-
-      let data;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          data = await response.json();
-        } catch (jsonError) {
-          console.error('Erro ao parsear JSON:', jsonError);
-          const text = await response.text();
-          console.error('Resposta do servidor:', text);
-          throw new Error('Resposta inválida do servidor. Verifique se o backend está rodando corretamente.');
-        }
-      } else {
-        const text = await response.text();
-        console.error('Resposta do servidor (não JSON):', text);
-        throw new Error('Resposta inválida do servidor. Verifique se o backend está rodando corretamente.');
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao realizar cadastro');
-      }
-
-      // Salvar token no localStorage
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.usuario));
-        localStorage.setItem('userType', tipo === 'dono' ? 'dono' : 'cliente');
-        
-        if (data.barbearia) {
-          localStorage.setItem('barbearia', JSON.stringify(data.barbearia));
-        }
-      }
-
       toast.success('Cadastro realizado com sucesso!');
-      
-      // Redirecionar
-      setTimeout(() => {
-        navigate(redirectPath);
-      }, 1000);
+      setTimeout(() => navigate(redirectPath), 800);
     } catch (error: any) {
       console.error('Erro ao realizar cadastro:', error);
       toast.error(error.message || "Ocorreu um erro. Tente novamente.");
@@ -191,6 +140,7 @@ const Cadastro = () => {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col" id="cadastro-page">

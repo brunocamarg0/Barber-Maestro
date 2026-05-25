@@ -23,6 +23,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -33,22 +34,21 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Search, 
-  Eye, 
-  Calendar, 
-  CreditCard, 
-  User, 
+import {
+  Search,
+  Eye,
+  Calendar,
+  CreditCard,
+  User,
   Package,
   TrendingUp,
   XCircle,
   CheckCircle,
-  Plus
+  Plus,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiGet, apiPost } from "@/services/api";
 import { Label } from "@/components/ui/label";
-import { DialogFooter } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AssinaturaCliente {
   id: string;
@@ -73,7 +73,7 @@ interface AssinaturaCliente {
     id: string;
     nome: string;
     comissaoAssinatura: number;
-  };
+  } | null;
   _count: {
     pagamentos: number;
     comissoes: number;
@@ -84,11 +84,43 @@ interface PagamentoAssinatura {
   id: string;
   valor: number;
   dataVencimento: string;
-  dataPagamento?: string;
+  dataPagamento?: string | null;
   status: string;
-  metodoPagamento?: string;
-  linkPagamento?: string;
-  qrCodePix?: string;
+  metodoPagamento?: string | null;
+}
+
+function mapAssinatura(row: any): AssinaturaCliente {
+  return {
+    id: row.id,
+    status: row.status,
+    dataInicio: row.data_inicio,
+    dataVencimento: row.data_vencimento,
+    proximoVencimento: row.proximo_vencimento,
+    pagamentoRecorrente: row.pagamento_recorrente,
+    cliente: {
+      id: row.clientes?.id,
+      nome: row.clientes?.nome ?? "",
+      email: row.clientes?.email ?? "",
+      telefone: row.clientes?.telefone ?? "",
+    },
+    plano: {
+      id: row.planos_cliente?.id,
+      nome: row.planos_cliente?.nome ?? "",
+      valor: Number(row.planos_cliente?.valor ?? 0),
+      duracaoMeses: row.planos_cliente?.duracao_meses ?? 1,
+    },
+    profissional: row.profissionais
+      ? {
+          id: row.profissionais.id,
+          nome: row.profissionais.nome,
+          comissaoAssinatura: Number(row.profissionais.comissao_assinatura ?? 0),
+        }
+      : null,
+    _count: {
+      pagamentos: row.pagamentos_count?.[0]?.count ?? 0,
+      comissoes: row.comissoes_count?.[0]?.count ?? 0,
+    },
+  };
 }
 
 export default function GestaoAssinaturasCliente() {
@@ -105,7 +137,6 @@ export default function GestaoAssinaturasCliente() {
   const [loadingPagamentos, setLoadingPagamentos] = useState(false);
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
   const [planos, setPlanos] = useState<any[]>([]);
-  const [clientesDisponiveis, setClientesDisponiveis] = useState<any[]>([]);
   const [formCriar, setFormCriar] = useState({
     clienteId: "",
     planoId: "",
@@ -116,41 +147,58 @@ export default function GestaoAssinaturasCliente() {
     if (barbeariaId) {
       carregarAssinaturas();
       carregarPlanos();
-      carregarClientes();
     }
   }, [barbeariaId, filtroStatus, filtroProfissional]);
 
   const carregarPlanos = async () => {
-    try {
-      const data = await apiGet<any[]>("/dono/planos-cliente");
-      setPlanos(data.filter((p) => p.ativo));
-    } catch (error) {
+    if (!barbeariaId) return;
+    const { data, error } = await supabase
+      .from("planos_cliente")
+      .select("*")
+      .eq("barbearia_id", barbeariaId)
+      .eq("ativo", true);
+    if (error) {
       console.error("Erro ao carregar planos:", error);
+      return;
     }
-  };
-
-  const carregarClientes = () => {
-    // Usar a lista de clientes do contexto
-    setClientesDisponiveis(clientesContexto || []);
+    setPlanos(data ?? []);
   };
 
   const carregarAssinaturas = async () => {
     if (!barbeariaId) return;
-
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (filtroStatus !== "todos") {
-        params.append("status", filtroStatus);
-      }
-      if (filtroProfissional !== "todos") {
-        params.append("profissionalId", filtroProfissional);
+      // Buscar IDs dos planos da barbearia primeiro
+      const { data: planosBarbearia, error: planosError } = await supabase
+        .from("planos_cliente")
+        .select("id")
+        .eq("barbearia_id", barbeariaId);
+      if (planosError) throw planosError;
+      const planoIds = (planosBarbearia ?? []).map((p) => p.id);
+      if (planoIds.length === 0) {
+        setAssinaturas([]);
+        return;
       }
 
-      const queryString = params.toString();
-      const endpoint = `/dono/assinaturas-cliente${queryString ? `?${queryString}` : ""}`;
-      const data = await apiGet<AssinaturaCliente[]>(endpoint);
-      setAssinaturas(data);
+      let query = supabase
+        .from("assinaturas_cliente")
+        .select(
+          `*,
+          clientes:cliente_id (id, nome, email, telefone),
+          planos_cliente:plano_id (id, nome, valor, duracao_meses),
+          profissionais:profissional_id (id, nome, comissao_assinatura),
+          pagamentos_count:pagamentos_assinatura(count),
+          comissoes_count:comissoes_assinatura(count)`
+        )
+        .in("plano_id", planoIds)
+        .order("data_vencimento", { ascending: true });
+
+      if (filtroStatus !== "todos") query = query.eq("status", filtroStatus);
+      if (filtroProfissional !== "todos") query = query.eq("profissional_id", filtroProfissional);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setAssinaturas((data ?? []).map(mapAssinatura));
     } catch (error: any) {
       console.error("Erro ao carregar assinaturas:", error);
       toast({
@@ -166,8 +214,22 @@ export default function GestaoAssinaturasCliente() {
   const carregarPagamentos = async (assinaturaId: string) => {
     setLoadingPagamentos(true);
     try {
-      const data = await apiGet<PagamentoAssinatura[]>(`/dono/pagamentos-assinatura?assinaturaId=${assinaturaId}`);
-      setPagamentos(data);
+      const { data, error } = await supabase
+        .from("pagamentos_assinatura")
+        .select("*")
+        .eq("assinatura_id", assinaturaId)
+        .order("data_vencimento", { ascending: false });
+      if (error) throw error;
+      setPagamentos(
+        (data ?? []).map((p: any) => ({
+          id: p.id,
+          valor: Number(p.valor),
+          dataVencimento: p.data_vencimento,
+          dataPagamento: p.data_pagamento,
+          status: p.status,
+          metodoPagamento: p.metodo_pagamento,
+        }))
+      );
     } catch (error: any) {
       console.error("Erro ao carregar pagamentos:", error);
       toast({
@@ -195,19 +257,36 @@ export default function GestaoAssinaturasCliente() {
       });
       return;
     }
-
     try {
-      await apiPost("/dono/assinaturas-cliente", {
-        clienteId: formCriar.clienteId,
-        planoId: formCriar.planoId,
-        profissionalId: formCriar.profissionalId || null,
-      });
+      const plano = planos.find((p) => p.id === formCriar.planoId);
+      if (!plano) throw new Error("Plano não encontrado");
 
-      toast({
-        title: "Sucesso",
-        description: "Assinatura criada com sucesso!",
-      });
+      const existente = await supabase
+        .from("assinaturas_cliente")
+        .select("id, status")
+        .eq("cliente_id", formCriar.clienteId)
+        .eq("status", "ativa")
+        .maybeSingle();
+      if (existente.data) {
+        throw new Error("Cliente já possui assinatura ativa");
+      }
 
+      const dataInicio = new Date();
+      const dataVencimento = new Date();
+      dataVencimento.setMonth(dataVencimento.getMonth() + (plano.duracao_meses ?? 1));
+
+      const { error } = await supabase.from("assinaturas_cliente").insert({
+        cliente_id: formCriar.clienteId,
+        plano_id: formCriar.planoId,
+        profissional_id: formCriar.profissionalId || null,
+        data_inicio: dataInicio.toISOString(),
+        data_vencimento: dataVencimento.toISOString(),
+        proximo_vencimento: dataVencimento.toISOString(),
+        status: "ativa",
+      });
+      if (error) throw error;
+
+      toast({ title: "Sucesso", description: "Assinatura criada com sucesso!" });
       setModalCriarAberto(false);
       setFormCriar({ clienteId: "", planoId: "", profissionalId: "" });
       carregarAssinaturas();
@@ -221,16 +300,49 @@ export default function GestaoAssinaturasCliente() {
     }
   };
 
-  const formatarMoeda = (valor: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(valor);
+  const handleSimularPagamento = async () => {
+    if (!assinaturaSelecionada) return;
+    try {
+      const agora = new Date();
+      const novoVencimento = new Date(assinaturaSelecionada.proximoVencimento);
+      novoVencimento.setMonth(novoVencimento.getMonth() + (assinaturaSelecionada.plano.duracaoMeses || 1));
+
+      const { error: payError } = await supabase.from("pagamentos_assinatura").insert({
+        assinatura_id: assinaturaSelecionada.id,
+        valor: assinaturaSelecionada.plano.valor,
+        data_vencimento: assinaturaSelecionada.proximoVencimento,
+        data_pagamento: agora.toISOString(),
+        status: "paga",
+        metodo_pagamento: "simulado",
+      });
+      if (payError) throw payError;
+
+      const { error: updError } = await supabase
+        .from("assinaturas_cliente")
+        .update({
+          status: "ativa",
+          proximo_vencimento: novoVencimento.toISOString(),
+          data_vencimento: novoVencimento.toISOString(),
+        })
+        .eq("id", assinaturaSelecionada.id);
+      if (updError) throw updError;
+
+      toast({ title: "Sucesso", description: "Pagamento simulado com sucesso" });
+      await carregarPagamentos(assinaturaSelecionada.id);
+      await carregarAssinaturas();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao simular pagamento",
+        variant: "destructive",
+      });
+    }
   };
 
-  const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString("pt-BR");
-  };
+  const formatarMoeda = (valor: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor);
+
+  const formatarData = (data: string) => new Date(data).toLocaleDateString("pt-BR");
 
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -242,12 +354,13 @@ export default function GestaoAssinaturasCliente() {
     return configs[status] || { label: status, variant: "default" };
   };
 
-  const assinaturasFiltradas = assinaturas.filter((assinatura) => {
-    const matchBusca =
-      assinatura.cliente.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      assinatura.cliente.email.toLowerCase().includes(busca.toLowerCase()) ||
-      assinatura.plano.nome.toLowerCase().includes(busca.toLowerCase());
-    return matchBusca;
+  const assinaturasFiltradas = assinaturas.filter((a) => {
+    const q = busca.toLowerCase();
+    return (
+      a.cliente.nome.toLowerCase().includes(q) ||
+      a.cliente.email.toLowerCase().includes(q) ||
+      a.plano.nome.toLowerCase().includes(q)
+    );
   });
 
   if (loading) {
@@ -380,13 +493,9 @@ export default function GestaoAssinaturasCliente() {
                         {formatarMoeda(assinatura.plano.valor)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusConfig.variant}>
-                          {statusConfig.label}
-                        </Badge>
+                        <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                       </TableCell>
-                      <TableCell>
-                        {formatarData(assinatura.dataVencimento)}
-                      </TableCell>
+                      <TableCell>{formatarData(assinatura.dataVencimento)}</TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
@@ -406,7 +515,7 @@ export default function GestaoAssinaturasCliente() {
         </CardContent>
       </Card>
 
-      {/* Modal de Detalhes */}
+      {/* Modal Detalhes */}
       <Dialog open={modalDetalhesAberto} onOpenChange={setModalDetalhesAberto}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -427,19 +536,14 @@ export default function GestaoAssinaturasCliente() {
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-sm flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          Cliente
+                          <User className="h-4 w-4" /> Cliente
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-1">
                           <p className="font-medium">{assinaturaSelecionada.cliente.nome}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {assinaturaSelecionada.cliente.email}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {assinaturaSelecionada.cliente.telefone}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{assinaturaSelecionada.cliente.email}</p>
+                          <p className="text-sm text-muted-foreground">{assinaturaSelecionada.cliente.telefone}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -447,15 +551,15 @@ export default function GestaoAssinaturasCliente() {
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-sm flex items-center gap-2">
-                          <Package className="h-4 w-4" />
-                          Plano
+                          <Package className="h-4 w-4" /> Plano
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-1">
                           <p className="font-medium">{assinaturaSelecionada.plano.nome}</p>
                           <p className="text-sm text-muted-foreground">
-                            {assinaturaSelecionada.plano.duracaoMeses} {assinaturaSelecionada.plano.duracaoMeses === 1 ? "mês" : "meses"}
+                            {assinaturaSelecionada.plano.duracaoMeses}{" "}
+                            {assinaturaSelecionada.plano.duracaoMeses === 1 ? "mês" : "meses"}
                           </p>
                           <p className="text-lg font-bold text-primary">
                             {formatarMoeda(assinaturaSelecionada.plano.valor)}
@@ -469,8 +573,7 @@ export default function GestaoAssinaturasCliente() {
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-sm flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          Datas
+                          <Calendar className="h-4 w-4" /> Datas
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -494,8 +597,7 @@ export default function GestaoAssinaturasCliente() {
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-sm flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4" />
-                          Status
+                          <TrendingUp className="h-4 w-4" /> Status
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -512,20 +614,13 @@ export default function GestaoAssinaturasCliente() {
                               <span className="text-muted-foreground">Comissões:</span>
                               <span>{assinaturaSelecionada._count.comissoes}</span>
                             </div>
-                            {assinaturaSelecionada.profissional && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Comissão/Assinatura:</span>
-                                <span className="font-medium">
-                                  {formatarMoeda(assinaturaSelecionada.profissional.comissaoAssinatura)}
-                                </span>
-                              </div>
-                            )}
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   </div>
                 </TabsContent>
+
                 <TabsContent value="pagamentos" className="space-y-4">
                   {loadingPagamentos ? (
                     <div className="text-center py-8">
@@ -535,6 +630,9 @@ export default function GestaoAssinaturasCliente() {
                     <div className="text-center py-8 text-muted-foreground">
                       <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>Nenhum pagamento registrado ainda.</p>
+                      <Button className="mt-4" variant="outline" onClick={handleSimularPagamento}>
+                        Simular Pagamento
+                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -544,9 +642,7 @@ export default function GestaoAssinaturasCliente() {
                             <div className="flex items-center justify-between">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium">
-                                    {formatarMoeda(pagamento.valor)}
-                                  </p>
+                                  <p className="font-medium">{formatarMoeda(pagamento.valor)}</p>
                                   <Badge
                                     variant={
                                       pagamento.status === "paga"
@@ -568,48 +664,23 @@ export default function GestaoAssinaturasCliente() {
                                   {pagamento.dataPagamento && (
                                     <p>Pagamento: {formatarData(pagamento.dataPagamento)}</p>
                                   )}
-                                  {pagamento.metodoPagamento && (
-                                    <p>Método: {pagamento.metodoPagamento}</p>
-                                  )}
+                                  {pagamento.metodoPagamento && <p>Método: {pagamento.metodoPagamento}</p>}
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
                                 {pagamento.status === "paga" ? (
                                   <CheckCircle className="h-5 w-5 text-green-600" />
                                 ) : (
-                                  <>
-                                    <XCircle className="h-5 w-5 text-gray-400" />
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={async () => {
-                                        try {
-                                          await apiPost(`/dono/planos-cliente/assinaturas-cliente/${assinaturaSelecionada.id}/simular-pagamento`);
-                                          toast({
-                                            title: "Sucesso",
-                                            description: "Pagamento simulado com sucesso",
-                                          });
-                                          await carregarPagamentos(assinaturaSelecionada.id);
-                                          // Recarregar assinaturas
-                                          carregarAssinaturas();
-                                        } catch (error: any) {
-                                          toast({
-                                            title: "Erro",
-                                            description: error.message || "Erro ao simular pagamento",
-                                            variant: "destructive",
-                                          });
-                                        }
-                                      }}
-                                    >
-                                      Simular Pagamento
-                                    </Button>
-                                  </>
+                                  <XCircle className="h-5 w-5 text-gray-400" />
                                 )}
                               </div>
                             </div>
                           </CardContent>
                         </Card>
                       ))}
+                      <Button variant="outline" onClick={handleSimularPagamento}>
+                        Simular Novo Pagamento
+                      </Button>
                     </div>
                   )}
                 </TabsContent>
@@ -619,36 +690,34 @@ export default function GestaoAssinaturasCliente() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Criar Assinatura */}
+      {/* Modal Criar */}
       <Dialog open={modalCriarAberto} onOpenChange={setModalCriarAberto}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nova Assinatura</DialogTitle>
-            <DialogDescription>
-              Crie uma nova assinatura para um cliente
-            </DialogDescription>
+            <DialogDescription>Crie uma nova assinatura para um cliente</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="cliente">Cliente *</Label>
               <Select
                 value={formCriar.clienteId || undefined}
-                onValueChange={(value) =>
-                  setFormCriar({ ...formCriar, clienteId: value || "" })
-                }
+                onValueChange={(value) => setFormCriar({ ...formCriar, clienteId: value || "" })}
               >
                 <SelectTrigger id="cliente">
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clientesDisponiveis.length > 0 ? (
-                    clientesDisponiveis.map((cliente) => (
+                  {(clientesContexto ?? []).length > 0 ? (
+                    (clientesContexto ?? []).map((cliente: any) => (
                       <SelectItem key={cliente.id} value={cliente.id}>
                         {cliente.nome} - {cliente.email || cliente.telefone}
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="no-clients" disabled>Nenhum cliente disponível</SelectItem>
+                    <SelectItem value="__empty__" disabled>
+                      Nenhum cliente disponível
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -658,9 +727,7 @@ export default function GestaoAssinaturasCliente() {
               <Label htmlFor="plano">Plano *</Label>
               <Select
                 value={formCriar.planoId || undefined}
-                onValueChange={(value) =>
-                  setFormCriar({ ...formCriar, planoId: value || "" })
-                }
+                onValueChange={(value) => setFormCriar({ ...formCriar, planoId: value || "" })}
               >
                 <SelectTrigger id="plano">
                   <SelectValue placeholder="Selecione um plano" />
@@ -669,11 +736,13 @@ export default function GestaoAssinaturasCliente() {
                   {planos.length > 0 ? (
                     planos.map((plano) => (
                       <SelectItem key={plano.id} value={plano.id}>
-                        {plano.nome} - {formatarMoeda(plano.valor)}/mês
+                        {plano.nome} - {formatarMoeda(Number(plano.valor))}
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="no-plans" disabled>Nenhum plano disponível</SelectItem>
+                    <SelectItem value="__empty__" disabled>
+                      Nenhum plano disponível
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -684,13 +753,14 @@ export default function GestaoAssinaturasCliente() {
               <Select
                 value={formCriar.profissionalId || undefined}
                 onValueChange={(value) =>
-                  setFormCriar({ ...formCriar, profissionalId: value || "" })
+                  setFormCriar({ ...formCriar, profissionalId: value === "__empty__" ? "" : value || "" })
                 }
               >
                 <SelectTrigger id="profissional">
                   <SelectValue placeholder="Selecione um profissional (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__empty__">Nenhum</SelectItem>
                   {profissionais.map((prof) => (
                     <SelectItem key={prof.id} value={prof.id}>
                       {prof.nome}
@@ -717,4 +787,3 @@ export default function GestaoAssinaturasCliente() {
     </div>
   );
 }
-

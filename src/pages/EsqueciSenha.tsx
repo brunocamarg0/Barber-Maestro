@@ -21,9 +21,12 @@ const EsqueciSenha = () => {
     setIsLoading(true);
 
     try {
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const baseUrl = isLocalhost ? window.location.origin : 'https://www.barbermaestro.com';
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${baseUrl}/reset-password`,
       });
+
 
       if (error) throw error;
 
@@ -110,7 +113,7 @@ const EsqueciSenha = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-foreground font-bold">Email</Label>
                 <Input
                   id="email"
                   type="email"

@@ -185,18 +185,26 @@ export default function GestaoPlanosCliente() {
     }
 
     try {
+      const payload = {
+        nome: formData.nome,
+        descricao: formData.descricao,
+        valor: formData.valor,
+        duracao_meses: formData.duracaoMeses,
+        beneficios: formData.beneficios,
+        ativo: formData.ativo,
+        barbearia_id: barbeariaId,
+      };
       if (planoEditando) {
-        await apiPut(`/dono/planos-cliente/${planoEditando.id}`, formData);
-        toast({
-          title: "Sucesso",
-          description: "Plano atualizado com sucesso!",
-        });
+        const { error } = await supabase
+          .from("planos_cliente")
+          .update(payload)
+          .eq("id", planoEditando.id);
+        if (error) throw error;
+        toast({ title: "Sucesso", description: "Plano atualizado com sucesso!" });
       } else {
-        await apiPost("/dono/planos-cliente", formData);
-        toast({
-          title: "Sucesso",
-          description: "Plano criado com sucesso!",
-        });
+        const { error } = await supabase.from("planos_cliente").insert(payload);
+        if (error) throw error;
+        toast({ title: "Sucesso", description: "Plano criado com sucesso!" });
       }
 
       setModalAberto(false);
@@ -218,11 +226,9 @@ export default function GestaoPlanosCliente() {
     }
 
     try {
-      await apiDelete(`/dono/planos-cliente/${planoId}`);
-      toast({
-        title: "Sucesso",
-        description: "Plano removido com sucesso!",
-      });
+      const { error } = await supabase.from("planos_cliente").delete().eq("id", planoId);
+      if (error) throw error;
+      toast({ title: "Sucesso", description: "Plano removido com sucesso!" });
       carregarPlanos();
     } catch (error: any) {
       console.error("Erro ao remover plano:", error);
@@ -239,10 +245,11 @@ export default function GestaoPlanosCliente() {
       const plano = planos.find((p) => p.id === planoId);
       if (!plano) return;
 
-      await apiPut(`/dono/planos-cliente/${planoId}`, {
-        ...plano,
-        ativo: !plano.ativo,
-      });
+      const { error } = await supabase
+        .from("planos_cliente")
+        .update({ ativo: !plano.ativo })
+        .eq("id", planoId);
+      if (error) throw error;
 
       toast({
         title: "Sucesso",

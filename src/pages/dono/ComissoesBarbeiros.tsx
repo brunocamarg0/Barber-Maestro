@@ -76,7 +76,7 @@ interface ResumoProfissional {
 }
 
 export default function ComissoesBarbeiros() {
-  const { profissionais } = useDono();
+  const { profissionais, barbeariaId } = useDono();
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [ano, setAno] = useState(new Date().getFullYear());
   const [resumoGeral, setResumoGeral] = useState<any>(null);

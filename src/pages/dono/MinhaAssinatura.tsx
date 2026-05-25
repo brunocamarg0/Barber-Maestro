@@ -166,36 +166,14 @@ export default function MinhaAssinatura() {
   const handlePagarFatura = async () => {
     if (!faturaSelecionada) return;
 
-    setPagandoFatura(faturaSelecionada.id);
-    try {
-      const data = await apiPost<{
-        linkPagamento: string;
-        qrCodePix?: string;
-      }>(`/dono/assinatura/faturas/${faturaSelecionada.id}/pagar`, {
-        metodoPagamento: metodoPagamento,
-      });
-
-      if (data.linkPagamento) {
-        // Abrir link de pagamento em nova aba
-        window.open(data.linkPagamento, '_blank');
-        toast.success('Redirecionando para pagamento...');
-        setModalPagamento(false);
-        
-        // Verificar status após alguns segundos
-        setTimeout(() => {
-          carregarDados();
-        }, 5000);
-      } else if (data.qrCodePix) {
-        // Mostrar QR Code PIX
-        toast.info('QR Code PIX gerado. Verifique o modal.');
-        // Aqui você pode mostrar o QR Code em um modal
-      }
-    } catch (error: any) {
-      console.error('Erro ao criar pagamento:', error);
-      toast.error(error.message || 'Erro ao processar pagamento');
-    } finally {
-      setPagandoFatura(null);
+    if (faturaSelecionada.linkPagamento) {
+      window.open(faturaSelecionada.linkPagamento, "_blank");
+      setModalPagamento(false);
+      return;
     }
+
+    toast.info("Pagamento online via Mercado Pago em breve. Entre em contato com o suporte para regularizar.");
+    setModalPagamento(false);
   };
 
   const abrirModalPagamento = (fatura: Fatura) => {

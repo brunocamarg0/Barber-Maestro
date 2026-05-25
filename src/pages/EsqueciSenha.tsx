@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Scissors } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
+import { supabase } from "@/integrations/supabase/client";
 
 const EsqueciSenha = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,78 +14,29 @@ const EsqueciSenha = () => {
   const [emailEnviado, setEmailEnviado] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const tipo = searchParams.get('tipo') || 'cliente'; // 'dono' ou 'cliente'
+  const tipo = searchParams.get('tipo') || 'cliente';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const endpoint = tipo === 'dono'
-        ? '/auth/dono/esqueci-senha'
-        : '/auth/cliente/esqueci-senha';
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
 
-      const fullUrl = `${API_URL}${endpoint}`;
-      console.log('📧 [ESQUECI SENHA] Enviando solicitação para:', fullUrl);
-      console.log('📧 [ESQUECI SENHA] Tipo:', tipo);
-      console.log('📧 [ESQUECI SENHA] Email:', email);
+      if (error) throw error;
 
-      // Adicionar timeout de 30 segundos
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-      try {
-        const response = await fetch(fullUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        console.log('📧 [ESQUECI SENHA] Resposta recebida:', response.status, response.statusText);
-        console.log('📧 [ESQUECI SENHA] Content-Type:', response.headers.get('content-type'));
-
-        // Verificar se a resposta é JSON antes de fazer parse
-        const contentType = response.headers.get('content-type');
-        let data;
-
-        if (contentType && contentType.includes('application/json')) {
-          data = await response.json();
-          console.log('📧 [ESQUECI SENHA] Dados recebidos:', data);
-        } else {
-          // Se não for JSON, ler como texto para ver o erro
-          const text = await response.text();
-          console.error('❌ [ESQUECI SENHA] Resposta não é JSON:', text.substring(0, 200));
-          throw new Error(`Erro no servidor: ${response.status} ${response.statusText}`);
-        }
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Erro ao solicitar recuperação de senha');
-        }
-
-        console.log('✅ [ESQUECI SENHA] Sucesso!');
-        toast.success(data.message || 'Se o email estiver cadastrado, você receberá uma nova senha por email');
-        setEmailEnviado(true);
-      } catch (fetchError: any) {
-        clearTimeout(timeoutId);
-        if (fetchError.name === 'AbortError') {
-          throw new Error('Tempo de espera esgotado. Tente novamente.');
-        }
-        throw fetchError;
-      }
+      toast.success('Se o email estiver cadastrado, você receberá um link para redefinir sua senha.');
+      setEmailEnviado(true);
     } catch (error: any) {
-      console.error('❌ [ESQUECI SENHA] Erro ao solicitar recuperação de senha:', error);
-      console.error('❌ [ESQUECI SENHA] Stack:', error.stack);
-      const errorMessage = error.message || 'Erro ao solicitar recuperação de senha. Verifique se o servidor está funcionando.';
-      toast.error(errorMessage);
+      console.error('[ESQUECI SENHA] erro:', error);
+      toast.error(error.message || 'Erro ao solicitar recuperação de senha.');
     } finally {
       setIsLoading(false);
     }
   };
+
 
   if (emailEnviado) {
     return (

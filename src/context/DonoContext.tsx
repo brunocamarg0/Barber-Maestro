@@ -155,7 +155,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true);
     try {
-      const [barb, srv, profs, clis, ags, pags, promos, avals, prods, notifs, agProfs] = await Promise.all([
+      const [barb, srv, profs, clis, ags, pags, promos, avals, prods, notifs, agProfs, plCli, asCli, comms, asMine, fats] = await Promise.all([
         supabase.from("barbearias").select("*").eq("id", barbeariaId).maybeSingle(),
         supabase.from("servicos").select("*").eq("barbearia_id", barbeariaId).order("ordem", { ascending: true }),
         supabase.from("profissionais").select("*").eq("barbearia_id", barbeariaId).order("nome"),
@@ -167,7 +167,18 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         supabase.from("produtos").select("*").eq("barbearia_id", barbeariaId),
         supabase.from("notificacoes").select("*").eq("barbearia_id", barbeariaId).order("data", { ascending: false }),
         supabase.from("agendamento_profissional").select("*"),
+        supabase.from("planos_cliente").select("*").eq("barbearia_id", barbeariaId).order("created_at", { ascending: false }),
+        supabase.from("assinaturas_cliente").select("*, plano:planos_cliente(*), cliente:clientes(*)").order("created_at", { ascending: false }),
+        supabase.from("comissoes_pagas").select("*").eq("barbearia_id", barbeariaId).order("created_at", { ascending: false }),
+        supabase.from("assinaturas").select("*, plano:planos(*)").eq("barbearia_id", barbeariaId).maybeSingle(),
+        supabase.from("faturas").select("*").order("created_at", { ascending: false }),
       ]);
+
+      setPlanosCliente(plCli.data ?? []);
+      setAssinaturasCliente(asCli.data ?? []);
+      setComissoes(comms.data ?? []);
+      setMinhaAssinatura(asMine.data ?? null);
+      setFaturas((fats.data ?? []).filter((f: any) => !asMine.data || f.assinatura_id === asMine.data.id));
 
       // Configuração da barbearia
       const b = barb.data;

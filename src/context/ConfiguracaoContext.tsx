@@ -11,10 +11,10 @@ const ConfiguracaoContext = createContext<ConfiguracaoContextType | undefined>(u
 
 const configuracaoInicial: ConfiguracaoPlataforma = {
   id: "1",
-  nomeSistema: "Groom Guru",
-  dominio: "groomguru.com",
+  nomeSistema: "Barber Maestro",
+  dominio: "barbermaestro.com",
   modoManutencao: false,
-  emailContato: "contato@groomguru.com",
+  emailContato: "contato@barbermaestro.com",
   telefoneContato: "+55 11 99999-9999",
   configuracoesAvancadas: {},
 };

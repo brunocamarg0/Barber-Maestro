@@ -11,6 +11,7 @@ import { Scissors, ArrowLeft, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { buscarCep, formatarCep } from "@/lib/viacep";
 
 
 const Cadastro = () => {

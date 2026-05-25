@@ -24,6 +24,7 @@ import { Loader2, Lock, CheckCircle, Clock, Settings, Upload, Image as ImageIcon
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfiguracaoBarbearia } from "@/types/dono";
+import LinkAgendamentoCard from "@/components/dono/LinkAgendamentoCard";
 
 // Função para comprimir imagem (reduz tamanho para evitar problemas)
 const compressImage = (file: File, maxWidth: number = 600, maxHeight: number = 600, quality: number = 0.7): Promise<Blob> => {
@@ -373,6 +374,10 @@ export default function ConfiguracoesBarbearia() {
           Gerencie as configurações da sua barbearia
         </p>
       </div>
+
+      <LinkAgendamentoCard />
+
+
 
       <Card>
         <CardHeader>

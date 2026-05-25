@@ -95,7 +95,9 @@ export default function LinkAgendamentoCard() {
           Link de Agendamento
         </CardTitle>
         <CardDescription>
-          Compartilhe este link com seus clientes para que possam agendar diretamente
+          {nomeBarbearia
+            ? <>Compartilhe este link com os clientes da <strong>{nomeBarbearia}</strong></>
+            : "Compartilhe este link com seus clientes para que possam agendar diretamente"}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -729,7 +729,7 @@ function RelatorioCompletoComissoes({ mes, ano }: { mes: number; ano: number }) 
 
 // Componente para Comissões por Assinatura
 function ComissoesAssinatura({ mes, ano }: { mes: number; ano: number }) {
-  const { profissionais } = useDono();
+  const { profissionais, barbeariaId } = useDono();
   const [resumoAssinaturas, setResumoAssinaturas] = useState<any>(null);
   const [profissionalSelecionado, setProfissionalSelecionado] = useState<string | null>(null);
   const [comissoesAssinatura, setComissoesAssinatura] = useState<any[]>([]);
@@ -737,7 +737,7 @@ function ComissoesAssinatura({ mes, ano }: { mes: number; ano: number }) {
 
   useEffect(() => {
     carregarResumoAssinaturas();
-  }, [mes, ano]);
+  }, [mes, ano, barbeariaId]);
 
   useEffect(() => {
     if (profissionalSelecionado) {
@@ -746,10 +746,11 @@ function ComissoesAssinatura({ mes, ano }: { mes: number; ano: number }) {
   }, [profissionalSelecionado, mes, ano]);
 
   const carregarResumoAssinaturas = async () => {
+    if (!barbeariaId) return;
     setCarregando(true);
     try {
-      const data = await apiGet<any>(`/dono/comissoes-assinatura/resumo?mes=${mes}&ano=${ano}`);
-      setResumoAssinaturas(data.totalGeral || data);
+      const data = await getResumoComissoesAssinatura(barbeariaId, mes, ano);
+      setResumoAssinaturas(data.totalGeral);
     } catch (error: any) {
       console.error("Erro ao carregar resumo de comissões por assinatura:", error);
       toast.error("Erro ao carregar resumo de comissões por assinatura");
@@ -759,11 +760,11 @@ function ComissoesAssinatura({ mes, ano }: { mes: number; ano: number }) {
   };
 
   const carregarComissoesAssinatura = async () => {
-    if (!profissionalSelecionado) return;
+    if (!profissionalSelecionado || !barbeariaId) return;
 
     setCarregando(true);
     try {
-      const data = await apiGet<any>(`/dono/comissoes-assinatura/${profissionalSelecionado}?mes=${mes}&ano=${ano}`);
+      const data = await getComissoesAssinatura(barbeariaId, profissionalSelecionado, mes, ano);
       setComissoesAssinatura(data.comissoes || []);
     } catch (error: any) {
       console.error("Erro ao carregar comissões por assinatura:", error);
@@ -775,7 +776,7 @@ function ComissoesAssinatura({ mes, ano }: { mes: number; ano: number }) {
 
   const marcarComissaoComoPaga = async (comissaoId: string) => {
     try {
-      await apiPost(`/dono/comissoes-assinatura/${comissaoId}/marcar-pago`);
+      await marcarComissaoAssinaturaPaga(comissaoId);
       toast.success("Comissão marcada como paga!");
       carregarComissoesAssinatura();
       carregarResumoAssinaturas();

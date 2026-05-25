@@ -36,7 +36,16 @@ import {
   Scissors,
 } from "lucide-react";
 import { toast } from "sonner";
-import { apiGet, apiPost } from "@/services/api";
+import {
+  getResumoComissoes,
+  getComissoesProfissional,
+  marcarComissaoPaga,
+  marcarTodasComissoesPagas,
+  getRelatorioCompleto,
+  getResumoComissoesAssinatura,
+  getComissoesAssinatura,
+  marcarComissaoAssinaturaPaga,
+} from "@/services/comissoesCloud";
 
 interface Comissao {
   agendamentoId: string;

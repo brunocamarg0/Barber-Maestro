@@ -49,10 +49,10 @@ const configuracaoInicial: ConfiguracaoNotificacao = {
   email: {
     smtpHost: "smtp.gmail.com",
     smtpPort: 587,
-    smtpUser: "noreply@groomguru.com",
+    smtpUser: "noreply@barbermaestro.com",
     smtpPassword: "",
-    fromEmail: "noreply@groomguru.com",
-    fromName: "Groom Guru",
+    fromEmail: "noreply@barbermaestro.com",
+    fromName: "Barber Maestro",
   },
   whatsapp: {
     provider: "twilio",

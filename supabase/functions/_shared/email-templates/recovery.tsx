@@ -23,14 +23,14 @@ export const RecoveryEmail = ({
 }: RecoveryEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Redefina sua senha do Groom Guru</Preview>
+    <Preview>Redefina sua senha do Barber Maestro</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={brand}>💈 Groom Guru</Heading>
+        <Heading style={brand}>💈 Barber Maestro</Heading>
         <Heading style={h1}>Redefinição de senha</Heading>
         <Text style={text}>
           Olá! Recebemos uma solicitação para redefinir a senha da sua conta no
-          <strong> Groom Guru</strong>, a plataforma de gestão para barbearias.
+          <strong> Barber Maestro</strong>, a plataforma de gestão para barbearias.
         </Text>
         <Text style={text}>
           Clique no botão abaixo para criar uma nova senha de acesso. Este link
@@ -50,7 +50,7 @@ export const RecoveryEmail = ({
         </Text>
         <Text style={footer}>
           Atenciosamente,<br />
-          Equipe Groom Guru
+          Equipe Barber Maestro
         </Text>
       </Container>
     </Body>

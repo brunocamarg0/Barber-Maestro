@@ -373,34 +373,28 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   };
 
   const buscarBarbearias = async (busca?: string, cidade?: string, bairro?: string) => {
-    let q = supabase
-      .from("barbearias_publicas" as any)
-      .select("id, nome, telefone, email, foto, bairro, cidade, endereco")
-      .order("nome");
-    if (busca) q = q.ilike("nome", `%${busca}%`);
-    if (cidade) q = q.ilike("cidade", `%${cidade}%`);
-    if (bairro) q = q.ilike("bairro", `%${bairro}%`);
-    const { data, error } = await q;
+    const { data, error } = await supabase.rpc("search_barbearias_publicas" as any, {
+      _busca: busca ?? null,
+      _cidade: cidade ?? null,
+      _bairro: bairro ?? null,
+    });
     if (error) {
       toast.error(error.message);
       setBarbearias([]);
       return;
     }
-    const mapped = await hidratarBarbearias(data || []);
+    const mapped = await hidratarBarbearias(((data as any[]) || []));
     setBarbearias(mapped);
   };
 
   const buscarBarbeariaPorId = async (id: string) => {
-    const { data, error } = await supabase
-      .from("barbearias_publicas" as any)
-      .select("id, nome, telefone, email, foto, bairro, cidade, endereco")
-      .eq("id", id)
-      .single();
+    const { data, error } = await supabase.rpc("get_barbearia_publica_by_id" as any, { _id: id });
     if (error) {
       toast.error(error.message);
       throw error;
     }
-    const [hidratada] = await hidratarBarbearias([data]);
+    const row = Array.isArray(data) ? (data as any[])[0] : data;
+    const [hidratada] = await hidratarBarbearias([row]);
     return hidratada;
   };
 

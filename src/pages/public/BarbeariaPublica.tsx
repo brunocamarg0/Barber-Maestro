@@ -12,15 +12,15 @@ export default function BarbeariaPublica() {
   useEffect(() => {
     if (!slug) return;
     (async () => {
-      const { data, error } = await supabase
-        .from("barbearias_publicas" as any)
-        .select("id")
-        .eq("slug", slug)
-        .maybeSingle();
-      if (error || !data) {
+      const { data, error } = await supabase.rpc(
+        "get_barbearia_publica_by_slug" as any,
+        { _slug: slug }
+      );
+      const row = Array.isArray(data) ? (data as any[])[0] : data;
+      if (error || !row) {
         setState({ kind: "notfound" });
       } else {
-        setState({ kind: "found", id: (data as any).id });
+        setState({ kind: "found", id: (row as any).id });
       }
     })();
   }, [slug]);

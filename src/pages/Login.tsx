@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [pendingPortal, setPendingPortal] = useState<"owner" | "client" | null>(null);
+  const [pendingLogin, setPendingLogin] = useState<{ portal: "owner" | "client"; userId: string } | null>(null);
   const { user, roles, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -29,15 +29,16 @@ const Login = () => {
   });
 
   useEffect(() => {
-    if (!pendingPortal || authLoading || !user) return;
+    if (!pendingLogin || authLoading || !user) return;
+    if (user.id !== pendingLogin.userId) return;
 
     const roleSet = new Set(roles);
-    const expectedRole = pendingPortal === "owner" ? "owner" : "client";
+    const expectedRole = pendingLogin.portal === "owner" ? "owner" : "client";
 
     if (roleSet.has(expectedRole)) {
       toast.success("Login realizado com sucesso!");
-      navigate(pendingPortal === "owner" ? "/dono" : "/cliente", { replace: true });
-      setPendingPortal(null);
+      navigate(pendingLogin.portal === "owner" ? "/dono" : "/cliente", { replace: true });
+      setPendingLogin(null);
       setIsLoading(false);
       return;
     }
@@ -45,7 +46,7 @@ const Login = () => {
     if (roleSet.has("super_admin") && roleSet.size === 1) {
       toast.success("Login realizado com sucesso!");
       navigate("/super-admin", { replace: true });
-      setPendingPortal(null);
+      setPendingLogin(null);
       setIsLoading(false);
       return;
     }
@@ -53,16 +54,16 @@ const Login = () => {
     const rejectAccess = async () => {
       await signOut();
       toast.error(
-        pendingPortal === "owner"
+        pendingLogin.portal === "owner"
           ? "Esta conta não tem acesso ao Portal do Dono."
           : "Esta conta não tem acesso ao Portal do Cliente."
       );
-      setPendingPortal(null);
+      setPendingLogin(null);
       setIsLoading(false);
     };
 
     void rejectAccess();
-  }, [pendingPortal, authLoading, user, roles, navigate, signOut]);
+  }, [pendingLogin, authLoading, user, roles, navigate, signOut]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +85,7 @@ const Login = () => {
       }
 
       shouldKeepLoading = true;
-      setPendingPortal(currentTab);
+      setPendingLogin({ portal: currentTab, userId: data.user.id });
     } catch (err: any) {
       console.error('[LOGIN] erro:', err);
       toast.error(err.message || 'Erro ao fazer login.');

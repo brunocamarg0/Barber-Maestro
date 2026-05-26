@@ -135,8 +135,7 @@ export default function LinkAgendamentoCard() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Dica: conecte um domínio próprio em Configurações do Projeto para remover o
-            "lovable.app" do link.
+            Compartilhe este link com seus clientes para que eles agendem direto pelo site.
           </p>
         </div>
       </CardContent>

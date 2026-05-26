@@ -44,7 +44,8 @@ const Login = () => {
 
     if (roleSet.has(expectedRole)) {
       toast.success("Login realizado com sucesso!");
-      navigate(pendingLogin.portal === "owner" ? "/dono" : "/cliente", { replace: true });
+      const defaultDest = pendingLogin.portal === "owner" ? "/dono" : "/cliente";
+      navigate(redirectUrl || defaultDest, { replace: true });
       setPendingLogin(null);
       setIsLoading(false);
       return;

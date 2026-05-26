@@ -170,6 +170,8 @@ export default function ConfiguracoesBarbearia() {
         bairro: formData.bairro,
         cep: formData.cep,
         modoConfirmacao: formData.modoConfirmacao,
+        horarioFuncionamento: formData.horarioFuncionamento,
+        politicaCancelamento: formData.politicaCancelamento,
         foto: formData.foto, // Incluir foto se existir
       };
 
@@ -190,6 +192,11 @@ export default function ConfiguracoesBarbearia() {
 
       // Atualizar configuração no backend (aguardar a promise)
       await atualizarConfiguracao(dadosParaEnvio);
+
+      setFormData((prev) => ({
+        ...prev,
+        ...dadosParaEnvio,
+      }));
       
       // Toast de sucesso já é mostrado pela função atualizarConfiguracao
     } catch (error: any) {

@@ -332,12 +332,14 @@ export type Database = {
           email: string | null
           endereco: string | null
           foto: string | null
+          horario_funcionamento: Json
           id: string
           latitude: number | null
           longitude: number | null
           modo_confirmacao: string
           nome: string
           plano: string
+          politica_cancelamento: Json
           responsavel: string
           slug: string
           status: string
@@ -354,12 +356,14 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           foto?: string | null
+          horario_funcionamento?: Json
           id?: string
           latitude?: number | null
           longitude?: number | null
           modo_confirmacao?: string
           nome: string
           plano?: string
+          politica_cancelamento?: Json
           responsavel: string
           slug: string
           status?: string
@@ -376,12 +380,14 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           foto?: string | null
+          horario_funcionamento?: Json
           id?: string
           latitude?: number | null
           longitude?: number | null
           modo_confirmacao?: string
           nome?: string
           plano?: string
+          politica_cancelamento?: Json
           responsavel?: string
           slug?: string
           status?: string

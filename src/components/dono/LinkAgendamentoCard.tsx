@@ -107,7 +107,7 @@ export default function LinkAgendamentoCard() {
           <Label htmlFor="slug">Nome no link (sem acentos ou espaços)</Label>
           <div className="flex gap-2 mt-1">
             <div className="flex items-center px-3 rounded-sm border bg-muted text-muted-foreground text-sm whitespace-nowrap">
-              {window.location.host}/
+              {PUBLIC_HOST}/
             </div>
             <Input
               id="slug"

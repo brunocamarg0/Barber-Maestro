@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDono } from "@/context/DonoContext";
+import MercadoPagoConnectCard from "@/components/pagamento/MercadoPagoConnectCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

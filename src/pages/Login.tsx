@@ -71,7 +71,7 @@ const Login = () => {
     };
 
     void rejectAccess();
-  }, [pendingLogin, authLoading, user, roles, navigate, signOut]);
+  }, [pendingLogin, authLoading, user, roles, navigate, signOut, redirectUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

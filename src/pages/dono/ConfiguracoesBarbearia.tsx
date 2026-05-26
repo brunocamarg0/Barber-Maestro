@@ -300,6 +300,10 @@ export default function ConfiguracoesBarbearia() {
 
       <LinkAgendamentoCard />
 
+      <MercadoPagoConnectCard barbeariaId={barbeariaId} />
+
+
+
 
 
       <Card>

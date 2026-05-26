@@ -34,6 +34,7 @@ export default function ClienteDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { cliente, getProximoAgendamento, fidelidade, barbearias, cancelarAgendamento, carregarDados, loading, agendamentos } = useCliente();
+  const primeiroNome = cliente?.nome?.trim()?.split(/\s+/)[0] || "Cliente";
 
   // Carregar dados se ainda não foram carregados
   React.useEffect(() => {
@@ -143,7 +144,7 @@ export default function ClienteDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Olá, {cliente.nome.split(" ")[0]}! 👋</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Olá, {primeiroNome}! 👋</h2>
           <p className="text-muted-foreground">
             Bem-vindo ao seu painel de agendamentos
           </p>

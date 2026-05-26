@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 import {
   Agendamento,
   Cliente,
@@ -97,10 +97,16 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
+
+      const nomeFallback =
+        (typeof user.user_metadata?.nome === "string" && user.user_metadata.nome.trim()) ||
+        user.email?.split("@")[0] ||
+        "Cliente";
+
       return {
         id: data.id,
-        nome: data.nome,
-        email: data.email,
+        nome: (typeof data.nome === "string" && data.nome.trim()) || nomeFallback,
+        email: (typeof data.email === "string" && data.email.trim()) || user.email || "",
         telefone: data.telefone || undefined,
         dataNascimento: data.data_nascimento || undefined,
         createdAt: data.created_at,
@@ -184,9 +190,9 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     queryClient.invalidateQueries({ queryKey: ["cliente", "perfil"] });
   };
 
-  const carregarDados = async () => {
+  const carregarDados = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ["cliente"] });
-  };
+  }, [queryClient]);
 
   const atualizarPerfil = async (dados: Partial<Cliente>) => {
     if (!cliente) throw new Error("Cliente não carregado");

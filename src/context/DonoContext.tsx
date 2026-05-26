@@ -694,11 +694,25 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       const slug = getSlugFromLink(dados.linkAgendamento);
       if (slug) payload.slug = slug;
     }
-    const { data, error } = await supabase.from("barbearias").update(payload).eq("id", barbeariaId).select("*").single();
+    const { error } = await supabase.from("barbearias").update(payload).eq("id", barbeariaId);
     if (error) { toast.error(error.message); throw error; }
-    if (data) {
-      setConfiguracao(mapBarbeariaToConfiguracao(data));
-    }
+    setConfiguracao((prev) => {
+      if (!prev) return prev;
+
+      const slugAtual = getSlugFromLink(prev.linkAgendamento);
+      const novoSlug = "linkAgendamento" in dados
+        ? getSlugFromLink(dados.linkAgendamento) || slugAtual
+        : slugAtual;
+
+      return {
+        ...prev,
+        ...dados,
+        foto: "foto" in dados ? dados.foto ?? undefined : prev.foto,
+        horarioFuncionamento: dados.horarioFuncionamento ?? prev.horarioFuncionamento,
+        politicaCancelamento: dados.politicaCancelamento ?? prev.politicaCancelamento,
+        linkAgendamento: `${PUBLIC_ORIGIN}/${novoSlug || "sua-barbearia"}`,
+      };
+    });
     toast.success("Configuração salva");
   };
 

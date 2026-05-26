@@ -19,7 +19,14 @@ const Login = () => {
   const [searchParams] = useSearchParams();
 
   const tabFromUrl = searchParams.get('tab');
-  const getInitialTab = () => (tabFromUrl === 'client' ? 'client' : 'owner');
+  const redirectUrl = searchParams.get('redirect');
+  const getInitialTab = () => {
+    if (tabFromUrl === 'client') return 'client';
+    if (tabFromUrl === 'owner') return 'owner';
+    if (redirectUrl && redirectUrl.startsWith('/cliente')) return 'client';
+    if (redirectUrl && redirectUrl.startsWith('/dono')) return 'owner';
+    return 'owner';
+  };
 
   const [activeTab, setActiveTab] = useState(getInitialTab());
 
@@ -37,7 +44,8 @@ const Login = () => {
 
     if (roleSet.has(expectedRole)) {
       toast.success("Login realizado com sucesso!");
-      navigate(pendingLogin.portal === "owner" ? "/dono" : "/cliente", { replace: true });
+      const defaultDest = pendingLogin.portal === "owner" ? "/dono" : "/cliente";
+      navigate(redirectUrl || defaultDest, { replace: true });
       setPendingLogin(null);
       setIsLoading(false);
       return;
@@ -63,7 +71,7 @@ const Login = () => {
     };
 
     void rejectAccess();
-  }, [pendingLogin, authLoading, user, roles, navigate, signOut]);
+  }, [pendingLogin, authLoading, user, roles, navigate, signOut, redirectUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

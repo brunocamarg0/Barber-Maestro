@@ -521,15 +521,17 @@ export default function AgendamentoOnline() {
         {[1, 2, 3, 4, 5].map((s) => (
           <div key={s} className="flex items-center flex-1">
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center $            {step >= s ? "bg-primary text-primary-foreground" : "bg-muted"
-                }`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                step >= s
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
             >
               {step > s ? <CheckCircle className="h-4 w-4" /> : s}
             </div>
             {s < 5 && (
               <div
-                className={`flex-1 h-1 mx-2 ${step > s ? "bg-primary" : "bg-muted"
-                  }`}
+                className={`flex-1 h-1 mx-2 ${step > s ? "bg-primary" : "bg-muted"}`}
               />
             )}
           </div>

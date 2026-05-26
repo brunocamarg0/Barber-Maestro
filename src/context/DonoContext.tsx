@@ -727,7 +727,7 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       valido_ate: p.validoAte,
       ativo: p.ativo ?? true,
       aplicavel_a: p.aplicavelA ?? "todos",
-      servico_id: p.servicoId ?? null,
+      servico_id: p.servicoId ? p.servicoId : null,
       horario_inicio: p.horarioInicio ?? null,
       horario_fim: p.horarioFim ?? null,
       barbearia_id: barbeariaId!,

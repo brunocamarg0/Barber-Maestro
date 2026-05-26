@@ -75,6 +75,11 @@ function dateOnlyToNoonUtcIso(date: string): string {
   return `${date}T12:00:00.000Z`;
 }
 
+function toArray<T>(value: T | T[] | null | undefined): T[] {
+  if (Array.isArray(value)) return value;
+  return value ? [value] : [];
+}
+
 export function ClienteProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const { user, roles, loading: authLoading } = useAuth();
@@ -160,7 +165,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
 
   const pagamentos: Pagamento[] = (agendamentosRaw || [])
     .flatMap((a: any) =>
-      (a.pagamentos || []).map((p: any) => ({
+      toArray(a.pagamentos).map((p: any) => ({
         id: p.id,
         agendamentoId: a.id,
         valor: Number(p.valor),

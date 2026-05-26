@@ -123,6 +123,15 @@ Deno.serve(async (req) => {
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
       { headers: { Authorization: `Bearer ${mpToken}` } }
     );
+    if (!mpRes.ok) {
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const payment = await mpRes.json();
+    const agendamentoId: string | undefined = payment.external_reference;
+    const status = payment.status as string;
+
 
     const mapped =
       status === "approved"

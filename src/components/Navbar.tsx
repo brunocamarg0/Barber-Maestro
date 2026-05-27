@@ -1,8 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { Scissors } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const goToAnchor = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (location.pathname !== "/") {
+      navigate(`/#${id}`);
+      return;
+    }
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      history.replaceState(null, "", `#${id}`);
+    }
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4 py-4">
@@ -15,15 +31,15 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <Link to="#funcionalidades" className="text-foreground hover:text-primary transition-colors font-bold uppercase text-sm">
+            <a href="#funcionalidades" onClick={goToAnchor("funcionalidades")} className="text-foreground hover:text-primary transition-colors font-bold uppercase text-sm cursor-pointer">
               Funcionalidades
-            </Link>
-            <Link to="#planos" className="text-foreground hover:text-primary transition-colors font-bold uppercase text-sm">
+            </a>
+            <a href="#planos" onClick={goToAnchor("planos")} className="text-foreground hover:text-primary transition-colors font-bold uppercase text-sm cursor-pointer">
               Planos
-            </Link>
-            <Link to="#contato" className="text-foreground hover:text-primary transition-colors font-bold uppercase text-sm">
+            </a>
+            <a href="#contato" onClick={goToAnchor("contato")} className="text-foreground hover:text-primary transition-colors font-bold uppercase text-sm cursor-pointer">
               Contato
-            </Link>
+            </a>
           </div>
 
           <div className="flex items-center gap-4">

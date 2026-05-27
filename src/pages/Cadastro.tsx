@@ -420,14 +420,30 @@ const Cadastro = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                        <Label htmlFor="confirmar-senha-cliente">Confirmar Senha *</Label>
                         <Input
-                          id="dataNascimento"
-                          type="date"
-                          value={formCliente.dataNascimento}
-                          onChange={(e) => setFormCliente({ ...formCliente, dataNascimento: e.target.value })}
+                          id="confirmar-senha-cliente"
+                          type="password"
+                          value={formCliente.confirmarSenha}
+                          onChange={(e) => setFormCliente({ ...formCliente, confirmarSenha: e.target.value })}
+                          placeholder="Repita a senha"
+                          minLength={6}
+                          required
                         />
+                        {formCliente.confirmarSenha && formCliente.senha !== formCliente.confirmarSenha && (
+                          <p className="text-xs text-destructive">As senhas não coincidem.</p>
+                        )}
                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                      <Input
+                        id="dataNascimento"
+                        type="date"
+                        value={formCliente.dataNascimento}
+                        onChange={(e) => setFormCliente({ ...formCliente, dataNascimento: e.target.value })}
+                      />
                     </div>
                   </>
                 )}

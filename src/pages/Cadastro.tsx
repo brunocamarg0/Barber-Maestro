@@ -88,6 +88,11 @@ const Cadastro = () => {
           setIsLoading(false);
           return;
         }
+        if (formDono.senha !== formDono.confirmarSenha) {
+          toast.error("As senhas não coincidem.");
+          setIsLoading(false);
+          return;
+        }
         if (!formDono.bairro || !formDono.cidade) {
           toast.error("Bairro e Cidade são obrigatórios para que clientes possam encontrar sua barbearia.");
           setIsLoading(false);
@@ -109,8 +114,31 @@ const Cadastro = () => {
           },
         });
 
+        // Extrai mensagem real do corpo da resposta, mesmo em status não-2xx
+        let serverMsg: string | null = (data as any)?.error ?? null;
+        if (!serverMsg && error) {
+          try {
+            const ctx: any = (error as any).context;
+            if (ctx) {
+              if (typeof ctx.json === "function") {
+                const body = await ctx.json().catch(() => null);
+                serverMsg = body?.error || body?.message || null;
+              } else if (typeof ctx.text === "function") {
+                const txt = await ctx.text().catch(() => "");
+                try { serverMsg = JSON.parse(txt)?.error || txt; } catch { serverMsg = txt; }
+              } else if (typeof ctx === "string") {
+                try { serverMsg = JSON.parse(ctx)?.error || ctx; } catch { serverMsg = ctx; }
+              }
+            }
+          } catch {/* ignore */}
+        }
+
         if (error || (data as any)?.error) {
-          throw new Error((data as any)?.error || error?.message || 'Erro ao realizar cadastro');
+          let friendly = serverMsg || error?.message || 'Erro ao realizar cadastro';
+          if (/already|exists|registered|registrad/i.test(friendly)) {
+            friendly = 'Este e-mail já está cadastrado. Tente fazer login.';
+          }
+          throw new Error(friendly);
         }
 
         // Login automático após cadastro
@@ -129,6 +157,11 @@ const Cadastro = () => {
         }
         if (formCliente.senha.length < 6) {
           toast.error("A senha deve ter no mínimo 6 caracteres.");
+          setIsLoading(false);
+          return;
+        }
+        if (formCliente.senha !== formCliente.confirmarSenha) {
+          toast.error("As senhas não coincidem.");
           setIsLoading(false);
           return;
         }

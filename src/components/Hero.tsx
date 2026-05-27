@@ -38,8 +38,16 @@ const Hero = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button variant="secondary" size="lg" asChild className="px-10 py-7">
-              <Link to="#planos">Ver Planos</Link>
+            <Button
+              variant="secondary"
+              size="lg"
+              className="px-10 py-7"
+              onClick={() => {
+                const el = document.getElementById("planos");
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Ver Planos
             </Button>
           </div>
           

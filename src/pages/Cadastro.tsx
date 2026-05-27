@@ -52,6 +52,7 @@ const Cadastro = () => {
     telefone: "",
     email: "",
     senha: "",
+    confirmarSenha: "",
     endereco: "",
     bairro: "",
     cidade: "",
@@ -63,6 +64,7 @@ const Cadastro = () => {
     nome: "",
     email: "",
     senha: "",
+    confirmarSenha: "",
     telefone: "",
     dataNascimento: "",
   });
@@ -83,6 +85,11 @@ const Cadastro = () => {
       if (tipo === 'dono') {
         if (formDono.senha.length < 6 || formDono.senha.length > 15) {
           toast.error("A senha deve ter entre 6 e 15 caracteres.");
+          setIsLoading(false);
+          return;
+        }
+        if (formDono.senha !== formDono.confirmarSenha) {
+          toast.error("As senhas não coincidem.");
           setIsLoading(false);
           return;
         }
@@ -107,8 +114,31 @@ const Cadastro = () => {
           },
         });
 
+        // Extrai mensagem real do corpo da resposta, mesmo em status não-2xx
+        let serverMsg: string | null = (data as any)?.error ?? null;
+        if (!serverMsg && error) {
+          try {
+            const ctx: any = (error as any).context;
+            if (ctx) {
+              if (typeof ctx.json === "function") {
+                const body = await ctx.json().catch(() => null);
+                serverMsg = body?.error || body?.message || null;
+              } else if (typeof ctx.text === "function") {
+                const txt = await ctx.text().catch(() => "");
+                try { serverMsg = JSON.parse(txt)?.error || txt; } catch { serverMsg = txt; }
+              } else if (typeof ctx === "string") {
+                try { serverMsg = JSON.parse(ctx)?.error || ctx; } catch { serverMsg = ctx; }
+              }
+            }
+          } catch {/* ignore */}
+        }
+
         if (error || (data as any)?.error) {
-          throw new Error((data as any)?.error || error?.message || 'Erro ao realizar cadastro');
+          let friendly = serverMsg || error?.message || 'Erro ao realizar cadastro';
+          if (/already|exists|registered|registrad/i.test(friendly)) {
+            friendly = 'Este e-mail já está cadastrado. Tente fazer login.';
+          }
+          throw new Error(friendly);
         }
 
         // Login automático após cadastro
@@ -127,6 +157,11 @@ const Cadastro = () => {
         }
         if (formCliente.senha.length < 6) {
           toast.error("A senha deve ter no mínimo 6 caracteres.");
+          setIsLoading(false);
+          return;
+        }
+        if (formCliente.senha !== formCliente.confirmarSenha) {
+          toast.error("As senhas não coincidem.");
           setIsLoading(false);
           return;
         }
@@ -260,6 +295,23 @@ const Cadastro = () => {
                       </div>
                     </div>
 
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmarSenha">Confirmar Senha *</Label>
+                      <Input
+                        id="confirmarSenha"
+                        type="password"
+                        value={formDono.confirmarSenha}
+                        onChange={(e) => setFormDono({ ...formDono, confirmarSenha: e.target.value })}
+                        placeholder="Repita a senha"
+                        minLength={6}
+                        maxLength={15}
+                        required
+                      />
+                      {formDono.confirmarSenha && formDono.senha !== formDono.confirmarSenha && (
+                        <p className="text-xs text-destructive">As senhas não coincidem.</p>
+                      )}
+                    </div>
+
                     {/* Campos de Localização - Obrigatórios para busca */}
                     <div className="space-y-2 mt-4">
                       <Label htmlFor="endereco">Endereço (Rua e Número)</Label>
@@ -368,14 +420,30 @@ const Cadastro = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                        <Label htmlFor="confirmar-senha-cliente">Confirmar Senha *</Label>
                         <Input
-                          id="dataNascimento"
-                          type="date"
-                          value={formCliente.dataNascimento}
-                          onChange={(e) => setFormCliente({ ...formCliente, dataNascimento: e.target.value })}
+                          id="confirmar-senha-cliente"
+                          type="password"
+                          value={formCliente.confirmarSenha}
+                          onChange={(e) => setFormCliente({ ...formCliente, confirmarSenha: e.target.value })}
+                          placeholder="Repita a senha"
+                          minLength={6}
+                          required
                         />
+                        {formCliente.confirmarSenha && formCliente.senha !== formCliente.confirmarSenha && (
+                          <p className="text-xs text-destructive">As senhas não coincidem.</p>
+                        )}
                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                      <Input
+                        id="dataNascimento"
+                        type="date"
+                        value={formCliente.dataNascimento}
+                        onChange={(e) => setFormCliente({ ...formCliente, dataNascimento: e.target.value })}
+                      />
                     </div>
                   </>
                 )}

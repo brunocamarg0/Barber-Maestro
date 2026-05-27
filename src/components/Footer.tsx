@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="bg-card border-t border-border py-12">
+    <footer id="contato" className="bg-card border-t border-border py-12">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div className="space-y-4">
@@ -22,14 +22,14 @@ const Footer = () => {
             <h3 className="font-black text-foreground mb-4 uppercase text-sm">Produto</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="#funcionalidades" className="text-muted-foreground hover:text-primary transition-colors">
+                <a href="#funcionalidades" className="text-muted-foreground hover:text-primary transition-colors">
                   Funcionalidades
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="#planos" className="text-muted-foreground hover:text-primary transition-colors">
+                <a href="#planos" className="text-muted-foreground hover:text-primary transition-colors">
                   Planos
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -43,9 +43,9 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="#contato" className="text-muted-foreground hover:text-primary transition-colors">
+                <a href="#contato" className="text-muted-foreground hover:text-primary transition-colors">
                   Contato
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

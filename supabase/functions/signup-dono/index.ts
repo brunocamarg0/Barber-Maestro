@@ -124,6 +124,22 @@ Deno.serve(async (req) => {
     // remove registro em clientes (também criado pelo trigger)
     await admin.from("clientes").delete().eq("user_id", userId);
 
+    // 6. envia email de boas-vindas ao dono (não bloqueia em caso de falha)
+    try {
+      await admin.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "boas-vindas-dono",
+          recipientEmail: body.email.trim().toLowerCase(),
+          idempotencyKey: `boas-vindas-dono-${userId}`,
+          templateData: {
+            nomeDono: body.nomeContato,
+            nomeBarbearia: body.nomeBarbearia,
+          },
+        },
+      });
+    } catch (emailErr) {
+      console.error("Falha ao enfileirar email de boas-vindas (não crítico)", emailErr);
+    }
 
     return new Response(
       JSON.stringify({ success: true, user_id: userId, barbearia_id: barbearia.id }),

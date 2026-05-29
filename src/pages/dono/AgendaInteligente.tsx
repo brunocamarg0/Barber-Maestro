@@ -1174,6 +1174,75 @@ export default function AgendaInteligente() {
         </DialogContent>
       </Dialog>
 
+      {/* Modal de Edição/Reagendamento */}
+      <Dialog open={!!agendamentoEditar} onOpenChange={(open) => !open && setAgendamentoEditar(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reagendar atendimento</DialogTitle>
+            <DialogDescription>
+              {agendamentoEditar && (
+                <>
+                  Cliente: <strong>{agendamentoEditar.clienteNome}</strong> · Serviço:{" "}
+                  <strong>{agendamentoEditar.servicoNome}</strong>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Data</Label>
+                <Input
+                  type="date"
+                  value={formEditar.data}
+                  min={format(new Date(), "yyyy-MM-dd")}
+                  onChange={(e) => setFormEditar({ ...formEditar, data: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Horário</Label>
+                <Input
+                  type="time"
+                  step={600}
+                  value={formEditar.horario}
+                  onChange={(e) => setFormEditar({ ...formEditar, horario: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Profissional</Label>
+              <Select
+                value={formEditar.profissionalId}
+                onValueChange={(v) => setFormEditar({ ...formEditar, profissionalId: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o profissional" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profissionais.filter((p) => p.ativo).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Reagendamento exige antecedência mínima de {prazoMinReagendamento}h do horário original.
+              O slot antigo é liberado automaticamente.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAgendamentoEditar(null)} disabled={!!processingId}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSalvarEdicao} disabled={!!processingId}>
+              {processingId === agendamentoEditar?.id ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
+              ) : "Salvar reagendamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal de Recusar Agendamento */}
       <Dialog open={!!agendamentoParaRecusar} onOpenChange={(open) => !open && setAgendamentoParaRecusar(null)}>
         <DialogContent>

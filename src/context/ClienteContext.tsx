@@ -214,7 +214,10 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     data: n.data,
     tipo: n.tipo,
     canal: "app",
+    url_acao: n.url_acao,
+    label_acao: n.label_acao,
   }));
+
 
   const marcarNotificacaoLida = async (id: string) => {
     await supabase.from("notificacoes").update({ lida: true }).eq("id", id);

@@ -47,6 +47,8 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMon
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { podeAlterarAgendamento, parseHorarioFuncionamento, horarioDentroDoFuncionamento } from "@/lib/horarios";
+import { supabase } from "@/integrations/supabase/client";
+
 
 export default function AgendaInteligente() {
   const { agendamentos, profissionais, clientes, servicos, configuracao, criarAgendamento, atualizarAgendamento, confirmarAgendamento, recusarAgendamento } = useDono();

@@ -45,8 +45,8 @@ export default function GestaoProfissionais() {
     email: "",
     especialidades: [] as string[],
     comissaoTipo: "percentual" as "percentual" | "fixo",
-    comissaoValor: 40,
-    comissaoAssinatura: 0,
+    comissaoValor: "40" as string,
+    comissaoAssinatura: "" as string,
   });
 
   const formatarMoeda = (valor: number) => {

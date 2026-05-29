@@ -176,8 +176,17 @@ export default function AgendamentoOnline() {
         observacoes: formData.observacoes,
       });
 
+      // Se é reagendamento, cancela o anterior (libera o slot antigo)
+      if (reagendarId) {
+        try {
+          await cancelarAgendamento(reagendarId);
+        } catch (e) {
+          console.warn("Não foi possível cancelar agendamento anterior:", e);
+        }
+      }
+
       toast({
-        title: "Agendamento criado!",
+        title: reagendarId ? "Reagendamento confirmado!" : "Agendamento criado!",
         description: "Escolha a forma de pagamento...",
       });
 

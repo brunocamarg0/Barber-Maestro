@@ -517,6 +517,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
         buscarBarbearias,
         buscarBarbeariaPorId,
         realizarPagamento,
+        marcarNotificacaoLida,
       }}
     >
       {children}

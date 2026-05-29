@@ -819,7 +819,9 @@ export default function AgendaInteligente() {
                   {agendamentosDoDia.map((agendamento) => (
                     <div
                       key={agendamento.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent"
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer"
+                      onClick={() => abrirEdicao(agendamento)}
+                      title="Clique para reagendar"
                     >
                       <div className="flex items-center gap-3">
                         <Clock className="h-4 w-4 text-muted-foreground" />
@@ -842,6 +844,7 @@ export default function AgendaInteligente() {
                     </div>
                   ))}
                 </div>
+
               )}
             </CardContent>
           </Card>

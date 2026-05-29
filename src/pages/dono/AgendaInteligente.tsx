@@ -815,9 +815,26 @@ export default function AgendaInteligente() {
                             <span className="font-medium">{formatarMoeda(agendamento.valor)}</span>
                           </div>
                         </div>
-                        <div className="mt-2 text-sm text-muted-foreground">
-                          Profissional: {agendamento.profissionalNome} • Duração: {agendamento.duracao}min
+                        <div className="mt-2 flex items-center justify-between">
+                          <div className="text-sm text-muted-foreground">
+                            Profissional: {agendamento.profissionalNome} • Duração: {agendamento.duracao}min
+                          </div>
+                          {agendamento.status === "confirmado" && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleConcluir(agendamento.id)}
+                              disabled={processingId === agendamento.id}
+                            >
+                              {processingId === agendamento.id ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                              )}
+                              Concluir atendimento
+                            </Button>
+                          )}
                         </div>
+
                       </div>
                     ))}
                   </div>

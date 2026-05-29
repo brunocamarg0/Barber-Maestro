@@ -109,24 +109,6 @@ export default function AgendamentoOnline() {
         if (error) {
           console.warn("Erro ao carregar horários ocupados:", error.message);
           setHorariosOcupados([]);
-  // Carregar horários ocupados quando data mudar (via Supabase)
-  useEffect(() => {
-    const carregarHorariosOcupados = async () => {
-      if (!formData.barbeariaId || !formData.data) {
-        setHorariosOcupados([]);
-        return;
-      }
-
-      setLoadingHorarios(true);
-      try {
-        const { supabase } = await import("@/integrations/supabase/client");
-        const { data, error } = await supabase.rpc("get_horarios_ocupados", {
-          _barbearia_id: formData.barbeariaId,
-          _data: formData.data,
-        });
-        if (error) {
-          console.warn("Erro ao carregar horários ocupados:", error.message);
-          setHorariosOcupados([]);
         } else {
           setHorariosOcupados((data || []).map((r: any) => r.horario).filter(Boolean));
         }

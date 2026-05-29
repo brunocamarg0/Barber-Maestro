@@ -50,7 +50,10 @@ interface ClienteContextType {
     data: string;
     tipo?: string;
     canal?: string;
+    url_acao?: string | null;
+    label_acao?: string | null;
   }>;
+
   barbearias: any[];
   buscarBarbearias: (busca?: string, cidade?: string, bairro?: string) => Promise<void>;
   buscarBarbeariaPorId: (id: string) => Promise<any>;

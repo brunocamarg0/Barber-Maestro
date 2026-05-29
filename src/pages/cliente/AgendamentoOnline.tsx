@@ -32,7 +32,7 @@ import {
 
 
 export default function AgendamentoOnline() {
-  const { criarAgendamento, buscarBarbeariaPorId, barbearias, buscarBarbearias } = useCliente();
+  const { criarAgendamento, buscarBarbeariaPorId, barbearias, buscarBarbearias, agendamentos, cancelarAgendamento } = useCliente();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -47,9 +47,17 @@ export default function AgendamentoOnline() {
   const [buscaTexto, setBuscaTexto] = useState("");
   const [buscaCidade, setBuscaCidade] = useState("");
   const [buscaBairro, setBuscaBairro] = useState("");
+
+  // Reagendamento: ?reagendar=<id> traz a barbearia/serviço do antigo e
+  // cancela o antigo assim que o novo for confirmado, liberando o slot.
+  const reagendarId = searchParams.get("reagendar");
+  const agendamentoAnterior = reagendarId
+    ? agendamentos.find((a) => a.id === reagendarId)
+    : undefined;
+
   const [formData, setFormData] = useState<Partial<NovoAgendamento>>({
-    barbeariaId: searchParams.get("barbearia") || "",
-    servicoId: "",
+    barbeariaId: searchParams.get("barbearia") || agendamentoAnterior?.barbeariaId || "",
+    servicoId: agendamentoAnterior?.servicoId || "",
     data: "",
     hora: "",
     observacoes: "",

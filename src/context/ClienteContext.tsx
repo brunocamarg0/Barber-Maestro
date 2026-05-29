@@ -310,6 +310,9 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   };
 
   const cancelarAgendamento = async (id: string) => {
+    // Busca o agendamento para conseguir notificar o dono
+    const ag = agendamentos.find((a) => a.id === id);
+
     const { error } = await supabase
       .from("agendamentos")
       .update({ status: "cancelado" })
@@ -318,6 +321,23 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       toast.error(error.message);
       throw error;
     }
+
+    // Notifica o dono da barbearia
+    try {
+      if (ag) {
+        await supabase.from("notificacoes").insert({
+          barbearia_id: ag.barbeariaId,
+          tipo: "agendamento_cancelado",
+          titulo: "Agendamento cancelado pelo cliente",
+          mensagem: `${cliente?.nome || "Cliente"} cancelou o agendamento de ${ag.data} às ${ag.hora}.`,
+          url_acao: "/dono/agenda",
+          label_acao: "Ver agenda",
+        });
+      }
+    } catch {
+      // best-effort
+    }
+
     await queryClient.invalidateQueries({ queryKey: ["cliente", "agendamentos"] });
     toast.success("Agendamento cancelado.");
   };
@@ -327,14 +347,20 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     valor: number,
     metodo: MetodoPagamento
   ): Promise<Pagamento> => {
+    // Existe constraint UNIQUE em pagamentos(agendamento_id) — usamos upsert
+    // para reaproveitar pagamento já existente do agendamento (resolve o bug
+    // "duplicate key value violates unique constraint pagamentos_agendamento_id_key").
     const { data, error } = await supabase
       .from("pagamentos")
-      .insert({
-        agendamento_id: agendamentoId,
-        valor,
-        metodo,
-        status: metodo === "dinheiro" ? "pendente" : "processando",
-      })
+      .upsert(
+        {
+          agendamento_id: agendamentoId,
+          valor,
+          metodo,
+          status: metodo === "dinheiro" ? "pendente" : "processando",
+        },
+        { onConflict: "agendamento_id" }
+      )
       .select()
       .single();
     if (error) {

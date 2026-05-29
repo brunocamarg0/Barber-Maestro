@@ -81,26 +81,71 @@ Deno.serve(async (req) => {
     const venc = new Date(agora);
     venc.setMonth(venc.getMonth() + Number(plano.duracao_meses || 1));
 
-    const { data: assinatura, error: aErr } = await admin
+    // Verifica se já existe assinatura para este cliente (unique constraint em cliente_id)
+    const { data: existente } = await admin
       .from("assinaturas_cliente")
-      .insert({
-        cliente_id: cliente.id,
-        plano_id: plano.id,
-        profissional_id: profissionalId,
-        status: "pendente",
-        pagamento_recorrente: pagamentoRecorrente,
-        data_inicio: agora.toISOString(),
-        data_vencimento: venc.toISOString(),
-        proximo_vencimento: venc.toISOString(),
-      })
-      .select("id")
-      .single();
-    if (aErr || !assinatura) {
-      console.error("assinatura insert error:", aErr);
-      return new Response(JSON.stringify({ error: "Falha ao criar assinatura" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      .select("id, status")
+      .eq("cliente_id", cliente.id)
+      .maybeSingle();
+
+    let assinatura: { id: string } | null = null;
+
+    if (existente) {
+      if (existente.status === "ativa") {
+        return new Response(
+          JSON.stringify({
+            error: "ja_possui_assinatura",
+            message: "Você já possui uma assinatura ativa. Cancele a atual antes de contratar outro plano.",
+          }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      // Reaproveita registro (pendente/cancelado/vencido) atualizando plano e datas
+      const { data: upd, error: uErr } = await admin
+        .from("assinaturas_cliente")
+        .update({
+          plano_id: plano.id,
+          profissional_id: profissionalId,
+          status: "pendente",
+          pagamento_recorrente: pagamentoRecorrente,
+          data_inicio: agora.toISOString(),
+          data_vencimento: venc.toISOString(),
+          proximo_vencimento: venc.toISOString(),
+        })
+        .eq("id", existente.id)
+        .select("id")
+        .single();
+      if (uErr || !upd) {
+        console.error("assinatura update error:", uErr);
+        return new Response(JSON.stringify({ error: "Falha ao atualizar assinatura" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      assinatura = upd;
+    } else {
+      const { data: novo, error: aErr } = await admin
+        .from("assinaturas_cliente")
+        .insert({
+          cliente_id: cliente.id,
+          plano_id: plano.id,
+          profissional_id: profissionalId,
+          status: "pendente",
+          pagamento_recorrente: pagamentoRecorrente,
+          data_inicio: agora.toISOString(),
+          data_vencimento: venc.toISOString(),
+          proximo_vencimento: venc.toISOString(),
+        })
+        .select("id")
+        .single();
+      if (aErr || !novo) {
+        console.error("assinatura insert error:", aErr);
+        return new Response(JSON.stringify({ error: "Falha ao criar assinatura" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      assinatura = novo;
     }
+
 
     const origin = req.headers.get("origin") || "https://barbermaestro.com";
 

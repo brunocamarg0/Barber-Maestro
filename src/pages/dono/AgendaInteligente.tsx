@@ -553,42 +553,42 @@ export default function AgendaInteligente() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-5">
               {listaAgendamentosPendentes.slice(0, 5).map((agendamento) => (
                 <div
                   key={agendamento.id}
-                  className="p-4 border border-yellow-300 rounded-lg bg-white hover:bg-yellow-50 transition-colors"
+                  className="p-6 border border-yellow-300 rounded-lg bg-white hover:bg-yellow-50 transition-colors"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Data</span>
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-x-8 gap-y-4 flex-1">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Data</span>
                         <span className="font-semibold">
                           {format(parseDateOnlyToSafeDate(agendamento.data), "dd/MM/yyyy", { locale: ptBR })}
                         </span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Horário</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Horário</span>
                         <span className="font-semibold">{agendamento.horario}</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Cliente</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Cliente</span>
                         <span className="font-semibold">{agendamento.clienteNome}</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Profissional</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Profissional</span>
                         <span className="font-medium">{agendamento.profissionalNome}</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Serviço</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Serviço</span>
                         <span className="font-medium">{agendamento.servicoNome}</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Valor</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Valor</span>
                         <span className="font-bold text-green-600">{formatarMoeda(agendamento.valor)}</span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-3 lg:flex-col xl:flex-row shrink-0">
                       <Button
                         size="sm"
                         onClick={() => handleConfirmar(agendamento.id)}

@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { podeAlterarAgendamento } from "@/lib/horarios";
 
 interface Agendamento {
   id: string;
@@ -121,6 +122,20 @@ export default function HistoricoAgendamentos() {
   };
 
   const handleCancelar = async (agendamentoId: string) => {
+    const ag = agendamentos?.find((a: any) => a.id === agendamentoId);
+    if (ag) {
+      const dataISO = typeof ag.data === "string" ? ag.data.slice(0, 10) : "";
+      const horario = (ag as any).horario || (ag as any).hora || "00:00";
+      const check = podeAlterarAgendamento(dataISO, horario, 2);
+      if (!check.ok) {
+        toast({
+          title: "Prazo mínimo de 2h",
+          description: "Cancelamentos e reagendamentos só são permitidos com pelo menos 2 horas de antecedência.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     if (confirm("Tem certeza que deseja cancelar este agendamento?")) {
       try {
         await cancelarAgendamento(agendamentoId);
@@ -192,10 +207,26 @@ export default function HistoricoAgendamentos() {
             )}
             {(agendamento.status === "confirmado" || agendamento.status === "pendente") && (
               <>
-                <Button variant="ghost" size="icon" asChild title="Reagendar">
-                  <Link to={`/cliente/agendar?reagendar=${agendamento.id}`}>
-                    <CalendarCheck className="h-4 w-4" />
-                  </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="Reagendar"
+                  onClick={() => {
+                    const dataISO = typeof agendamento.data === "string" ? agendamento.data.slice(0, 10) : "";
+                    const horario = (agendamento as any).horario || (agendamento as any).hora || "00:00";
+                    const check = podeAlterarAgendamento(dataISO, horario, 2);
+                    if (!check.ok) {
+                      toast({
+                        title: "Prazo mínimo de 2h",
+                        description: "Reagendamentos só são permitidos com pelo menos 2 horas de antecedência.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    window.location.href = `/cliente/agendar?reagendar=${agendamento.id}`;
+                  }}
+                >
+                  <CalendarCheck className="h-4 w-4" />
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -483,11 +514,26 @@ export default function HistoricoAgendamentos() {
               <div className="flex gap-2 pt-4 border-t">
                 {(agendamentoSelecionado.status === "confirmado" || agendamentoSelecionado.status === "pendente") && (
                   <>
-                    <Button variant="outline" asChild className="flex-1">
-                      <Link to={`/cliente/agendar?reagendar=${agendamentoSelecionado.id}`}>
-                        <CalendarCheck className="h-4 w-4 mr-2" />
-                        Reagendar
-                      </Link>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        const dataISO = typeof agendamentoSelecionado.data === "string" ? agendamentoSelecionado.data.slice(0, 10) : "";
+                        const horario = (agendamentoSelecionado as any).horario || (agendamentoSelecionado as any).hora || "00:00";
+                        const check = podeAlterarAgendamento(dataISO, horario, 2);
+                        if (!check.ok) {
+                          toast({
+                            title: "Prazo mínimo de 2h",
+                            description: "Reagendamentos só são permitidos com pelo menos 2 horas de antecedência.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        window.location.href = `/cliente/agendar?reagendar=${agendamentoSelecionado.id}`;
+                      }}
+                    >
+                      <CalendarCheck className="h-4 w-4 mr-2" />
+                      Reagendar
                     </Button>
                     <Button 
                       variant="destructive" 

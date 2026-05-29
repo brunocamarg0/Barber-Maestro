@@ -1,4 +1,5 @@
 import { useCliente } from "@/context/ClienteContext";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -8,10 +9,12 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, Mail, MessageSquare, CheckCircle, Calendar, Gift, CreditCard, Settings } from "lucide-react";
+import { Bell, Mail, MessageSquare, CheckCircle, Calendar, Gift, CreditCard, Settings, Star, ArrowRight } from "lucide-react";
 
 export default function NotificacoesCliente() {
   const { notificacoes, marcarNotificacaoLida } = useCliente();
+  const navigate = useNavigate();
+
 
   // Proteção contra undefined
   const notificacoesArray = Array.isArray(notificacoes) ? notificacoes : [];

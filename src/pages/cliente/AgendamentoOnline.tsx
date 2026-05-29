@@ -157,7 +157,11 @@ export default function AgendamentoOnline() {
   const horariosDisponiveis = useMemo(() => {
     return todosHorarios.filter(horario => !horariosOcupados.includes(horario));
   }, [todosHorarios, horariosOcupados]);
-
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    if (!formData.servicoId || !formData.data || !formData.hora) {
+      toast({
+        title: "Erro",
         description: "Preencha todos os campos obrigatórios.",
         variant: "destructive",
       });

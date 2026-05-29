@@ -220,7 +220,20 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       toast.error("Cadastro de cliente não encontrado. Faça login novamente.");
       throw new Error("Cliente não carregado");
     }
-    const insertPayload = {
+
+    // Resolve modo de confirmação da barbearia para definir status inicial
+    let modo: "automatico" | "manual" | "hibrido" = "manual";
+    try {
+      const { data: barb } = await supabase
+        .rpc("get_barbearia_publica_by_id", { _id: novo.barbeariaId })
+        .maybeSingle();
+      if (barb?.modo_confirmacao) modo = barb.modo_confirmacao as any;
+    } catch {
+      // fallback: manual
+    }
+    const autoConfirma = modo === "automatico" || modo === "hibrido";
+
+    const insertPayload: any = {
       cliente_id: cliente.id,
       cliente_nome: cliente.nome,
       telefone: cliente.telefone || "",
@@ -229,7 +242,9 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       data: dateOnlyToNoonUtcIso(novo.data),
       horario: novo.hora,
       observacao: novo.observacoes || null,
-      status: "pendente",
+      status: autoConfirma ? "confirmado" : "pendente",
+      confirmado_automaticamente: autoConfirma,
+      data_confirmacao_automatica: autoConfirma ? new Date().toISOString() : null,
     };
     const { data, error } = await supabase
       .from("agendamentos")

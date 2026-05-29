@@ -207,10 +207,26 @@ export default function HistoricoAgendamentos() {
             )}
             {(agendamento.status === "confirmado" || agendamento.status === "pendente") && (
               <>
-                <Button variant="ghost" size="icon" asChild title="Reagendar">
-                  <Link to={`/cliente/agendar?reagendar=${agendamento.id}`}>
-                    <CalendarCheck className="h-4 w-4" />
-                  </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="Reagendar"
+                  onClick={() => {
+                    const dataISO = typeof agendamento.data === "string" ? agendamento.data.slice(0, 10) : "";
+                    const horario = (agendamento as any).horario || (agendamento as any).hora || "00:00";
+                    const check = podeAlterarAgendamento(dataISO, horario, 2);
+                    if (!check.ok) {
+                      toast({
+                        title: "Prazo mínimo de 2h",
+                        description: "Reagendamentos só são permitidos com pelo menos 2 horas de antecedência.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    window.location.href = `/cliente/agendar?reagendar=${agendamento.id}`;
+                  }}
+                >
+                  <CalendarCheck className="h-4 w-4" />
                 </Button>
                 <Button 
                   variant="ghost" 

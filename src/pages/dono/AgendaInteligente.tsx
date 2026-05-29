@@ -49,7 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 import { podeAlterarAgendamento, parseHorarioFuncionamento, horarioDentroDoFuncionamento } from "@/lib/horarios";
 
 export default function AgendaInteligente() {
-  const { agendamentos, profissionais, clientes, servicos, criarAgendamento, confirmarAgendamento, recusarAgendamento } = useDono();
+  const { agendamentos, profissionais, clientes, servicos, configuracao, criarAgendamento, atualizarAgendamento, confirmarAgendamento, recusarAgendamento } = useDono();
   const { toast } = useToast();
   const [visualizacao, setVisualizacao] = useState<"dia" | "semana" | "mes">("dia");
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date());
@@ -59,6 +59,8 @@ export default function AgendaInteligente() {
   const [motivoRecusa, setMotivoRecusa] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [modalNovoAgendamento, setModalNovoAgendamento] = useState(false);
+  const [agendamentoEditar, setAgendamentoEditar] = useState<any | null>(null);
+  const [formEditar, setFormEditar] = useState({ data: "", horario: "", profissionalId: "" });
   const [formNovoAgendamento, setFormNovoAgendamento] = useState({
     clienteId: "",
     profissionalId: "",
@@ -67,6 +69,66 @@ export default function AgendaInteligente() {
     horario: "",
     observacoes: "",
   });
+
+  const prazoMinReagendamento = configuracao?.politicaCancelamento?.prazoMinimo ?? 2;
+  const horarioFuncionamento = useMemo(
+    () => parseHorarioFuncionamento(configuracao?.horarioFuncionamento),
+    [configuracao]
+  );
+
+  const abrirEdicao = (a: any) => {
+    setAgendamentoEditar(a);
+    setFormEditar({ data: a.data, horario: a.horario, profissionalId: a.profissionalId || "" });
+  };
+
+  const handleSalvarEdicao = async () => {
+    if (!agendamentoEditar) return;
+    const { data, horario, profissionalId } = formEditar;
+    if (!data || !horario || !profissionalId) {
+      toast({ title: "Dados incompletos", description: "Preencha data, horário e profissional.", variant: "destructive" });
+      return;
+    }
+    // Política 2h em relação ao horário ORIGINAL
+    const policy = podeAlterarAgendamento(agendamentoEditar.data, agendamentoEditar.horario, prazoMinReagendamento);
+    if (!policy.ok) {
+      toast({ title: `Prazo mínimo de ${prazoMinReagendamento}h`, description: "Não é possível reagendar tão próximo ao horário.", variant: "destructive" });
+      return;
+    }
+    // Horário dentro do funcionamento
+    const duracao = agendamentoEditar.duracao || 40;
+    if (!horarioDentroDoFuncionamento(horarioFuncionamento, data, horario, duracao)) {
+      toast({ title: "Fora do funcionamento", description: "O novo horário está fora do horário de funcionamento da barbearia.", variant: "destructive" });
+      return;
+    }
+    // Conflito com outros agendamentos (exceto o próprio)
+    const conflito = agendamentos.some((a) => {
+      if (a.id === agendamentoEditar.id) return false;
+      if (a.profissionalId !== profissionalId) return false;
+      if (a.data !== data) return false;
+      if (!["confirmado", "pendente", "concluido"].includes(a.status)) return false;
+      if (!a.horario) return false;
+      const [h1, m1] = horario.split(":").map(Number);
+      const ini = h1 * 60 + m1;
+      const fim = ini + duracao;
+      const [h2, m2] = a.horario.split(":").map(Number);
+      const aIni = h2 * 60 + m2;
+      const aFim = aIni + (a.duracao || 40);
+      return ini < aFim && fim > aIni;
+    });
+    if (conflito) {
+      toast({ title: "Horário ocupado", description: "Já existe um agendamento neste horário para este profissional.", variant: "destructive" });
+      return;
+    }
+    setProcessingId(agendamentoEditar.id);
+    try {
+      await atualizarAgendamento(agendamentoEditar.id, { data, horario, profissionalId });
+      toast({ title: "Agendamento reagendado", description: "O horário antigo foi liberado." });
+      setAgendamentoEditar(null);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
 
   // Obter serviços ativos do banco de dados
   const servicosAtivos = useMemo(() => {

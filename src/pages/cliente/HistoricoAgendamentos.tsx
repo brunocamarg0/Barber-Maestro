@@ -514,11 +514,26 @@ export default function HistoricoAgendamentos() {
               <div className="flex gap-2 pt-4 border-t">
                 {(agendamentoSelecionado.status === "confirmado" || agendamentoSelecionado.status === "pendente") && (
                   <>
-                    <Button variant="outline" asChild className="flex-1">
-                      <Link to={`/cliente/agendar?reagendar=${agendamentoSelecionado.id}`}>
-                        <CalendarCheck className="h-4 w-4 mr-2" />
-                        Reagendar
-                      </Link>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        const dataISO = typeof agendamentoSelecionado.data === "string" ? agendamentoSelecionado.data.slice(0, 10) : "";
+                        const horario = (agendamentoSelecionado as any).horario || (agendamentoSelecionado as any).hora || "00:00";
+                        const check = podeAlterarAgendamento(dataISO, horario, 2);
+                        if (!check.ok) {
+                          toast({
+                            title: "Prazo mínimo de 2h",
+                            description: "Reagendamentos só são permitidos com pelo menos 2 horas de antecedência.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        window.location.href = `/cliente/agendar?reagendar=${agendamentoSelecionado.id}`;
+                      }}
+                    >
+                      <CalendarCheck className="h-4 w-4 mr-2" />
+                      Reagendar
                     </Button>
                     <Button 
                       variant="destructive" 

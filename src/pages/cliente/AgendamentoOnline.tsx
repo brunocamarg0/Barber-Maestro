@@ -109,24 +109,6 @@ export default function AgendamentoOnline() {
         if (error) {
           console.warn("Erro ao carregar horários ocupados:", error.message);
           setHorariosOcupados([]);
-  // Carregar horários ocupados quando data mudar (via Supabase)
-  useEffect(() => {
-    const carregarHorariosOcupados = async () => {
-      if (!formData.barbeariaId || !formData.data) {
-        setHorariosOcupados([]);
-        return;
-      }
-
-      setLoadingHorarios(true);
-      try {
-        const { supabase } = await import("@/integrations/supabase/client");
-        const { data, error } = await supabase.rpc("get_horarios_ocupados", {
-          _barbearia_id: formData.barbeariaId,
-          _data: formData.data,
-        });
-        if (error) {
-          console.warn("Erro ao carregar horários ocupados:", error.message);
-          setHorariosOcupados([]);
         } else {
           setHorariosOcupados((data || []).map((r: any) => r.horario).filter(Boolean));
         }
@@ -157,6 +139,12 @@ export default function AgendamentoOnline() {
   const horariosDisponiveis = useMemo(() => {
     return todosHorarios.filter(horario => !horariosOcupados.includes(horario));
   }, [todosHorarios, horariosOcupados]);
+
+  const servicosDisponiveis = (barbearia?.servicos || []).filter((s: any) => s.ativo !== false);
+  const profissionaisDisponiveis = (barbearia?.profissionais || []).filter((p: any) => p.ativo !== false);
+  const servicoSelecionado = servicosDisponiveis.find((s: any) => s.id === formData.servicoId);
+  const profissionalSelecionado = profissionaisDisponiveis.find((p: any) => p.id === formData.profissionalId);
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
     if (!formData.servicoId || !formData.data || !formData.hora) {
@@ -862,9 +850,4 @@ export default function AgendamentoOnline() {
       )}
     </div>
   );
-}
-
-}
-}
-}
 }

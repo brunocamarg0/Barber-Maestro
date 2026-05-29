@@ -332,6 +332,40 @@ export default function AgendaInteligente() {
     }
   };
 
+  const handleConcluir = async (id: string) => {
+    setProcessingId(id);
+    try {
+      const ag = agendamentos.find((a) => a.id === id);
+      await atualizarAgendamento(id, { status: "concluido" });
+
+      // Notifica cliente para avaliar
+      if (ag?.clienteId && configuracao?.id) {
+        await supabase.from("notificacoes").insert({
+          tipo: "atendimento_concluido",
+          titulo: "Como foi seu atendimento?",
+          mensagem: `Seu atendimento de ${ag.servicoNome} com ${ag.profissionalNome} foi concluído. Avalie agora e ganhe pontos de fidelidade!`,
+          cliente_id: ag.clienteId,
+          barbearia_id: configuracao.id,
+          url_acao: `/cliente/avaliacoes?agendamento=${id}`,
+          label_acao: "Avaliar",
+        });
+      }
+
+      toast({
+        title: "Atendimento concluído!",
+        description: "O cliente foi notificado para avaliar o atendimento.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao concluir",
+        description: error.message || "Não foi possível concluir o atendimento.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const handleRecusar = async () => {
     if (!agendamentoParaRecusar) return;
 

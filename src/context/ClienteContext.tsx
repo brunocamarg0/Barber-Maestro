@@ -188,6 +188,36 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     progressoProximoNivel: ((concluidos % 5) / 5) * 100,
   };
 
+  // NOTIFICAÇÕES do cliente
+  const { data: notificacoesRaw } = useQuery({
+    queryKey: ["cliente", "notificacoes", cliente?.id],
+    enabled: !!cliente?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notificacoes")
+        .select("id, tipo, titulo, mensagem, lida, data, url_acao, label_acao")
+        .eq("cliente_id", cliente!.id)
+        .order("data", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const notificacoes = (notificacoesRaw || []).map((n: any) => ({
+    id: n.id,
+    titulo: n.titulo,
+    mensagem: n.mensagem,
+    lida: n.lida,
+    data: n.data,
+    tipo: n.tipo,
+    canal: "app",
+  }));
+
+  const marcarNotificacaoLida = async (id: string) => {
+    await supabase.from("notificacoes").update({ lida: true }).eq("id", id);
+    await queryClient.invalidateQueries({ queryKey: ["cliente", "notificacoes"] });
+  };
+
   const loading = authLoading || loadingCliente || loadingAgendamentos;
 
   const setCliente = (_c: Cliente | null) => {

@@ -50,7 +50,10 @@ interface ClienteContextType {
     data: string;
     tipo?: string;
     canal?: string;
+    url_acao?: string | null;
+    label_acao?: string | null;
   }>;
+
   barbearias: any[];
   buscarBarbearias: (busca?: string, cidade?: string, bairro?: string) => Promise<void>;
   buscarBarbeariaPorId: (id: string) => Promise<any>;
@@ -211,7 +214,10 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     data: n.data,
     tipo: n.tipo,
     canal: "app",
+    url_acao: n.url_acao,
+    label_acao: n.label_acao,
   }));
+
 
   const marcarNotificacaoLida = async (id: string) => {
     await supabase.from("notificacoes").update({ lida: true }).eq("id", id);

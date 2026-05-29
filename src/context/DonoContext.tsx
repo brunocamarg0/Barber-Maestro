@@ -686,6 +686,20 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     toast.success("Agendamento confirmado");
   };
   const recusarAgendamento = async (id: string, motivo?: string) => {
+    // No modo híbrido, recusa só é permitida em até 2h após confirmação automática
+    const ag = agendamentos.find((a) => a.id === id);
+    const modo = configuracao?.modoConfirmacao;
+    if (modo === "hibrido" && ag) {
+      const dbRow: any = (ag as any);
+      const confirmadoEm = dbRow.dataConfirmacaoAutomatica || dbRow.data_confirmacao_automatica || dbRow.createdAt || dbRow.created_at;
+      if (confirmadoEm) {
+        const diffH = (Date.now() - new Date(confirmadoEm).getTime()) / 3_600_000;
+        if (diffH > 2) {
+          toast.error("Prazo de 2h para recusar (modo híbrido) expirado.");
+          return;
+        }
+      }
+    }
     await atualizarAgendamento(id, { status: "recusado", observacao: motivo });
     toast.success("Agendamento recusado");
   };

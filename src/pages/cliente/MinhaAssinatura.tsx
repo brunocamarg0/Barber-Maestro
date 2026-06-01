@@ -30,8 +30,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiGet } from "@/services/api";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AssinaturaCliente {
   id: string;
@@ -73,6 +73,7 @@ export default function MinhaAssinatura() {
   const [pagamentos, setPagamentos] = useState<PagamentoAssinatura[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPagamentos, setLoadingPagamentos] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
 
   useEffect(() => {
     if (cliente?.id) {
@@ -85,25 +86,50 @@ export default function MinhaAssinatura() {
 
     setLoading(true);
     try {
-      // Tentar buscar assinatura do cliente
-      // Nota: Esta rota precisa ser criada no backend se não existir
-      const data = await apiGet<AssinaturaCliente>(`/cliente/assinatura`);
-      setAssinatura(data);
-      if (data?.id) {
-        await carregarPagamentos(data.id);
-      }
-    } catch (error: any) {
-      // Se retornar 404, o cliente não tem assinatura
-      if (error.status === 404) {
+      const { data, error } = await supabase
+        .from("assinaturas_cliente")
+        .select(
+          `id, status, data_inicio, data_vencimento, proximo_vencimento, pagamento_recorrente,
+           plano:planos_cliente!plano_id ( id, nome, descricao, valor, duracao_meses, beneficios ),
+           profissional:profissionais!profissional_id ( id, nome )`,
+        )
+        .eq("cliente_id", cliente.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
         setAssinatura(null);
       } else {
-        console.error("Erro ao carregar assinatura:", error);
-        toast({
-          title: "Erro",
-          description: "Erro ao carregar dados da assinatura",
-          variant: "destructive",
-        });
+        const a: AssinaturaCliente = {
+          id: data.id,
+          status: data.status,
+          dataInicio: data.data_inicio,
+          dataVencimento: data.data_vencimento,
+          proximoVencimento: data.proximo_vencimento,
+          pagamentoRecorrente: data.pagamento_recorrente,
+          plano: {
+            id: (data as any).plano?.id,
+            nome: (data as any).plano?.nome,
+            descricao: (data as any).plano?.descricao ?? undefined,
+            valor: Number((data as any).plano?.valor ?? 0),
+            duracaoMeses: (data as any).plano?.duracao_meses ?? 1,
+            beneficios: (data as any).plano?.beneficios ?? [],
+          },
+          profissional: (data as any).profissional
+            ? { id: (data as any).profissional.id, nome: (data as any).profissional.nome }
+            : undefined,
+        };
+        setAssinatura(a);
+        await carregarPagamentos(a.id);
       }
+    } catch (error: any) {
+      console.error("Erro ao carregar assinatura:", error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao carregar dados da assinatura",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -112,20 +138,55 @@ export default function MinhaAssinatura() {
   const carregarPagamentos = async (assinaturaId: string) => {
     setLoadingPagamentos(true);
     try {
-      const data = await apiGet<PagamentoAssinatura[]>(`/cliente/assinatura/pagamentos`);
-      setPagamentos(data);
+      const { data, error } = await supabase
+        .from("pagamentos_assinatura")
+        .select(
+          "id, valor, data_vencimento, data_pagamento, status, metodo_pagamento, link_pagamento, qr_code_pix",
+        )
+        .eq("assinatura_id", assinaturaId)
+        .order("data_vencimento", { ascending: false });
+
+      if (error) throw error;
+
+      setPagamentos(
+        (data ?? []).map((p: any) => ({
+          id: p.id,
+          valor: Number(p.valor ?? 0),
+          dataVencimento: p.data_vencimento,
+          dataPagamento: p.data_pagamento ?? undefined,
+          status: p.status,
+          metodoPagamento: p.metodo_pagamento ?? undefined,
+          linkPagamento: p.link_pagamento ?? undefined,
+          qrCodePix: p.qr_code_pix ?? undefined,
+        })),
+      );
     } catch (error: any) {
       console.error("Erro ao carregar pagamentos:", error);
-      // Não mostrar erro se não houver pagamentos ainda
-      if (error.status !== 404) {
-        toast({
-          title: "Erro",
-          description: "Erro ao carregar pagamentos",
-          variant: "destructive",
-        });
-      }
     } finally {
       setLoadingPagamentos(false);
+    }
+  };
+
+  const cancelarAssinatura = async () => {
+    if (!assinatura) return;
+    if (!confirm("Tem certeza que deseja cancelar sua assinatura?")) return;
+    setCancelando(true);
+    try {
+      const { error } = await supabase
+        .from("assinaturas_cliente")
+        .update({ status: "cancelada" })
+        .eq("id", assinatura.id);
+      if (error) throw error;
+      toast({ title: "Assinatura cancelada", description: "Você já pode contratar outro plano." });
+      await carregarAssinatura();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cancelar",
+        description: error.message || "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancelando(false);
     }
   };
 
@@ -143,6 +204,7 @@ export default function MinhaAssinatura() {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; icon: any }> = {
       ativa: { label: "Ativa", variant: "default", icon: CheckCircle },
+      pendente: { label: "Pendente", variant: "secondary", icon: Clock },
       suspensa: { label: "Suspensa", variant: "secondary", icon: Clock },
       cancelada: { label: "Cancelada", variant: "destructive", icon: XCircle },
       vencida: { label: "Vencida", variant: "destructive", icon: AlertCircle },
@@ -172,10 +234,13 @@ export default function MinhaAssinatura() {
           <CardContent className="pt-6">
             <div className="text-center py-12">
               <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-xl font-semibold mb-2">Você não possui uma assinatura ativa</h3>
+              <h3 className="text-xl font-semibold mb-2">Você não possui uma assinatura</h3>
               <p className="text-muted-foreground mb-6">
-                Entre em contato com sua barbearia para contratar um plano.
+                Veja os planos disponíveis nas barbearias e contrate o seu.
               </p>
+              <Button onClick={() => navigate("/cliente/planos-disponiveis")}>
+                Ver planos disponíveis
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -188,11 +253,22 @@ export default function MinhaAssinatura() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Minha Assinatura</h2>
-        <p className="text-muted-foreground">
-          Gerencie sua assinatura e acompanhe seus pagamentos
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Minha Assinatura</h2>
+          <p className="text-muted-foreground">
+            Gerencie sua assinatura e acompanhe seus pagamentos
+          </p>
+        </div>
+        {assinatura.status !== "cancelada" && (
+          <Button
+            variant="destructive"
+            onClick={cancelarAssinatura}
+            disabled={cancelando}
+          >
+            {cancelando ? "Cancelando..." : "Cancelar assinatura"}
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="info" className="w-full">
@@ -377,4 +453,3 @@ export default function MinhaAssinatura() {
     </div>
   );
 }
-

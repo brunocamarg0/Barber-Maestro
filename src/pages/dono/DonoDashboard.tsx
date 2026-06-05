@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useDono } from "@/context/DonoContext";
 import {
   Card,
@@ -16,13 +17,56 @@ import {
   AlertCircle,
   CreditCard,
   Loader2,
+  Check,
+  X,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DonoDashboard() {
-  const { kpi, agendamentos, notificacoes, loading } = useDono();
+  const { kpi, agendamentos, notificacoes, loading, confirmarAgendamento, recusarAgendamento, atualizarAgendamento } = useDono();
+  const { toast } = useToast();
+  const [acaoEmProgresso, setAcaoEmProgresso] = useState<string | null>(null);
+
+  const handleConfirmar = async (id: string) => {
+    setAcaoEmProgresso(id);
+    try {
+      await confirmarAgendamento(id);
+      toast({ title: "Agendamento confirmado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao confirmar", description: e.message, variant: "destructive" });
+    } finally {
+      setAcaoEmProgresso(null);
+    }
+  };
+
+  const handleRecusar = async (id: string) => {
+    setAcaoEmProgresso(id);
+    try {
+      await recusarAgendamento(id);
+      toast({ title: "Agendamento recusado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao recusar", description: e.message, variant: "destructive" });
+    } finally {
+      setAcaoEmProgresso(null);
+    }
+  };
+
+  const handleConcluir = async (id: string) => {
+    setAcaoEmProgresso(id);
+    try {
+      await atualizarAgendamento(id, { status: "concluido" });
+      toast({ title: "Atendimento concluído" });
+    } catch (e: any) {
+      toast({ title: "Erro ao concluir", description: e.message, variant: "destructive" });
+    } finally {
+      setAcaoEmProgresso(null);
+    }
+  };
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {

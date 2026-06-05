@@ -237,11 +237,24 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         .order("data", { ascending: false });
       const agendamentoIds = (ags.data ?? []).map((a: any) => a.id);
 
+      // IDs de clientes vinculados a esta barbearia (via agendamentos e vínculo com profissionais)
+      const clienteIdsAgs = (ags.data ?? [])
+        .map((a: any) => a.cliente_id)
+        .filter((v: any): v is string => !!v);
+      const cpRes = await supabase
+        .from("cliente_profissional")
+        .select("cliente_id, profissional:profissionais!inner(barbearia_id)")
+        .eq("profissional.barbearia_id", barbeariaId);
+      const clienteIdsCP = (cpRes.data ?? []).map((x: any) => x.cliente_id);
+      const clienteIdsBarbearia = Array.from(new Set([...clienteIdsAgs, ...clienteIdsCP]));
+
       const [barb, srv, profs, clis, pags, promos, avals, prods, notifs, agProfs, plCli, asCli, comms, asMine, fats] = await Promise.all([
         supabase.from("barbearias").select("*").eq("id", barbeariaId).maybeSingle(),
         supabase.from("servicos").select("*").eq("barbearia_id", barbeariaId).order("ordem", { ascending: true }),
         supabase.from("profissionais").select("*").eq("barbearia_id", barbeariaId).order("nome"),
-        supabase.from("clientes").select("*").order("nome"),
+        clienteIdsBarbearia.length
+          ? supabase.from("clientes").select("*").in("id", clienteIdsBarbearia).order("nome")
+          : Promise.resolve({ data: [] as any[] }),
         agendamentoIds.length
           ? supabase.from("pagamentos").select("*").in("agendamento_id", agendamentoIds)
           : Promise.resolve({ data: [] as any[] }),

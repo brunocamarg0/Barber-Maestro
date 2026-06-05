@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useDono } from "@/context/DonoContext";
 import {
   Card,
@@ -16,13 +17,56 @@ import {
   AlertCircle,
   CreditCard,
   Loader2,
+  Check,
+  X,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DonoDashboard() {
-  const { kpi, agendamentos, notificacoes, loading } = useDono();
+  const { kpi, agendamentos, notificacoes, loading, confirmarAgendamento, recusarAgendamento, atualizarAgendamento } = useDono();
+  const { toast } = useToast();
+  const [acaoEmProgresso, setAcaoEmProgresso] = useState<string | null>(null);
+
+  const handleConfirmar = async (id: string) => {
+    setAcaoEmProgresso(id);
+    try {
+      await confirmarAgendamento(id);
+      toast({ title: "Agendamento confirmado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao confirmar", description: e.message, variant: "destructive" });
+    } finally {
+      setAcaoEmProgresso(null);
+    }
+  };
+
+  const handleRecusar = async (id: string) => {
+    setAcaoEmProgresso(id);
+    try {
+      await recusarAgendamento(id);
+      toast({ title: "Agendamento recusado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao recusar", description: e.message, variant: "destructive" });
+    } finally {
+      setAcaoEmProgresso(null);
+    }
+  };
+
+  const handleConcluir = async (id: string) => {
+    setAcaoEmProgresso(id);
+    try {
+      await atualizarAgendamento(id, { status: "concluido" });
+      toast({ title: "Atendimento concluído" });
+    } catch (e: any) {
+      toast({ title: "Erro ao concluir", description: e.message, variant: "destructive" });
+    } finally {
+      setAcaoEmProgresso(null);
+    }
+  };
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -249,6 +293,72 @@ export default function DonoDashboard() {
         </Card>
       )}
 
+      {/* Confirmações Pendentes - parte superior */}
+      {(() => {
+        const pendentes = (agendamentos || [])
+          .filter((a) => a.status === "pendente")
+          .sort((a, b) => (a.data + (a.horario || "")).localeCompare(b.data + (b.horario || "")));
+        return (
+          <Card className="border-yellow-500/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                Confirmações Pendentes
+              </CardTitle>
+              <CardDescription>
+                {pendentes.length === 0
+                  ? "Nenhum agendamento aguardando confirmação"
+                  : `${pendentes.length} agendamento(s) aguardando confirmação`}
+              </CardDescription>
+            </CardHeader>
+            {pendentes.length > 0 && (
+              <CardContent>
+                <div className="space-y-2">
+                  {pendentes.slice(0, 8).map((a) => (
+                    <div
+                      key={a.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium">{a.clienteNome}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {a.servicoNome} • {a.profissionalNome} • {a.data} {a.horario}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{formatarMoeda(a.valor)}</span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRecusar(a.id)}
+                          disabled={acaoEmProgresso === a.id}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Recusar
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleConfirmar(a.id)}
+                          disabled={acaoEmProgresso === a.id}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Confirmar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {pendentes.length > 8 && (
+                    <Button asChild variant="ghost" className="w-full">
+                      <Link to="/dono/agenda">Ver todos os pendentes ({pendentes.length})</Link>
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        );
+      })()}
+
       {/* Agendamentos de Hoje */}
       <Card>
         <CardHeader>
@@ -267,9 +377,9 @@ export default function DonoDashboard() {
               agendamentosHoje.map((agendamento) => (
                 <div
                   key={agendamento.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg"
                 >
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium">{agendamento.clienteNome}</p>
                     <p className="text-sm text-muted-foreground">
                       {agendamento.servicoNome} • {agendamento.profissionalNome} • {agendamento.horario}
@@ -282,12 +392,24 @@ export default function DonoDashboard() {
                           ? "default"
                           : agendamento.status === "pendente"
                             ? "secondary"
-                            : "destructive"
+                            : agendamento.status === "concluido"
+                              ? "outline"
+                              : "destructive"
                       }
                     >
                       {agendamento.status}
                     </Badge>
                     <span className="font-medium">{formatarMoeda(agendamento.valor)}</span>
+                    {agendamento.status === "confirmado" && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleConcluir(agendamento.id)}
+                        disabled={acaoEmProgresso === agendamento.id}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        Concluir
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))

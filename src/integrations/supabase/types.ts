@@ -1725,9 +1725,7 @@ export type Database = {
           longitude: number
           modo_confirmacao: string
           nome: string
-          plano: string
           slug: string
-          status: string
           telefone: string
         }[]
       }
@@ -1743,9 +1741,7 @@ export type Database = {
           longitude: number
           modo_confirmacao: string
           nome: string
-          plano: string
           slug: string
-          status: string
           telefone: string
         }[]
       }
@@ -1816,9 +1812,7 @@ export type Database = {
           longitude: number
           modo_confirmacao: string
           nome: string
-          plano: string
           slug: string
-          status: string
           telefone: string
         }[]
       }

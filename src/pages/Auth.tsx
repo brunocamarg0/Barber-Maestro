@@ -38,7 +38,7 @@ export default function Auth() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast.error(traduzirErro(error.message) === "Invalid login credentials" ? "Email ou senha incorretos" : traduzirErro(error.message));
+      toast.error(traduzirErro(error.message));
       return;
     }
     toast.success("Bem-vindo de volta!");

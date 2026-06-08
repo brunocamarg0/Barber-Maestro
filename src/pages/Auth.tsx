@@ -57,7 +57,7 @@ export default function Auth() {
     });
     setLoading(false);
     if (error) {
-      toast.error(traduzirErro(error.message).includes("already") ? "Este email já está cadastrado" : traduzirErro(error.message));
+      toast.error(traduzirErro(error.message));
       return;
     }
     toast.success("Conta criada! Você já pode entrar.");

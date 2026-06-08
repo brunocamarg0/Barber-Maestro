@@ -111,7 +111,7 @@ export default function GestaoClientes() {
         }
       }, 300);
     } catch (error: any) {
-      toast.error(error.message || "Erro ao adicionar cliente");
+      toast.error(traduzirErro(error.message) || "Erro ao adicionar cliente");
     } finally {
       setSalvando(false);
     }
@@ -166,7 +166,7 @@ export default function GestaoClientes() {
         telefone: "",
       });
     } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar cliente");
+      toast.error(traduzirErro(error.message) || "Erro ao atualizar cliente");
     } finally {
       setSalvando(false);
     }
@@ -199,7 +199,7 @@ export default function GestaoClientes() {
       setProfissionalSelecionado("");
     } catch (error: any) {
       console.error("Erro ao atribuir cliente:", error);
-      toast.error(error.message || "Erro ao atribuir cliente ao profissional");
+      toast.error(traduzirErro(error.message) || "Erro ao atribuir cliente ao profissional");
     } finally {
       setAtribuindo(false);
     }
@@ -214,7 +214,7 @@ export default function GestaoClientes() {
     try {
       await removerCliente(id);
     } catch (error: any) {
-      toast.error(error.message || "Erro ao remover cliente");
+      toast.error(traduzirErro(error.message) || "Erro ao remover cliente");
     } finally {
       setExcluindo(null);
     }

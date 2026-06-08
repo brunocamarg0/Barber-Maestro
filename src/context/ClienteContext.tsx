@@ -243,7 +243,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     if (dados.email !== undefined) payload.email = dados.email;
     const { error } = await supabase.from("clientes").update(payload).eq("id", cliente.id);
     if (error) {
-      toast.error(error.message);
+      toast.error(traduzirErro(error.message));
       throw error;
     }
     await queryClient.invalidateQueries({ queryKey: ["cliente", "perfil"] });
@@ -291,7 +291,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       )
       .single();
     if (error) {
-      toast.error(error.message);
+      toast.error(traduzirErro(error.message));
       throw error;
     }
 
@@ -353,7 +353,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       .update({ status: "cancelado" })
       .eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(traduzirErro(error.message));
       throw error;
     }
 
@@ -399,7 +399,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       .select()
       .single();
     if (error) {
-      toast.error(error.message);
+      toast.error(traduzirErro(error.message));
       throw error;
     }
     await queryClient.invalidateQueries({ queryKey: ["cliente", "agendamentos"] });
@@ -417,7 +417,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   const atualizarStatusPagamento = async (id: string, status: StatusPagamento) => {
     const { error } = await supabase.from("pagamentos").update({ status }).eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(traduzirErro(error.message));
       throw error;
     }
     await queryClient.invalidateQueries({ queryKey: ["cliente", "agendamentos"] });
@@ -479,7 +479,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
       _bairro: bairro ?? null,
     });
     if (error) {
-      toast.error(error.message);
+      toast.error(traduzirErro(error.message));
       setBarbearias([]);
       return;
     }
@@ -490,7 +490,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
   const buscarBarbeariaPorId = async (id: string) => {
     const { data, error } = await supabase.rpc("get_barbearia_publica_by_id" as any, { _id: id });
     if (error) {
-      toast.error(error.message);
+      toast.error(traduzirErro(error.message));
       throw error;
     }
     const row = Array.isArray(data) ? (data as any[])[0] : data;

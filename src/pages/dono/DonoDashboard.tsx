@@ -38,7 +38,7 @@ export default function DonoDashboard() {
       await confirmarAgendamento(id);
       toast({ title: "Agendamento confirmado" });
     } catch (e: any) {
-      toast({ title: "Erro ao confirmar", description: e.message, variant: "destructive" });
+      toast({ title: "Erro ao confirmar", description: traduzirErro(e.message), variant: "destructive" });
     } finally {
       setAcaoEmProgresso(null);
     }
@@ -50,7 +50,7 @@ export default function DonoDashboard() {
       await recusarAgendamento(id);
       toast({ title: "Agendamento recusado" });
     } catch (e: any) {
-      toast({ title: "Erro ao recusar", description: e.message, variant: "destructive" });
+      toast({ title: "Erro ao recusar", description: traduzirErro(e.message), variant: "destructive" });
     } finally {
       setAcaoEmProgresso(null);
     }
@@ -62,7 +62,7 @@ export default function DonoDashboard() {
       await atualizarAgendamento(id, { status: "concluido" });
       toast({ title: "Atendimento concluído" });
     } catch (e: any) {
-      toast({ title: "Erro ao concluir", description: e.message, variant: "destructive" });
+      toast({ title: "Erro ao concluir", description: traduzirErro(e.message), variant: "destructive" });
     } finally {
       setAcaoEmProgresso(null);
     }

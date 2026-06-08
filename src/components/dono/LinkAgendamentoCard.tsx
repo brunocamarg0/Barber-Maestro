@@ -79,7 +79,7 @@ export default function LinkAgendamentoCard() {
       if ((error as any)?.code === "23505") {
         toast.error("Este link já está em uso. Escolha outro.");
       } else {
-        toast.error("Erro ao salvar link: " + (error?.message || "tente novamente"));
+        toast.error("Erro ao salvar link: " + (traduzirErro(error?.message) || "tente novamente"));
       }
     } finally {
       setSaving(false);

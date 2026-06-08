@@ -34,7 +34,7 @@ const EsqueciSenha = () => {
       setEmailEnviado(true);
     } catch (error: any) {
       console.error('[ESQUECI SENHA] erro:', error);
-      toast.error(error.message || 'Erro ao solicitar recuperação de senha.');
+      toast.error(traduzirErro(error.message) || 'Erro ao solicitar recuperação de senha.');
     } finally {
       setIsLoading(false);
     }

@@ -143,7 +143,7 @@ export default function FidelidadePromocoes() {
     try {
       await removerPromocao(id);
     } catch (error: any) {
-      toast.error(error.message || "Erro ao excluir promoção");
+      toast.error(traduzirErro(error.message) || "Erro ao excluir promoção");
     }
   };
 

@@ -37,7 +37,7 @@ export default function Auth() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast.error(error.message === "Invalid login credentials" ? "Email ou senha incorretos" : error.message);
+      toast.error(traduzirErro(error.message) === "Invalid login credentials" ? "Email ou senha incorretos" : traduzirErro(error.message));
       return;
     }
     toast.success("Bem-vindo de volta!");
@@ -56,7 +56,7 @@ export default function Auth() {
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message.includes("already") ? "Este email já está cadastrado" : error.message);
+      toast.error(traduzirErro(error.message).includes("already") ? "Este email já está cadastrado" : traduzirErro(error.message));
       return;
     }
     toast.success("Conta criada! Você já pode entrar.");
@@ -70,7 +70,7 @@ export default function Auth() {
     });
     if (error) {
       setLoading(false);
-      toast.error(error.message);
+      toast.error(traduzirErro(error.message));
     }
   };
 

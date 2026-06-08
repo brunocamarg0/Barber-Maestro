@@ -58,7 +58,7 @@ export default function LoginAdmin() {
       }, 500);
     } catch (error: any) {
       console.error('❌ [ADMIN LOGIN] Erro:', error);
-      toast.error(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      toast.error(traduzirErro(error.message) || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {
       setIsLoading(false);
     }

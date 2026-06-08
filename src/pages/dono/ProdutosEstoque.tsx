@@ -156,7 +156,7 @@ export default function ProdutosEstoque() {
     try {
       await removerProduto(id);
     } catch (error: any) {
-      toast.error(error.message || "Erro ao excluir produto");
+      toast.error(traduzirErro(error.message) || "Erro ao excluir produto");
     }
   };
 

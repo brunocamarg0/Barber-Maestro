@@ -83,7 +83,7 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
       setBarbearias(barbeariasConvertidas);
     } catch (err: any) {
       console.error('❌ [BARBEARIAS] Erro ao carregar:', err);
-      setError(err.message || 'Erro ao carregar barbearias');
+      setError(traduzirErro(err.message) || 'Erro ao carregar barbearias');
       // Não mostrar toast aqui para evitar spam
     } finally {
       setIsLoading(false);
@@ -128,7 +128,7 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
       console.error('❌ [BARBEARIAS] Erro ao criar:', err);
       toast({
         title: "Erro ao criar barbearia",
-        description: err.message,
+        description: traduzirErro(err.message),
         variant: "destructive",
       });
       throw err;
@@ -162,7 +162,7 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
       console.error('❌ [BARBEARIAS] Erro ao editar:', err);
       toast({
         title: "Erro ao atualizar barbearia",
-        description: err.message,
+        description: traduzirErro(err.message),
         variant: "destructive",
       });
       throw err;
@@ -187,7 +187,7 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
       console.error('❌ [BARBEARIAS] Erro ao alterar status:', err);
       toast({
         title: "Erro ao alterar status",
-        description: err.message,
+        description: traduzirErro(err.message),
         variant: "destructive",
       });
       throw err;
@@ -214,7 +214,7 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
       console.error('❌ [BARBEARIAS] Erro ao deletar:', err);
       toast({
         title: "Erro ao remover barbearia",
-        description: err.message,
+        description: traduzirErro(err.message),
         variant: "destructive",
       });
       throw err;

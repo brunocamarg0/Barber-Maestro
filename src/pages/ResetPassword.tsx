@@ -46,7 +46,7 @@ const ResetPassword = () => {
       await supabase.auth.signOut();
       navigate("/login");
     } catch (err: any) {
-      toast.error(err.message || "Erro ao redefinir senha.");
+      toast.error(traduzirErro(err.message) || "Erro ao redefinir senha.");
     } finally {
       setIsLoading(false);
     }

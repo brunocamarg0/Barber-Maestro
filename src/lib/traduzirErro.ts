@@ -17,6 +17,8 @@ const TRADUCOES: Array<{ match: RegExp | string; pt: string }> = [
   { match: /password.*too weak/i, pt: "A senha é muito fraca. Use letras, números e símbolos." },
   { match: /weak password/i, pt: "Senha muito fraca. Use letras, números e símbolos." },
   { match: /password.*pwned|leaked password|compromised password/i, pt: "Esta senha foi exposta em vazamentos. Escolha outra mais segura." },
+  { match: /password is known to be weak.*easy to guess.*choose a different/i, pt: "Esta senha é conhecida por ser fraca e fácil de adivinhar. Escolha uma diferente." },
+  { match: /known to be weak|easy to guess/i, pt: "Esta senha é fraca e fácil de adivinhar. Escolha uma mais segura." },
   { match: /same password|new password.*same/i, pt: "A nova senha deve ser diferente da anterior." },
   { match: /should be different from the old password/i, pt: "A nova senha deve ser diferente da anterior." },
   { match: /invalid email/i, pt: "Email inválido." },

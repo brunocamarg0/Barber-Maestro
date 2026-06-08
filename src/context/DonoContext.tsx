@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

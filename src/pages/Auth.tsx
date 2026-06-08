@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";

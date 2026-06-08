@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";

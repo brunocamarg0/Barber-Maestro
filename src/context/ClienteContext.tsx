@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 import {
   Agendamento,

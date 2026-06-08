@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { Barbearia, NovaBarbearia, StatusBarbearia, ServicoBarbearia, NovoServicoBarbearia } from "@/types/barbearia";
 import { 

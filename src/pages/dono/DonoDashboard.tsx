@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useState } from "react";
 import { useDono } from "@/context/DonoContext";
 import {

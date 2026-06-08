@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,7 @@ const EsqueciSenha = () => {
       setEmailEnviado(true);
     } catch (error: any) {
       console.error('[ESQUECI SENHA] erro:', error);
-      toast.error(error.message || 'Erro ao solicitar recuperação de senha.');
+      toast.error(traduzirErro(error.message) || 'Erro ao solicitar recuperação de senha.');
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useState } from "react";
 import { useDono } from "@/context/DonoContext";
 import { Button } from "@/components/ui/button";
@@ -143,7 +144,7 @@ export default function FidelidadePromocoes() {
     try {
       await removerPromocao(id);
     } catch (error: any) {
-      toast.error(error.message || "Erro ao excluir promoção");
+      toast.error(traduzirErro(error.message) || "Erro ao excluir promoção");
     }
   };
 

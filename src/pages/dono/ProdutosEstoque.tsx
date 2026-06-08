@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useState } from "react";
 import { useDono } from "@/context/DonoContext";
 import { Button } from "@/components/ui/button";
@@ -156,7 +157,7 @@ export default function ProdutosEstoque() {
     try {
       await removerProduto(id);
     } catch (error: any) {
-      toast.error(error.message || "Erro ao excluir produto");
+      toast.error(traduzirErro(error.message) || "Erro ao excluir produto");
     }
   };
 

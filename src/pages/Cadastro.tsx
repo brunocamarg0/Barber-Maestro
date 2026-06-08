@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -134,7 +135,7 @@ const Cadastro = () => {
         }
 
         if (error || (data as any)?.error) {
-          let friendly = serverMsg || error?.message || 'Erro ao realizar cadastro';
+          let friendly = serverMsg || traduzirErro(error?.message) || 'Erro ao realizar cadastro';
           if (/already|exists|registered|registrad/i.test(friendly)) {
             friendly = 'Este e-mail já está cadastrado. Tente fazer login.';
           }
@@ -181,9 +182,9 @@ const Cadastro = () => {
         });
 
         if (error) {
-          const msg = error.message?.toLowerCase().includes('already')
+          const msg = traduzirErro(error.message)?.toLowerCase().includes('already')
             ? 'Este email já está cadastrado.'
-            : error.message;
+            : traduzirErro(error.message);
           throw new Error(msg || 'Erro ao realizar cadastro');
         }
 
@@ -194,7 +195,7 @@ const Cadastro = () => {
       setTimeout(() => navigate(redirectPath), 800);
     } catch (error: any) {
       console.error('Erro ao realizar cadastro:', error);
-      toast.error(error.message || "Ocorreu um erro. Tente novamente.");
+      toast.error(traduzirErro(error.message) || "Ocorreu um erro. Tente novamente.");
     } finally {
       setIsLoading(false);
     }

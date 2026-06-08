@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ const ResetPassword = () => {
       await supabase.auth.signOut();
       navigate("/login");
     } catch (err: any) {
-      toast.error(err.message || "Erro ao redefinir senha.");
+      toast.error(traduzirErro(err.message) || "Erro ao redefinir senha.");
     } finally {
       setIsLoading(false);
     }

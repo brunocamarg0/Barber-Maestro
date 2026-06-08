@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,7 +78,7 @@ export default function MercadoPagoConnectCard({ barbeariaId }: Props) {
     if (error || !data?.url) {
       toast({
         title: "Erro ao iniciar conexão",
-        description: error?.message || "Tente novamente.",
+        description: traduzirErro(error?.message) || "Tente novamente.",
         variant: "destructive",
       });
       return;
@@ -94,7 +95,7 @@ export default function MercadoPagoConnectCard({ barbeariaId }: Props) {
     });
     setBusy(false);
     if (error) {
-      toast({ title: "Erro ao desconectar", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao desconectar", description: traduzirErro(error.message), variant: "destructive" });
       return;
     }
     toast({ title: "Conta desconectada" });

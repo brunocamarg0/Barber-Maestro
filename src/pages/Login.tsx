@@ -1,3 +1,4 @@
+import { traduzirErro } from "@/lib/traduzirErro";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,16 +88,16 @@ const Login = () => {
       });
 
       if (error || !data.user) {
-        throw new Error(error?.message === 'Invalid login credentials'
+        throw new Error(traduzirErro(error?.message) === 'Invalid login credentials'
           ? 'Email ou senha incorretos.'
-          : (error?.message || 'Erro ao fazer login.'));
+          : (traduzirErro(error?.message) || 'Erro ao fazer login.'));
       }
 
       shouldKeepLoading = true;
       setPendingLogin({ portal: currentTab, userId: data.user.id });
     } catch (err: any) {
       console.error('[LOGIN] erro:', err);
-      toast.error(err.message || 'Erro ao fazer login.');
+      toast.error(traduzirErro(err.message) || 'Erro ao fazer login.');
     } finally {
       if (!shouldKeepLoading) {
         setIsLoading(false);

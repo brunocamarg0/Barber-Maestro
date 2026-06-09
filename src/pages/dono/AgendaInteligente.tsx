@@ -816,25 +816,52 @@ export default function AgendaInteligente() {
                             <span className="font-medium">{formatarMoeda(agendamento.valor)}</span>
                           </div>
                         </div>
-                        <div className="mt-2 flex items-center justify-between">
+                        <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
                           <div className="text-sm text-muted-foreground">
                             Profissional: {agendamento.profissionalNome} • Duração: {agendamento.duracao}min
                           </div>
-                          {agendamento.status === "confirmado" && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleConcluir(agendamento.id)}
-                              disabled={processingId === agendamento.id}
-                            >
-                              {processingId === agendamento.id ? (
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                              ) : (
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                              )}
-                              Concluir atendimento
-                            </Button>
-                          )}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {agendamento.status === "pendente" && (
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => handleConfirmar(agendamento.id)}
+                                disabled={processingId === agendamento.id}
+                              >
+                                {processingId === agendamento.id ? (
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                ) : (
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                )}
+                                Confirmar
+                              </Button>
+                            )}
+                            {(agendamento.status === "pendente" || agendamento.status === "confirmado") && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => setAgendamentoParaRecusar({ id: agendamento.id, clienteNome: agendamento.clienteNome })}
+                                  disabled={!!processingId}
+                                >
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Recusar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => abrirEdicao(agendamento)}
+                                  disabled={!!processingId}
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Reagendar
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
+
 
                       </div>
                     ))}

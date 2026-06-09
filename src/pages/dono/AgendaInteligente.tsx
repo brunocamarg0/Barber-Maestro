@@ -41,7 +41,8 @@ import {
   XCircle,
   Filter,
   AlertCircle,
-  Loader2
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, addDays, subDays, startOfMonth, endOfMonth, eachWeekOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";

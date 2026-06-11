@@ -41,10 +41,14 @@ export function validarToken(token: string): boolean {
 
 /**
  * Obtém o secret JWT de forma centralizada
- * IMPORTANTE: Este secret deve ser o mesmo em todos os lugares
+ * IMPORTANTE: NUNCA usar fallback — exige JWT_SECRET configurado no ambiente
  */
 export function obterJWTSecret(): string {
-  return process.env.JWT_SECRET || 'fallback-secret';
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET não configurado ou muito curto (mínimo 32 caracteres). Configure a variável de ambiente.');
+  }
+  return secret;
 }
 
 /**

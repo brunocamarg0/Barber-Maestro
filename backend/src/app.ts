@@ -106,50 +106,29 @@ console.log('🔧 CORS - NODE_ENV:', process.env.NODE_ENV);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir requisições sem origin (mobile apps, Postman, etc)
-    if (!origin) {
-      console.log('🔧 CORS - Requisição sem origin, permitindo');
+    // Permitir requisições sem origin (mobile apps, curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    console.log('🔧 CORS - Origin recebida:', origin);
-
-    // Permitir origens específicas ou todas em desenvolvimento
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('🔧 CORS - Origin permitida (na lista)');
-      callback(null, true);
-    } else {
-      // Em produção, permitir apenas origens conhecidas
-      // Em desenvolvimento, permitir todas
-      if (process.env.NODE_ENV === 'production') {
-        // Permitir Vercel mesmo se não estiver na lista
-        if (origin.includes('vercel.app') || origin.includes('groom-guru-platform')) {
-          console.log('🔧 CORS - Origin permitida (Vercel/groom-guru-platform)');
-          callback(null, true);
-        } else {
-          console.log('🔧 CORS - Origin permitida (debug mode)');
-          callback(null, true); // Por enquanto permitir todas para debug
-        }
-      } else {
-        console.log('🔧 CORS - Origin permitida (desenvolvimento)');
-        callback(null, true);
+    // Em produção: allowlist estrita + subdomínios do projeto na Vercel
+    if (process.env.NODE_ENV === 'production') {
+      if (/^https:\/\/([a-z0-9-]+\.)?groom-guru-platform\.vercel\.app$/i.test(origin)) {
+        return callback(null, true);
       }
+      return callback(new Error('Origem não permitida pelo CORS'));
     }
+
+    // Desenvolvimento: liberar
+    return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
 }));
-
-// Tratar preflight requests (OPTIONS) explicitamente
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
-});
 
 // Aumentar limite do body parser para suportar imagens em base64
 app.use(express.json({ limit: '10mb' }));
@@ -175,19 +154,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Rota temporária para testar envio de emails
-app.use('/api/test-email', testEmailRoutes);
+// Rota de teste de email — APENAS em desenvolvimento (evita abuso de envio em produção)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/test-email', testEmailRoutes);
+}
 
 // Configuração de sessão para OAuth
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret || sessionSecret.length < 32) {
+  throw new Error('SESSION_SECRET não configurado ou muito curto (mínimo 32 caracteres).');
+}
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 horas
+      maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );

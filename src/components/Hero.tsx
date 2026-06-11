@@ -18,15 +18,15 @@ const Hero = () => {
       
       <div className="absolute inset-0 bg-gradient-dark opacity-80 z-10" />
       
-      <div className="container mx-auto px-4 py-32 relative z-20">
-        <div className="max-w-3xl mx-auto text-center space-y-8">
-          <h1 className="text-5xl md:text-7xl font-black text-foreground leading-tight uppercase">
+      <div className="container mx-auto px-4 py-24 sm:py-32 relative z-20">
+        <div className="max-w-3xl mx-auto text-center space-y-6 sm:space-y-8">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-foreground leading-tight uppercase">
             Sistema de gestão{" "}
             <span className="text-primary drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]">pro</span>{" "}
             para barbearias
           </h1>
           
-          <p className="text-xl md:text-2xl text-muted-foreground font-medium">
+          <p className="text-base sm:text-xl md:text-2xl text-muted-foreground font-medium">
             Agendamento online, controle financeiro e gestão completa. 
             Tudo que sua barbearia precisa em um só lugar.
           </p>

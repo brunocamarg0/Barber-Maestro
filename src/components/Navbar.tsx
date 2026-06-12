@@ -36,6 +36,9 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
+            <a href="#sobre" onClick={goToAnchor("sobre")} className="text-foreground hover:text-primary transition-colors font-bold uppercase text-sm cursor-pointer">
+              Sobre
+            </a>
             <a href="#funcionalidades" onClick={goToAnchor("funcionalidades")} className="text-foreground hover:text-primary transition-colors font-bold uppercase text-sm cursor-pointer">
               Funcionalidades
             </a>
@@ -69,6 +72,9 @@ const Navbar = () => {
 
         {open && (
           <div className="md:hidden mt-3 pb-2 flex flex-col gap-1 border-t border-border pt-3">
+            <a href="#sobre" onClick={goToAnchor("sobre")} className="px-2 py-2 text-foreground hover:text-primary font-bold uppercase text-sm">
+              Sobre
+            </a>
             <a href="#funcionalidades" onClick={goToAnchor("funcionalidades")} className="px-2 py-2 text-foreground hover:text-primary font-bold uppercase text-sm">
               Funcionalidades
             </a>

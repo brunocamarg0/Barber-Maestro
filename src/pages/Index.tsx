@@ -26,6 +26,7 @@ const Index = () => {
       </Helmet>
       <Navbar />
       <Hero />
+      <About />
       <Features />
       <Pricing />
       <Footer />

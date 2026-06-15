@@ -39,9 +39,8 @@ const Hero = () => {
               </Link>
             </Button>
             <Button
-              variant="secondary"
               size="lg"
-              className="px-10 py-7"
+              className="px-10 py-7 bg-secondary/30 text-secondary-foreground border border-secondary/50 hover:bg-secondary/40"
               onClick={() => {
                 const el = document.getElementById("planos");
                 if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });

@@ -50,16 +50,6 @@ const Hero = () => {
             </Button>
           </div>
           
-          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground pt-4">
-            <span className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-primary rounded-full"></span>
-              14 dias grátis
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-secondary rounded-full"></span>
-              Sem cartão
-            </span>
-          </div>
         </div>
       </div>
     </section>

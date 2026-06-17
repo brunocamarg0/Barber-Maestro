@@ -72,7 +72,8 @@ const Features = () => {
           </div>
 
           <div className="text-center mt-12">
-            <Button size="lg" className="bg-secondary/30 text-secondary-foreground border border-secondary/50 hover:bg-secondary/40" asChild>
+            <Button size="lg" className="bg-secondary/30 text-secondary-foreground border border-secondary/50 hover:bg-secondary/40 hover:shadow-accent" asChild>
+
               <Link to="/funcionalidades">
                 Ver Todas as Funcionalidades
               </Link>

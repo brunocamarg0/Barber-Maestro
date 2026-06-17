@@ -40,7 +40,8 @@ const Hero = () => {
             </Button>
             <Button
               size="lg"
-              className="px-10 py-7 bg-secondary/30 text-secondary-foreground border border-secondary/50 hover:bg-secondary/40"
+              className="px-10 py-7 bg-secondary/30 text-secondary-foreground border border-secondary/50 hover:bg-secondary/40 hover:shadow-accent"
+
               onClick={() => {
                 const el = document.getElementById("planos");
                 if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });

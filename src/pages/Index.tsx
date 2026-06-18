@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-body">
       <Helmet>
         <title>Barber Maestro - Sistema de Gestão para Barbearias</title>
         <meta

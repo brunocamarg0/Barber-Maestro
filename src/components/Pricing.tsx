@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, Sparkles, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const plans = [
@@ -36,7 +35,7 @@ const plans = [
   {
     name: "Enterprise",
     slug: "enterprise",
-    price: "Personalizado",
+    price: "Sob consulta",
     description: "Para redes de barbearias",
     features: [
       "Tudo do Profissional",
@@ -51,68 +50,96 @@ const plans = [
 
 const Pricing = () => {
   return (
-    <section id="planos" className="py-24 bg-secondary/30">
-      <div className="container mx-auto px-4">
-      <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-4xl md:text-5xl font-black text-foreground mb-4 uppercase">
-            Planos <span className="text-primary drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]">sem enrolação</span>
+    <section
+      id="planos"
+      className="relative py-24 lg:py-32 bg-[#0a0a0a] text-white font-body overflow-hidden border-b border-white/10"
+    >
+      {/* Glow vermelho central */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-[#dc2626]/15 blur-[140px] pointer-events-none" />
+
+      <div className="container relative mx-auto px-4">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="inline-flex items-center gap-2 border border-[#dc2626]/40 bg-[#dc2626]/10 px-3 py-1 mb-6 text-xs uppercase tracking-[0.2em] text-[#dc2626] font-semibold">
+            <Sparkles className="h-3 w-3" />
+            Planos
+          </div>
+          <h2 className="font-display text-5xl md:text-7xl lg:text-8xl uppercase leading-[0.9] tracking-tight mb-6">
+            Sem <span className="text-[#dc2626]">enrolação.</span>
           </h2>
-          <p className="text-xl text-muted-foreground font-medium">
-            Preço justo para o que você precisa
+          <p className="text-lg md:text-xl text-white/60">
+            Preço justo para o que você precisa.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-4 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
-            <Card
+            <div
               key={index}
-              className={`bg-card border-2 relative ${
+              className={`relative flex flex-col p-8 lg:p-10 bg-[#111] border transition-all duration-300 ${
                 plan.popular
-                  ? "border-primary shadow-primary scale-105"
-                  : "border-border hover:border-primary/50"
-              } transition-all duration-200`}
+                  ? "border-[#dc2626] shadow-[0_0_60px_rgba(220,38,38,0.25)] md:scale-[1.03]"
+                  : "border-white/10 hover:border-white/30"
+              }`}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-5 py-1.5 text-xs font-black uppercase tracking-wider">
-                  Top
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#dc2626] text-white px-5 py-1.5 text-xs font-bold uppercase tracking-[0.2em]">
+                  Mais Popular
                 </div>
               )}
-              <CardHeader className="text-center pb-8 pt-8">
-                <CardTitle className="text-2xl text-foreground mb-2 font-black uppercase">{plan.name}</CardTitle>
-                <CardDescription className="text-muted-foreground mb-4 font-medium">
-                  {plan.description}
-                </CardDescription>
-                <div className="text-5xl font-black text-primary">
-                  {plan.price}
-                  {plan.price !== "Personalizado" && (
-                    <span className="text-base text-muted-foreground font-bold">/mês</span>
-                  )}
+
+              <span className="absolute top-5 right-6 font-display text-2xl text-white/10">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+
+              <h3 className="font-display text-4xl uppercase tracking-wide mb-2">
+                {plan.name}
+              </h3>
+              <p className="text-white/50 text-sm mb-6">{plan.description}</p>
+
+              <div className="font-display text-6xl text-[#dc2626] leading-none mb-1">
+                {plan.price}
+              </div>
+              {plan.price !== "Sob consulta" && (
+                <div className="text-white/40 text-sm uppercase tracking-wider mb-8">
+                  por mês
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <ul className="space-y-3">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-primary shrink-0 mt-0.5 stroke-[3]" />
-                      <span className="text-foreground font-medium">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  variant={plan.popular ? "hero" : "outline"}
-                  className="w-full py-6"
-                  asChild
-                >
-                  {plan.price === "Personalizado" ? (
-                    <Link to="/login">Falar Agora</Link>
-                  ) : (
-                    <Link to={`/checkout-assinatura?plano=${plan.slug}`}>
-                      Assinar agora
-                    </Link>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
+              )}
+              {plan.price === "Sob consulta" && <div className="mb-8" />}
+
+              <div className="h-px bg-white/10 mb-6" />
+
+              <ul className="space-y-3 mb-8 flex-1">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 flex items-center justify-center bg-[#dc2626]/10 border border-[#dc2626]/30">
+                      <Check className="h-3 w-3 text-[#dc2626] stroke-[3]" />
+                    </div>
+                    <span className="text-white/80 text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button
+                asChild
+                className={`w-full py-6 uppercase tracking-wider text-sm font-semibold rounded-none transition-all ${
+                  plan.popular
+                    ? "bg-[#dc2626] hover:bg-[#b91c1c] text-white hover:shadow-[0_0_30px_rgba(220,38,38,0.5)]"
+                    : "bg-transparent border border-white/20 text-white hover:bg-white/5 hover:border-white/50"
+                }`}
+              >
+                {plan.price === "Sob consulta" ? (
+                  <Link to="/login">
+                    Falar Agora
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                ) : (
+                  <Link to={`/checkout-assinatura?plano=${plan.slug}`}>
+                    Assinar Agora
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                )}
+              </Button>
+            </div>
           ))}
         </div>
       </div>

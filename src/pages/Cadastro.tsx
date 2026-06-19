@@ -488,8 +488,7 @@ const Cadastro = () => {
                 <div className="pt-4">
                   <Button
                     type="submit"
-                    variant="hero"
-                    className="w-full"
+                    className="w-full h-12 rounded-none bg-[#dc2626] hover:bg-[#b91c1c] text-white font-display tracking-[0.2em] text-lg uppercase shadow-[0_0_30px_rgba(220,38,38,0.3)] hover:shadow-[0_0_40px_rgba(220,38,38,0.5)] transition-all disabled:opacity-50"
                     disabled={isLoading || !aceiteTermos}
                   >
                     {isLoading ? (
@@ -498,7 +497,7 @@ const Cadastro = () => {
                         Cadastrando...
                       </>
                     ) : (
-                      "CADASTRAR"
+                      "Cadastrar"
                     )}
                   </Button>
                 </div>

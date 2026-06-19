@@ -203,34 +203,49 @@ const Cadastro = () => {
 
 
   return (
-    <div className="min-h-screen bg-background flex flex-col" id="cadastro-page">
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col relative overflow-hidden" id="cadastro-page">
+      <div
+        className="absolute inset-0 opacity-[0.05] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[#dc2626]/15 blur-[160px] rounded-full pointer-events-none" />
+
       <Navbar />
-      
-      <div className="flex-1 flex items-center justify-center p-4 py-16">
+
+      <div className="flex-1 flex items-center justify-center p-4 py-16 relative z-10">
         <div className="w-full max-w-2xl mx-auto">
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
             <div className="flex justify-center mb-4">
-              <div className="bg-primary p-3">
-                <Scissors className="h-8 w-8 text-primary-foreground" />
+              <div className="bg-[#dc2626] p-3 shadow-[0_0_25px_rgba(220,38,38,0.45)]">
+                <Scissors className="h-7 w-7 text-white" />
               </div>
             </div>
-            <p className="text-muted-foreground">
-              {tipo === 'dono' 
-                ? 'Cadastre sua barbearia e comece a usar agora'
-                : 'Crie sua conta e agende seus serviços'}
+            <p className="text-xs uppercase tracking-[0.3em] text-white/40 font-body">
+              {tipo === 'dono'
+                ? 'Cadastre sua barbearia'
+                : 'Crie sua conta'}
             </p>
           </div>
 
-          <Card className="bg-card border-2 border-border">
-            <CardHeader className="text-center pb-6">
-              <CardTitle className="text-foreground font-black uppercase text-xl">
+          <div className="relative border border-white/10 bg-black/40 backdrop-blur-sm">
+            <div className="absolute -top-px -left-px w-4 h-4 border-t-2 border-l-2 border-[#dc2626] z-10" />
+            <div className="absolute -top-px -right-px w-4 h-4 border-t-2 border-r-2 border-[#dc2626] z-10" />
+            <div className="absolute -bottom-px -left-px w-4 h-4 border-b-2 border-l-2 border-[#dc2626] z-10" />
+            <div className="absolute -bottom-px -right-px w-4 h-4 border-b-2 border-r-2 border-[#dc2626] z-10" />
+
+            <div className="text-center pb-6 px-8 pt-8 border-b border-white/10">
+              <h2 className="text-3xl md:text-4xl font-display tracking-wide uppercase text-white">
                 {tipo === 'dono' ? 'Cadastro de Barbearia' : 'Cadastro de Cliente'}
-              </CardTitle>
-              <CardDescription className="text-muted-foreground font-medium">
+              </h2>
+              <p className="text-sm text-white/50 font-body mt-2">
                 Preencha os dados abaixo para criar sua conta
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
+              </p>
+            </div>
+            <div className="px-8 py-8">
               <form onSubmit={handleSubmit} className="space-y-5">
                 {tipo === 'dono' ? (
                   <>
@@ -473,8 +488,7 @@ const Cadastro = () => {
                 <div className="pt-4">
                   <Button
                     type="submit"
-                    variant="hero"
-                    className="w-full"
+                    className="w-full h-12 rounded-none bg-[#dc2626] hover:bg-[#b91c1c] text-white font-display tracking-[0.2em] text-lg uppercase shadow-[0_0_30px_rgba(220,38,38,0.3)] hover:shadow-[0_0_40px_rgba(220,38,38,0.5)] transition-all disabled:opacity-50"
                     disabled={isLoading || !aceiteTermos}
                   >
                     {isLoading ? (
@@ -483,20 +497,20 @@ const Cadastro = () => {
                         Cadastrando...
                       </>
                     ) : (
-                      "CADASTRAR"
+                      "Cadastrar"
                     )}
                   </Button>
                 </div>
 
-                <p className="text-center text-sm text-muted-foreground">
+                <p className="text-center text-xs uppercase tracking-[0.15em] text-white/40 font-body">
                   Já tem uma conta?{" "}
-                  <Link to="/login" className="text-primary hover:underline">
+                  <Link to="/login" className="text-[#dc2626] hover:text-white transition-colors">
                     Fazer login
                   </Link>
                 </p>
               </form>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
 

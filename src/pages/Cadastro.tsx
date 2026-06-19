@@ -503,15 +503,15 @@ const Cadastro = () => {
                   </Button>
                 </div>
 
-                <p className="text-center text-sm text-muted-foreground">
+                <p className="text-center text-xs uppercase tracking-[0.15em] text-white/40 font-body">
                   Já tem uma conta?{" "}
-                  <Link to="/login" className="text-primary hover:underline">
+                  <Link to="/login" className="text-[#dc2626] hover:text-white transition-colors">
                     Fazer login
                   </Link>
                 </p>
               </form>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
 

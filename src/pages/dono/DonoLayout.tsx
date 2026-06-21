@@ -101,7 +101,7 @@ function DonoLayoutContent() {
   ];
 
   return (
-    <div className="light bg-white min-h-screen light-theme-override" id="dono-panel">
+    <div className="min-h-screen font-body" id="dono-panel" style={{ backgroundColor: "#0a0a0a" }}>
       <SidebarProvider>
         <Sidebar className="bg-sidebar border-r border-sidebar-border">
           <SidebarHeader className="border-b border-sidebar-border bg-sidebar">

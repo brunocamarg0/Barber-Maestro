@@ -104,7 +104,7 @@ export default function ClienteLayout() {
   };
 
   return (
-    <div className="light bg-white min-h-screen" id="cliente-panel">
+    <div className="min-h-screen font-body" id="cliente-panel" style={{ backgroundColor: "#0a0a0a" }}>
       <SidebarProvider>
         <Sidebar className="bg-sidebar">
           <SidebarHeader className="border-b border-sidebar-border">

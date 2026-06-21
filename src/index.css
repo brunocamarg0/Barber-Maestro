@@ -291,3 +291,198 @@ All colors MUST be HSL.
 .cliente-dialog * {
   border-color: hsl(var(--border));
 }
+
+/* =========================================================================
+   Painel Monochrome Red — Dono & Cliente
+   Tema dark unificado com a landing (Bebas Neue + Barlow, red #dc2626).
+   Aplicado via wrapper #dono-panel e #cliente-panel.
+   ========================================================================= */
+#dono-panel,
+#cliente-panel {
+  --background: 0 0% 4%;
+  --foreground: 0 0% 98%;
+
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 98%;
+
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
+
+  --primary: 0 72% 51%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 0 0% 98%;
+
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 65%;
+
+  --accent: 0 72% 51%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 0 0% 14%;
+  --input: 0 0% 10%;
+  --ring: 0 72% 51%;
+
+  --sidebar-background: 0 0% 2%;
+  --sidebar-foreground: 0 0% 92%;
+  --sidebar-primary: 0 72% 51%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 72% 51% / 0.12;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 0 0% 12%;
+  --sidebar-ring: 0 72% 51%;
+
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  font-family: 'Barlow', system-ui, sans-serif;
+}
+
+/* Forçar legibilidade quando componentes usam classes hard-coded */
+#dono-panel .text-gray-900,
+#cliente-panel .text-gray-900,
+#dono-panel .text-foreground,
+#cliente-panel .text-foreground {
+  color: hsl(var(--foreground)) !important;
+}
+
+#dono-panel .bg-white,
+#cliente-panel .bg-white {
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Tipografia editorial nos títulos */
+#dono-panel h1,
+#dono-panel h2,
+#dono-panel h3,
+#cliente-panel h1,
+#cliente-panel h2,
+#cliente-panel h3,
+#dono-panel [data-slot="card-title"],
+#cliente-panel [data-slot="card-title"],
+#dono-panel .text-3xl,
+#cliente-panel .text-3xl,
+#dono-panel .text-2xl,
+#cliente-panel .text-2xl {
+  font-family: 'Bebas Neue', sans-serif !important;
+  letter-spacing: 0.04em;
+  font-weight: 400;
+}
+
+/* Cards com cantos retos e borda sutil red on hover */
+#dono-panel [data-slot="card"],
+#cliente-panel [data-slot="card"],
+#dono-panel .rounded-lg,
+#cliente-panel .rounded-lg {
+  border-radius: 2px !important;
+}
+
+#dono-panel [data-slot="card"],
+#cliente-panel [data-slot="card"] {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+#dono-panel [data-slot="card"]:hover,
+#cliente-panel [data-slot="card"]:hover {
+  border-color: hsl(0 72% 51% / 0.5);
+  box-shadow: 0 0 0 1px hsl(0 72% 51% / 0.15), 0 20px 40px -20px hsl(0 72% 51% / 0.25);
+}
+
+/* Header e sidebar do shell */
+#dono-panel header,
+#cliente-panel header {
+  background-color: hsl(var(--background)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+#dono-panel [data-sidebar="sidebar"],
+#cliente-panel [data-sidebar="sidebar"] {
+  background-color: hsl(var(--sidebar-background)) !important;
+  border-color: hsl(var(--sidebar-border)) !important;
+}
+
+#dono-panel [data-sidebar="menu-button"],
+#cliente-panel [data-sidebar="menu-button"] {
+  color: hsl(var(--sidebar-foreground)) !important;
+  border-radius: 2px !important;
+}
+
+#dono-panel [data-sidebar="menu-button"]:hover,
+#cliente-panel [data-sidebar="menu-button"]:hover {
+  background-color: hsl(0 72% 51% / 0.1) !important;
+  color: hsl(0 0% 100%) !important;
+}
+
+#dono-panel [data-sidebar="menu-button"][data-active="true"],
+#cliente-panel [data-sidebar="menu-button"][data-active="true"] {
+  background-color: hsl(0 72% 51% / 0.15) !important;
+  color: hsl(0 0% 100%) !important;
+  border-left: 2px solid hsl(0 72% 51%);
+}
+
+#dono-panel [data-sidebar="group-label"],
+#cliente-panel [data-sidebar="group-label"] {
+  color: hsl(0 0% 50%) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 0.7rem;
+  font-family: 'Bebas Neue', sans-serif;
+}
+
+/* Inputs */
+#dono-panel input,
+#dono-panel textarea,
+#dono-panel select,
+#cliente-panel input,
+#cliente-panel textarea,
+#cliente-panel select {
+  background-color: hsl(var(--input)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+  border-radius: 2px !important;
+}
+
+#dono-panel input:focus,
+#cliente-panel input:focus,
+#dono-panel textarea:focus,
+#cliente-panel textarea:focus {
+  border-color: hsl(0 72% 51%) !important;
+  box-shadow: 0 0 0 1px hsl(0 72% 51% / 0.3) !important;
+}
+
+/* Botões */
+#dono-panel button,
+#cliente-panel button {
+  border-radius: 2px !important;
+  letter-spacing: 0.02em;
+}
+
+/* Muted text */
+#dono-panel .text-muted-foreground,
+#cliente-panel .text-muted-foreground {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+/* Watermark de marca no shell (decorativo) */
+#dono-panel main::before,
+#cliente-panel .flex-1.flex-col::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(hsl(0 0% 100% / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(0 0% 100% / 0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#dono-panel main > *,
+#cliente-panel main > * {
+  position: relative;
+  z-index: 1;
+}

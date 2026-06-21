@@ -101,7 +101,7 @@ function DonoLayoutContent() {
   ];
 
   return (
-    <div className="light bg-white min-h-screen light-theme-override" id="dono-panel">
+    <div className="min-h-screen font-body" id="dono-panel" style={{ backgroundColor: "#0a0a0a" }}>
       <SidebarProvider>
         <Sidebar className="bg-sidebar border-r border-sidebar-border">
           <SidebarHeader className="border-b border-sidebar-border bg-sidebar">
@@ -168,13 +168,13 @@ function DonoLayoutContent() {
             </Button>
           </div>
         </Sidebar>
-        <SidebarInset className="bg-white">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border bg-white px-4">
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border px-4">
             <SidebarTrigger className="-ml-1 text-foreground" />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            <h1 className="text-lg font-semibold text-foreground">Área do Dono</h1>
+            <h1 className="text-lg font-display tracking-wider uppercase text-foreground">Área do Dono</h1>
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6 bg-white">
+          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
             <Outlet />
           </div>
         </SidebarInset>

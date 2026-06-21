@@ -104,7 +104,7 @@ export default function ClienteLayout() {
   };
 
   return (
-    <div className="light bg-white min-h-screen" id="cliente-panel">
+    <div className="min-h-screen font-body" id="cliente-panel" style={{ backgroundColor: "#0a0a0a" }}>
       <SidebarProvider>
         <Sidebar className="bg-sidebar">
           <SidebarHeader className="border-b border-sidebar-border">
@@ -162,13 +162,13 @@ export default function ClienteLayout() {
             </Button>
           </div>
         </Sidebar>
-        <SidebarInset className="bg-background">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border px-4 bg-background">
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            <h1 className="text-lg font-semibold text-foreground">Área do Cliente</h1>
+            <h1 className="text-lg font-display tracking-wider uppercase text-foreground">Área do Cliente</h1>
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6 bg-background min-h-screen">
+          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6 min-h-screen">
             <Outlet />
           </div>
         </SidebarInset>

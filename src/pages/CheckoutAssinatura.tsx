@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ShieldCheck, Loader2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Loader2, CheckCircle2, Scissors } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -112,120 +109,153 @@ export default function CheckoutAssinatura() {
 
   if (plano.valor === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container max-w-md mx-auto py-32 px-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Plano Enterprise</CardTitle>
-              <CardDescription>
-                Valor personalizado conforme a operação. Fale com nosso time comercial para fechar sua assinatura.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild className="w-full">
-                <Link to="/">Voltar ao início</Link>
-              </Button>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-[#0a0a0a] text-white font-body flex items-center justify-center px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[#dc2626]/20 blur-[140px]" />
+        <div className="relative max-w-md w-full border border-white/10 bg-black/40 backdrop-blur-sm p-8">
+          <h1 className="font-display text-4xl uppercase tracking-wider mb-3">Plano Enterprise</h1>
+          <p className="text-white/60 mb-6">
+            Valor personalizado conforme a operação. Fale com nosso time comercial para fechar sua assinatura.
+          </p>
+          <Button asChild className="w-full rounded-none bg-[#dc2626] hover:bg-[#b91c1c] uppercase tracking-wider">
+            <Link to="/">Voltar ao início</Link>
+          </Button>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="container max-w-3xl mx-auto py-24 px-4">
-        <Button variant="ghost" size="sm" asChild className="mb-6">
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-body relative overflow-hidden">
+      {/* Grid pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+      {/* Red glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[600px] w-[900px] rounded-full bg-[#dc2626]/15 blur-[160px] pointer-events-none" />
+
+      <div className="relative container max-w-5xl mx-auto py-16 px-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          asChild
+          className="mb-8 text-white/70 hover:text-white hover:bg-white/5 rounded-none uppercase tracking-wider text-xs"
+        >
           <Link to="/#planos">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar aos planos
           </Link>
         </Button>
 
-        <div className="grid md:grid-cols-5 gap-6">
-          <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle className="text-2xl font-black uppercase">
-                Finalizar assinatura – Plano {plano.nome}
-              </CardTitle>
-              <CardDescription>
-                Pagamento processado pelo <strong>Mercado Pago</strong> com PIX, cartão de crédito ou boleto.
-                Você só é cobrado após confirmar o pagamento.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="nome">Nome do responsável *</Label>
-                  <Input
-                    id="nome"
-                    type="text"
-                    placeholder="Ex: João da Silva"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail para recibo *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enviaremos o comprovante e instruções para este e-mail.
-                  </p>
-                </div>
-                <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    <>Ir para o pagamento seguro</>
-                  )}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Ambiente protegido pelo Mercado Pago. Sem fidelidade, cancele quando quiser.
-                </p>
-              </form>
-            </CardContent>
-          </Card>
+        <div className="flex items-center gap-3 mb-10">
+          <div className="h-10 w-10 bg-[#dc2626] flex items-center justify-center">
+            <Scissors className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-[0.25em] text-[#dc2626] font-semibold">Checkout</div>
+            <h1 className="font-display text-3xl md:text-4xl uppercase tracking-wider leading-none">
+              Finalizar assinatura
+            </h1>
+          </div>
+        </div>
 
-          <Card className="md:col-span-2 bg-card border-2 border-primary/30">
-            <CardHeader>
-              <CardTitle className="uppercase font-black">{plano.nome}</CardTitle>
-              <CardDescription>{plano.descricao}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="text-4xl font-black text-primary">
-                  R$ {plano.valor.toFixed(2).replace(".", ",")}
-                </div>
-                <div className="text-sm text-muted-foreground">por mês</div>
+        <div className="grid md:grid-cols-5 gap-6">
+          {/* Form */}
+          <div className="md:col-span-3 relative border border-white/10 bg-black/40 backdrop-blur-sm p-8">
+            {/* Corner accents */}
+            <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[#dc2626]" />
+            <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#dc2626]" />
+            <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#dc2626]" />
+            <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#dc2626]" />
+
+            <h2 className="font-display text-2xl uppercase tracking-wider mb-2">
+              Plano {plano.nome}
+            </h2>
+            <p className="text-white/60 text-sm mb-6">
+              Pagamento processado pelo <span className="text-white font-semibold">Mercado Pago</span> com PIX, cartão ou boleto. Você só é cobrado após confirmar.
+            </p>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="nome" className="text-xs uppercase tracking-wider text-white/70">
+                  Nome do responsável *
+                </Label>
+                <Input
+                  id="nome"
+                  type="text"
+                  placeholder="Ex: João da Silva"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  required
+                  className="rounded-none bg-white text-black border-white/10 focus-visible:ring-0 focus-visible:border-[#dc2626] h-11"
+                />
               </div>
-              <ul className="space-y-2 text-sm">
-                {plano.beneficios.map((b) => (
-                  <li key={b} className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs uppercase tracking-wider text-white/70">
+                  E-mail para recibo *
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="rounded-none bg-white text-black border-white/10 focus-visible:ring-0 focus-visible:border-[#dc2626] h-11"
+                />
+                <p className="text-xs text-white/40">
+                  Enviaremos o comprovante e instruções para este e-mail.
+                </p>
+              </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-none bg-[#dc2626] hover:bg-[#b91c1c] text-white uppercase tracking-wider font-semibold hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] transition-all"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>Ir para o pagamento seguro</>
+                )}
+              </Button>
+              <p className="text-xs text-center text-white/40 flex items-center justify-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-[#dc2626]" />
+                Protegido pelo Mercado Pago. Sem fidelidade, cancele quando quiser.
+              </p>
+            </form>
+          </div>
+
+          {/* Summary */}
+          <div className="md:col-span-2 relative border border-[#dc2626]/40 bg-[#111] p-8 shadow-[0_0_40px_rgba(220,38,38,0.15)]">
+            <div className="text-xs uppercase tracking-[0.25em] text-[#dc2626] font-semibold mb-2">
+              Resumo
+            </div>
+            <h3 className="font-display text-3xl uppercase tracking-wider mb-2">{plano.nome}</h3>
+            <p className="text-white/50 text-sm mb-6">{plano.descricao}</p>
+
+            <div className="h-px bg-white/10 mb-6" />
+
+            <div className="mb-6">
+              <div className="font-display text-5xl text-[#dc2626] leading-none">
+                R$ {plano.valor.toFixed(2).replace(".", ",")}
+              </div>
+              <div className="text-white/40 text-xs uppercase tracking-wider mt-1">por mês</div>
+            </div>
+
+            <ul className="space-y-3 text-sm">
+              {plano.beneficios.map((b) => (
+                <li key={b} className="flex items-start gap-2.5">
+                  <div className="flex-shrink-0 mt-0.5 h-4 w-4 flex items-center justify-center bg-[#dc2626]/10 border border-[#dc2626]/40">
+                    <CheckCircle2 className="h-3 w-3 text-[#dc2626]" />
+                  </div>
+                  <span className="text-white/80">{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

@@ -86,6 +86,7 @@ import PagamentoAssinaturaFalha from "./pages/PagamentoAssinaturaFalha";
 import LoginAdmin from "./pages/admin/LoginAdmin";
 import BarbeariaPublica from "./pages/public/BarbeariaPublica";
 import Unsubscribe from "./pages/Unsubscribe";
+import Trust from "./pages/Trust";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -156,6 +157,8 @@ const App = () => (
             <Route path="/ativar-conta" element={<AtivarConta />} />
             <Route path="/funcionalidades" element={<Funcionalidades />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/trust" element={<Trust />} />
+            <Route path="/seguranca" element={<Trust />} />
             <Route path="/admin/login" element={<LoginAdmin />} />
             <Route
               path="/super-admin"

@@ -40,11 +40,11 @@ import { StatusBarbearia } from "@/types/barbearia";
 import { useToast } from "@/hooks/use-toast";
 import { listarSolicitacoes, aprovarSolicitacao, rejeitarSolicitacao, SolicitacaoCadastro } from "@/services/adminApi";
 
-const statusConfig: Record<StatusBarbearia, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  ativa: { label: "Ativa", variant: "default" },
-  em_teste: { label: "Em Teste", variant: "secondary" },
-  bloqueada: { label: "Bloqueada", variant: "destructive" },
-  cancelada: { label: "Cancelada", variant: "outline" },
+const statusConfig: Record<StatusBarbearia, { label: string; className: string }> = {
+  ativa: { label: "Ativa", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  em_teste: { label: "Em Teste", className: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+  bloqueada: { label: "Bloqueada", className: "bg-[#dc2626]/15 text-[#ef4444] border-[#dc2626]/40" },
+  cancelada: { label: "Cancelada", className: "bg-white/5 text-white/60 border-white/20" },
 };
 
 const planoConfig: Record<string, string> = {

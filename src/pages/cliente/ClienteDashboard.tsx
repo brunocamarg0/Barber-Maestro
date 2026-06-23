@@ -1,13 +1,7 @@
 import { useCliente } from "@/context/ClienteContext";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,10 +16,10 @@ import {
   Gift,
   MapPin,
   Phone,
-  Mail,
   Search,
   RefreshCw,
   XCircle,
+  ArrowRight,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -33,23 +27,27 @@ import { useToast } from "@/hooks/use-toast";
 export default function ClienteDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { cliente, getProximoAgendamento, fidelidade, barbearias, cancelarAgendamento, carregarDados, loading, agendamentos } = useCliente();
+  const {
+    cliente,
+    getProximoAgendamento,
+    fidelidade,
+    barbearias,
+    cancelarAgendamento,
+    carregarDados,
+    loading,
+  } = useCliente();
   const primeiroNome = cliente?.nome?.trim()?.split(/\s+/)[0] || "Cliente";
 
-  // Carregar dados se ainda não foram carregados
   React.useEffect(() => {
-    if (!cliente && !loading && carregarDados) {
-      console.log('🔄 [DASHBOARD] Cliente não encontrado, carregando dados...');
-      carregarDados();
-    }
+    if (!cliente && !loading && carregarDados) carregarDados();
   }, [cliente, loading, carregarDados]);
 
   if (loading || !cliente || !getProximoAgendamento || !fidelidade) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando dados do cliente...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#dc2626] mx-auto mb-4" />
+          <p className="text-white/60">Carregando dados do cliente...</p>
         </div>
       </div>
     );
@@ -57,32 +55,21 @@ export default function ClienteDashboard() {
 
   const proximoAgendamento = getProximoAgendamento();
 
-  const formatarMoeda = (valor: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(valor);
-  };
+  const formatarMoeda = (valor: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor);
 
   const calcularTempoRestante = () => {
     if (!proximoAgendamento) return null;
-
     const dataAgendamento = new Date(
       `${proximoAgendamento.data}T${proximoAgendamento.horario || proximoAgendamento.hora}`
     );
     const agora = new Date();
-
     if (dataAgendamento < agora) return null;
-
     const diffMs = dataAgendamento.getTime() - agora.getTime();
     const horas = Math.floor(diffMs / (1000 * 60 * 60));
     const minutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (horas > 0) {
-      return `Faltam ${horas}h e ${minutos}min para seu corte`;
-    } else {
-      return `Faltam ${minutos}min para seu corte`;
-    }
+    if (horas > 0) return `Faltam ${horas}h e ${minutos}min para seu corte`;
+    return `Faltam ${minutos}min para seu corte`;
   };
 
   const formatarData = (data: string, horario: string) => {
@@ -90,12 +77,9 @@ export default function ClienteDashboard() {
       const date = new Date(`${data}T${horario}`);
       const meses = [
         "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-        "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+        "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
       ];
-      const dia = date.getDate();
-      const mes = meses[date.getMonth()];
-      const hora = horario;
-      return `${dia} de ${mes} às ${hora}`;
+      return `${date.getDate()} de ${meses[date.getMonth()]} às ${horario}`;
     } catch {
       return `${data} às ${horario}`;
     }
@@ -103,145 +87,176 @@ export default function ClienteDashboard() {
 
   const handleCancelarAgendamento = async () => {
     if (!proximoAgendamento) return;
-    
-    if (confirm("Tem certeza que deseja cancelar este agendamento?")) {
-      try {
-        await cancelarAgendamento(proximoAgendamento.id);
-        toast({
-          title: "Agendamento cancelado",
-          description: "Seu agendamento foi cancelado com sucesso.",
-        });
-        // Recarregar dados
-        if (carregarDados) {
-          await carregarDados();
-        }
-      } catch (error: any) {
-        toast({
-          title: "Erro",
-          description: error.message || "Não foi possível cancelar o agendamento.",
-          variant: "destructive",
-        });
-      }
+    if (!confirm("Tem certeza que deseja cancelar este agendamento?")) return;
+    try {
+      await cancelarAgendamento(proximoAgendamento.id);
+      toast({ title: "Agendamento cancelado", description: "Seu agendamento foi cancelado com sucesso." });
+      if (carregarDados) await carregarDados();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível cancelar o agendamento.",
+        variant: "destructive",
+      });
     }
   };
 
   const tempoRestante = calcularTempoRestante();
 
-  const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-    confirmado: { label: "Confirmado", variant: "default" },
-    aguardando_pagamento: { label: "Aguardando Pagamento", variant: "secondary" },
-    pendente: { label: "Pendente", variant: "secondary" },
-    concluido: { label: "Concluído", variant: "outline" },
-    cancelado: { label: "Cancelado", variant: "destructive" },
-    reagendado: { label: "Reagendado", variant: "secondary" },
+  const statusLabel: Record<string, string> = {
+    confirmado: "Confirmado",
+    aguardando_pagamento: "Aguardando Pagamento",
+    pendente: "Pendente",
+    concluido: "Concluído",
+    cancelado: "Cancelado",
+    reagendado: "Reagendado",
   };
 
-  const getStatusConfig = (status: string) => {
-    return statusConfig[status] || { label: status, variant: "default" as const };
-  };
+  const atalhos = [
+    { to: "/cliente/agendar", icon: Calendar, label: "Agendar", desc: "Marque seu próximo corte" },
+    { to: "/cliente/historico", icon: History, label: "Histórico", desc: "Agendamentos anteriores" },
+    { to: "/cliente/perfil", icon: UserCircle, label: "Meu Perfil", desc: "Dados pessoais" },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Olá, {primeiroNome}! 👋</h2>
-          <p className="text-muted-foreground">
-            Bem-vindo ao seu painel de agendamentos
-          </p>
+    <div className="space-y-8 text-white">
+      {/* Hero */}
+      <div className="relative rounded-sm border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#dc2626]/30 blur-[120px]" />
+        <div className="absolute top-0 left-0 h-1 w-24 bg-[#dc2626]" />
+        <div className="relative p-6 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-px w-6 bg-[#dc2626]" />
+              <span className="text-[10px] uppercase tracking-[0.3em] text-[#dc2626] font-bold">
+                Área do Cliente
+              </span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display tracking-[0.1em] uppercase">
+              Olá, {primeiroNome}
+            </h2>
+            <p className="text-white/60 text-sm mt-1">
+              Bem-vindo ao seu painel de agendamentos
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={async () => {
+              if (carregarDados) {
+                await carregarDados();
+                toast({ title: "Atualizado", description: "Dados sincronizados." });
+              }
+            }}
+            className="text-white/70 hover:text-white hover:bg-white/5 border border-white/10 rounded-sm uppercase tracking-wider text-xs font-bold"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={async () => {
-            if (carregarDados) {
-              await carregarDados();
-              toast({ title: "Atualizado", description: "Dados sincronizados." });
-            }
-          }}
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Atualizar
-        </Button>
       </div>
 
-      {/* Próximo Agendamento */}
+      {/* Próximo agendamento */}
       {proximoAgendamento ? (
-        <Card className="border-primary">
-          <CardHeader>
-            <div className="flex items-center justify-between">
+        <Card className="relative border-[#dc2626]/40 bg-black/40 backdrop-blur-sm rounded-sm overflow-hidden">
+          <div className="absolute top-0 left-0 h-full w-1 bg-[#dc2626]" />
+          <div className="p-6 space-y-5">
+            <div className="flex items-start justify-between flex-wrap gap-3">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Próximo Agendamento
-                </CardTitle>
+                <div className="flex items-center gap-2 text-[#dc2626] mb-1">
+                  <Calendar className="h-4 w-4" />
+                  <span className="text-[10px] uppercase tracking-[0.3em] font-bold">
+                    Próximo Agendamento
+                  </span>
+                </div>
                 {tempoRestante && (
-                  <CardDescription className="mt-2 text-primary font-medium">
-                    ⏰ {tempoRestante}
-                  </CardDescription>
+                  <p className="text-white/80 text-sm flex items-center gap-1 mt-1">
+                    <Clock className="h-3.5 w-3.5" /> {tempoRestante}
+                  </p>
                 )}
               </div>
-              <Badge variant={getStatusConfig(proximoAgendamento.status).variant}>
-                {getStatusConfig(proximoAgendamento.status).label}
+              <Badge className="bg-[#dc2626] text-white border-0 rounded-sm uppercase tracking-wider text-[10px]">
+                {statusLabel[proximoAgendamento.status] || proximoAgendamento.status}
               </Badge>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Data e Horário</p>
-                <p className="font-medium">
-                  {formatarData(proximoAgendamento.data, proximoAgendamento.horario || proximoAgendamento.hora)}
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1">
+                  Data
+                </p>
+                <p className="font-semibold">
+                  {formatarData(
+                    proximoAgendamento.data,
+                    proximoAgendamento.horario || proximoAgendamento.hora
+                  )}
                 </p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Profissional</p>
-                <p className="font-medium flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  {proximoAgendamento.profissionalNome || 'A definir'}
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1">
+                  Profissional
+                </p>
+                <p className="font-semibold flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-[#dc2626]" />
+                  {proximoAgendamento.profissionalNome || "A definir"}
                 </p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Serviço</p>
-                <p className="font-medium flex items-center gap-2">
-                  <Scissors className="h-4 w-4" />
-                  {proximoAgendamento.servicoNome || proximoAgendamento.servico?.nome || 'N/A'}
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1">
+                  Serviço
+                </p>
+                <p className="font-semibold flex items-center gap-1.5">
+                  <Scissors className="h-3.5 w-3.5 text-[#dc2626]" />
+                  {proximoAgendamento.servicoNome || proximoAgendamento.servico?.nome || "N/A"}
                 </p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Valor</p>
-                <p className="font-medium flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1">
+                  Valor
+                </p>
+                <p className="font-semibold flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5 text-[#dc2626]" />
                   {formatarMoeda(proximoAgendamento.valor || proximoAgendamento.servico?.preco || 0)}
                 </p>
               </div>
             </div>
-            <div className="flex gap-2 pt-4 border-t">
-              <Button variant="outline" asChild>
+
+            <div className="flex flex-wrap gap-2 pt-4 border-t border-white/10">
+              <Button
+                asChild
+                variant="ghost"
+                className="text-white hover:bg-white/5 border border-white/10 rounded-sm uppercase tracking-wider text-xs font-bold"
+              >
                 <Link to={`/cliente/agendar?reagendar=${proximoAgendamento.id}`}>
                   <CalendarCheck className="h-4 w-4 mr-2" />
                   Reagendar
                 </Link>
               </Button>
               <Button
-                variant="destructive"
                 onClick={handleCancelarAgendamento}
+                className="bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-sm uppercase tracking-wider text-xs font-bold"
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
             </div>
-          </CardContent>
+          </div>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Nenhum agendamento próximo</CardTitle>
-            <CardDescription>
-              Você não possui agendamentos confirmados no momento
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild>
+        <Card className="border-white/10 bg-black/40 backdrop-blur-sm rounded-sm">
+          <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h3 className="text-xl font-display uppercase tracking-[0.15em]">
+                Nenhum agendamento próximo
+              </h3>
+              <p className="text-white/60 text-sm mt-1">
+                Você não possui agendamentos confirmados no momento
+              </p>
+            </div>
+            <Button
+              asChild
+              className="bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-sm uppercase tracking-wider text-xs font-bold shadow-[0_0_20px_rgba(220,38,38,0.4)]"
+            >
               <Link to="/cliente/agendar">
                 <Calendar className="h-4 w-4 mr-2" />
                 Agendar Agora
@@ -251,126 +266,107 @@ export default function ClienteDashboard() {
         </Card>
       )}
 
-      {/* Atalhos Rápidos */}
+      {/* Atalhos */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link to="/cliente/agendar">
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Agendar Agora
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Agende seu próximo corte de forma rápida e fácil
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link to="/cliente/historico">
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5" />
-                Ver Histórico
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Veja todos os seus agendamentos anteriores
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link to="/cliente/perfil">
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCircle className="h-5 w-5" />
-                Meu Perfil
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Gerencie suas informações pessoais
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+        {atalhos.map((a) => (
+          <Link key={a.to} to={a.to} className="group">
+            <Card className="relative border-white/10 bg-black/40 backdrop-blur-sm rounded-sm overflow-hidden h-full hover:border-[#dc2626]/50 transition-colors">
+              <div className="absolute top-0 left-0 h-1 w-12 bg-[#dc2626] group-hover:w-full transition-all duration-500" />
+              <CardContent className="p-5 flex items-start gap-4">
+                <div className="bg-[#dc2626]/10 border border-[#dc2626]/30 p-3 rounded-sm">
+                  <a.icon className="h-5 w-5 text-[#dc2626]" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-display uppercase tracking-[0.15em] text-sm">{a.label}</p>
+                  <p className="text-xs text-white/60 mt-1">{a.desc}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-white/30 group-hover:text-[#dc2626] group-hover:translate-x-1 transition-all" />
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
 
-      {/* Fidelidade */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Gift className="h-5 w-5" />
-            Programa de Fidelidade
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold">{fidelidade.pontos} pontos</p>
-              <p className="text-sm text-muted-foreground">
-                {fidelidade.cortesRealizados} cortes realizados • Nível {fidelidade.nivel}
-              </p>
+      {/* Fidelidade + Créditos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="relative border-white/10 bg-black/40 backdrop-blur-sm rounded-sm overflow-hidden">
+          <div className="absolute top-0 left-0 h-1 w-12 bg-[#dc2626]" />
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Gift className="h-4 w-4 text-[#dc2626]" />
+              <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#dc2626]">
+                Fidelidade
+              </span>
             </div>
-            <div className="text-right">
-              <p className="text-sm font-medium">
-                Faltam {fidelidade.proximoDesconto?.cortesNecessarios || 5} cortes
-              </p>
-              <p className="text-xs text-muted-foreground">
-                para ganhar {fidelidade.proximoDesconto?.desconto || 5}% de desconto
-              </p>
+            <div className="flex items-end justify-between flex-wrap gap-3">
+              <div>
+                <p className="text-4xl font-display tracking-wider">{fidelidade.pontos}</p>
+                <p className="text-xs text-white/60 uppercase tracking-wider mt-1">
+                  pontos • {fidelidade.cortesRealizados} cortes • Nível {fidelidade.nivel}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-semibold">
+                  Faltam {fidelidade.proximoDesconto?.cortesNecessarios || 5} cortes
+                </p>
+                <p className="text-xs text-white/50">
+                  para {fidelidade.proximoDesconto?.desconto || 5}% de desconto
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Créditos */}
-      {((cliente as any).creditos || 0) > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Créditos Disponíveis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-primary">
-              {formatarMoeda((cliente as any).creditos || 0)}
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Use seus créditos no próximo pagamento
-            </p>
           </CardContent>
         </Card>
-      )}
 
-      {/* Barbearias Disponíveis */}
+        {((cliente as any).creditos || 0) > 0 && (
+          <Card className="relative border-white/10 bg-black/40 backdrop-blur-sm rounded-sm overflow-hidden">
+            <div className="absolute top-0 left-0 h-1 w-12 bg-[#dc2626]" />
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <DollarSign className="h-4 w-4 text-[#dc2626]" />
+                <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#dc2626]">
+                  Créditos
+                </span>
+              </div>
+              <p className="text-4xl font-display tracking-wider">
+                {formatarMoeda((cliente as any).creditos || 0)}
+              </p>
+              <p className="text-xs text-white/60 mt-2">Use seus créditos no próximo pagamento</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Barbearias */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Barbearias Disponíveis</h2>
-            <p className="text-muted-foreground">
-              Escolha uma barbearia para agendar seu serviço
-            </p>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-px w-6 bg-[#dc2626]" />
+              <span className="text-[10px] uppercase tracking-[0.3em] text-[#dc2626] font-bold">
+                Para você
+              </span>
+            </div>
+            <h2 className="text-2xl font-display tracking-[0.15em] uppercase">
+              Barbearias Disponíveis
+            </h2>
           </div>
-          <Button variant="outline" onClick={() => navigate('/cliente/agendar')}>
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/cliente/agendar")}
+            className="text-white/70 hover:text-white hover:bg-white/5 border border-white/10 rounded-sm uppercase tracking-wider text-xs font-bold"
+          >
             <Search className="h-4 w-4 mr-2" />
             Buscar Mais
           </Button>
         </div>
 
         {barbearias.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground">
-                Nenhuma barbearia disponível no momento.
-              </p>
-              <Button 
-                className="mt-4" 
-                onClick={() => navigate('/cliente/agendar')}
+          <Card className="border-white/10 bg-black/40 backdrop-blur-sm rounded-sm">
+            <CardContent className="py-10 text-center">
+              <p className="text-white/60">Nenhuma barbearia disponível no momento.</p>
+              <Button
+                className="mt-4 bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-sm uppercase tracking-wider text-xs font-bold"
+                onClick={() => navigate("/cliente/agendar")}
               >
                 Buscar Barbearias
               </Button>
@@ -379,112 +375,100 @@ export default function ClienteDashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {barbearias
-              .filter((barbearia: any) => barbearia && barbearia.id && barbearia.nome)
+              .filter((b: any) => b && b.id && b.nome)
               .slice(0, 6)
-              .map((barbearia: any) => {
-                const nomeBarbearia = barbearia.nome || 'Barbearia sem nome';
-                const inicial = nomeBarbearia.charAt(0).toUpperCase();
+              .map((b: any) => {
+                const nome = b.nome || "Barbearia sem nome";
+                const inicial = nome.charAt(0).toUpperCase();
                 return (
                   <Card
-                    key={barbearia.id}
-                    className="cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => navigate(`/cliente/agendar?barbearia=${barbearia.id}`)}
+                    key={b.id}
+                    onClick={() => navigate(`/cliente/agendar?barbearia=${b.id}`)}
+                    className="group relative cursor-pointer border-white/10 bg-black/40 backdrop-blur-sm rounded-sm overflow-hidden hover:border-[#dc2626]/50 transition-colors"
                   >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          {barbearia.foto ? (
-                            <Avatar className="h-12 w-12 border-2 border-primary/20">
-                              <AvatarImage src={barbearia.foto} alt={nomeBarbearia} />
-                              <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                                {inicial}
-                              </AvatarFallback>
-                            </Avatar>
-                          ) : (
-                            <div className="bg-primary p-2 rounded-full">
-                              <Scissors className="h-5 w-5 text-primary-foreground" />
-                            </div>
+                    <div className="absolute top-0 left-0 h-1 w-12 bg-[#dc2626] group-hover:w-full transition-all duration-500" />
+                    <CardContent className="p-5 space-y-4">
+                      <div className="flex items-center gap-3">
+                        {b.foto ? (
+                          <Avatar className="h-12 w-12 border border-[#dc2626]/30 rounded-sm">
+                            <AvatarImage src={b.foto} alt={nome} />
+                            <AvatarFallback className="bg-[#dc2626]/20 text-[#dc2626] font-bold rounded-sm">
+                              {inicial}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <div className="bg-[#dc2626] p-2.5 rounded-sm">
+                            <Scissors className="h-5 w-5 text-white" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-display uppercase tracking-[0.1em] text-base truncate">
+                            {nome}
+                          </p>
+                          {(b?.endereco || b?.cidade || b?.bairro) && (
+                            <p className="text-xs text-white/60 flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3" />
+                              <span className="truncate">
+                                {[b?.endereco, b?.bairro, b?.cidade].filter(Boolean).join(", ")}
+                              </span>
+                            </p>
                           )}
-                          <div className="flex-1">
-                            <CardTitle className="text-lg">{nomeBarbearia}</CardTitle>
-                        {(barbearia?.endereco || barbearia?.cidade || barbearia?.bairro) && (
-                          <CardDescription className="flex items-center gap-1 mt-1">
-                            <MapPin className="h-3 w-3" />
-                            {[
-                              barbearia?.endereco,
-                              barbearia?.bairro,
-                              barbearia?.cidade
-                            ].filter(Boolean).join(', ')}
-                          </CardDescription>
+                        </div>
+                      </div>
+
+                      {b?.telefone && (
+                        <div className="flex items-center gap-2 text-xs text-white/60">
+                          <Phone className="h-3 w-3" />
+                          {b.telefone}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4 text-xs text-white/50">
+                        {b?.totalServicos > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Scissors className="h-3 w-3" />
+                            {b.totalServicos} serviços
+                          </span>
+                        )}
+                        {b?.profissionais?.length > 0 && (
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {b.profissionais.length} profissionais
+                          </span>
                         )}
                       </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {/* Informações de contato */}
-                  <div className="space-y-1 text-sm">
-                    {barbearia?.telefone && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-3 w-3" />
-                        {barbearia.telefone}
-                      </div>
-                    )}
-                    {barbearia?.email && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Mail className="h-3 w-3" />
-                        {barbearia.email}
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Estatísticas */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {barbearia?.totalServicos && barbearia.totalServicos > 0 && (
-                      <div className="flex items-center gap-1">
-                        <Scissors className="h-3 w-3" />
-                        {barbearia.totalServicos} serviços
-                      </div>
-                    )}
-                    {barbearia?.profissionais && barbearia.profissionais.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {barbearia.profissionais.length} profissionais
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Serviços disponíveis (primeiros 2) */}
-                  {barbearia?.servicos && barbearia.servicos.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Serviços:
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {barbearia.servicos
-                          .filter((s: any) => s && s.id && s.nome)
-                          .slice(0, 2)
-                          .map((servico: any) => (
-                            <Badge key={servico.id} variant="secondary" className="text-xs">
-                              {servico.nome || 'Serviço sem nome'}
+                      {b?.servicos?.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {b.servicos
+                            .filter((s: any) => s && s.id && s.nome)
+                            .slice(0, 2)
+                            .map((s: any) => (
+                              <Badge
+                                key={s.id}
+                                variant="outline"
+                                className="text-[10px] border-white/20 text-white/70 rounded-sm uppercase tracking-wider"
+                              >
+                                {s.nome}
+                              </Badge>
+                            ))}
+                          {b.servicos.length > 2 && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] border-[#dc2626]/40 text-[#ef4444] rounded-sm"
+                            >
+                              +{b.servicos.length - 2}
                             </Badge>
-                          ))}
-                        {barbearia.servicos.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{barbearia.servicos.length - 2} mais
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                          )}
+                        </div>
+                      )}
 
-                  {/* Botão de ação */}
-                  <Button className="w-full mt-4" variant="default">
-                    <CalendarCheck className="h-4 w-4 mr-2" />
-                    Agendar Agora
-                  </Button>
-                </CardContent>
-              </Card>
+                      <Button className="w-full bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-sm uppercase tracking-wider text-xs font-bold">
+                        <CalendarCheck className="h-4 w-4 mr-2" />
+                        Agendar Agora
+                      </Button>
+                    </CardContent>
+                  </Card>
                 );
               })}
           </div>
@@ -492,7 +476,11 @@ export default function ClienteDashboard() {
 
         {barbearias.length > 6 && (
           <div className="mt-4 text-center">
-            <Button variant="outline" onClick={() => navigate('/cliente/agendar')}>
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/cliente/agendar")}
+              className="text-white/70 hover:text-white hover:bg-white/5 border border-white/10 rounded-sm uppercase tracking-wider text-xs font-bold"
+            >
               Ver Todas as {barbearias.length} Barbearias
             </Button>
           </div>

@@ -8,89 +8,91 @@ import { Scissors, Shield, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://groom-guru-platform-production.up.railway.app/api';
+const API_URL = import.meta.env.VITE_API_URL || "https://groom-guru-platform-production.up.railway.app/api";
 
 export default function LoginAdmin() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    senha: "",
-  });
+  const [formData, setFormData] = useState({ email: "", senha: "" });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      console.log('🔐 [ADMIN LOGIN] Iniciando login admin...');
-      
       const response = await fetch(`${API_URL}/auth/admin/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Erro ao fazer login");
+      if (!data.token) throw new Error("Token não recebido do servidor");
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao fazer login');
-      }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userType", "admin");
+      if (data.usuario) localStorage.setItem("user", JSON.stringify(data.usuario));
 
-      if (!data.token) {
-        throw new Error('Token não recebido do servidor');
-      }
-
-      // Salvar token e dados
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('userType', 'admin');
-      if (data.usuario) {
-        localStorage.setItem('user', JSON.stringify(data.usuario));
-      }
-
-      console.log('✅ [ADMIN LOGIN] Login realizado com sucesso');
-      toast.success('Login admin realizado com sucesso!');
-      
-      // Navegar para o painel admin
-      setTimeout(() => {
-        navigate('/admin', { replace: true });
-      }, 500);
+      toast.success("Login admin realizado com sucesso!");
+      setTimeout(() => navigate("/admin", { replace: true }), 500);
     } catch (error: any) {
-      console.error('❌ [ADMIN LOGIN] Erro:', error);
-      toast.error(traduzirErro(error.message) || 'Erro ao fazer login. Verifique suas credenciais.');
+      toast.error(traduzirErro(error.message) || "Erro ao fazer login. Verifique suas credenciais.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-3 mb-4">
-            <div className="bg-primary p-3">
-              <Scissors className="h-8 w-8 text-primary-foreground" />
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden" style={{ backgroundColor: "#0a0a0a" }}>
+      {/* Grid pattern */}
+      <div
+        className="absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }}
+      />
+      {/* Red glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[520px] w-[520px] rounded-full bg-[#dc2626]/20 blur-[140px]" />
+
+      <div className="relative w-full max-w-md">
+        {/* Corner accents */}
+        <div className="absolute -top-2 -left-2 h-6 w-6 border-t-2 border-l-2 border-[#dc2626]" />
+        <div className="absolute -top-2 -right-2 h-6 w-6 border-t-2 border-r-2 border-[#dc2626]" />
+        <div className="absolute -bottom-2 -left-2 h-6 w-6 border-b-2 border-l-2 border-[#dc2626]" />
+        <div className="absolute -bottom-2 -right-2 h-6 w-6 border-b-2 border-r-2 border-[#dc2626]" />
+
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-flex items-center gap-3">
+            <div className="bg-[#dc2626] p-2 rounded-sm shadow-[0_0_24px_rgba(220,38,38,0.5)]">
+              <Scissors className="h-6 w-6 text-white" />
             </div>
-            <span className="text-3xl font-black text-foreground uppercase tracking-tight">Barber Maestro</span>
+            <span className="text-2xl font-display tracking-[0.2em] text-white uppercase">
+              Barber Maestro
+            </span>
           </Link>
         </div>
 
-        <Card className="bg-card border-2 border-border">
-          <CardHeader>
+        <Card className="border-white/10 bg-black/40 backdrop-blur-sm rounded-sm">
+          <CardHeader className="space-y-3">
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              <CardTitle className="text-foreground font-black uppercase text-xl">Acesso Administrativo</CardTitle>
+              <Shield className="h-5 w-5 text-[#dc2626]" />
+              <CardTitle className="text-white font-display uppercase tracking-[0.15em] text-xl">
+                Acesso Administrativo
+              </CardTitle>
             </div>
-            <CardDescription className="text-muted-foreground font-medium">
+            <CardDescription className="text-white/60">
               Área restrita para administradores do sistema
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="admin-email">Email</Label>
+                <Label htmlFor="admin-email" className="text-white/80 uppercase text-xs tracking-wider font-bold">
+                  Email
+                </Label>
                 <Input
                   id="admin-email"
                   type="email"
@@ -99,10 +101,13 @@ export default function LoginAdmin() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                   autoComplete="email"
+                  className="bg-white text-black border-white/20 focus:border-[#dc2626] focus:ring-[#dc2626] rounded-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="admin-password">Senha</Label>
+                <Label htmlFor="admin-password" className="text-white/80 uppercase text-xs tracking-wider font-bold">
+                  Senha
+                </Label>
                 <Input
                   id="admin-password"
                   type="password"
@@ -111,12 +116,12 @@ export default function LoginAdmin() {
                   onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
                   required
                   autoComplete="current-password"
+                  className="bg-white text-black border-white/20 focus:border-[#dc2626] focus:ring-[#dc2626] rounded-sm"
                 />
               </div>
               <Button
                 type="submit"
-                variant="hero"
-                className="w-full"
+                className="w-full bg-[#dc2626] hover:bg-[#b91c1c] text-white font-display tracking-[0.15em] uppercase rounded-sm shadow-[0_0_20px_rgba(220,38,38,0.4)]"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -128,8 +133,8 @@ export default function LoginAdmin() {
                   "Entrar como Administrador"
                 )}
               </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                <Link to="/login" className="text-primary hover:underline">
+              <p className="text-center text-sm text-white/60">
+                <Link to="/login" className="text-[#dc2626] hover:text-[#ef4444] underline-offset-4 hover:underline transition-colors">
                   Voltar para login normal
                 </Link>
               </p>

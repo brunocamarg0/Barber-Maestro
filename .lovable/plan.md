@@ -1,68 +1,83 @@
+# Migração Painel Admin (dark monochrome red) + Cliente Dashboard
 
-# Painel do Cliente — Plano de Correções
-
-Vou agrupar tudo em 4 frentes para conseguir entregar de forma organizada (e reversível, se algo não agradar).
-
----
-
-## Frente 1 — Tema claro (textos transparentes em TODO o painel)
-
-**Causa raiz:** o `ClienteLayout` força `className="light bg-white"`, mas as páginas internas usam tokens (`text-foreground`, `text-muted-foreground`, títulos sem cor explícita) que herdam o tema escuro global do app. Por isso quase tudo aparece "transparente/claro demais".
-
-**O que farei:**
-- Definir um escopo CSS isolado em `index.css` para `#cliente-panel` que sobrescreve as variáveis HSL (`--background`, `--foreground`, `--card`, `--muted-foreground`, `--border`, `--sidebar-*`) com paleta clara consistente.
-- Remover as gambiarras `text-gray-900 dark:text-gray-100` espalhadas no `ClienteLayout` (vão deixar de ser necessárias).
-- Garantir contraste correto nos títulos: "Olá, fulano", "Histórico de Agendamentos", "Pagamento", "Avaliar Atendimento", "Perfil", "Notificações", "Fidelidade & Benefícios", "Planos Disponíveis", "Minha Assinatura", "Suporte & Contato", "Configurações" e no botão hamburger (`SidebarTrigger`).
-
-Resultado: todo texto, ícone do menu, dialog de "Detalhes do Agendamento" e cabeçalhos ficam legíveis sem precisar tocar em cada página.
+Escopo grande — proponho dividir em **3 fases entregáveis**. Você confirma e eu executo fase por fase (cada fase é um turno).
 
 ---
 
-## Frente 2 — Bugs funcionais
+## Fase 1 — Visual (rápida, baixo risco)
 
-1. **Botão "Atualizar" do Dashboard sem efeito** → trocar para invalidar queries do React Query corretamente e mostrar toast "Atualizado".
-2. **Cancelar agendamento não cancela** → investigar (provável conflito de RLS update / status). Depois do cancelamento:
-   - status vira `cancelado` (libera o slot automaticamente, pois `get_horarios_ocupados` já ignora cancelados).
-   - cria notificação para o dono da barbearia (`agendamento_cancelado`).
-3. **"Reagendar"** → ao clicar, abrir o fluxo de agendamento já com a barbearia/serviço pré-preenchidos e cancelar o agendamento original assim que o novo for confirmado (assim o slot antigo desocupa e o cliente escolhe outro horário).
-4. **Pagar → "duplicate key value violates unique constraint pagamentos_agendamento_id_key"** → existe constraint unique por `agendamento_id`. Ajustar `criarPagamento` para fazer **upsert** (ou reaproveitar pagamento existente em status `pendente`/`processando`).
+**Objetivo:** Painel Admin e Dashboard do Cliente com a mesma identidade da landing/login (`#0a0a0a` bg, glow vermelho `#dc2626`, grid pattern, corner accents, Bebas Neue uppercase, cards `border-white/10 bg-black/40`).
 
----
+Arquivos:
+- `src/pages/admin/AdminLayout.tsx` — sidebar preta, header com glow vermelho, logo Bebas Neue, item ativo com borda esquerda vermelha
+- `src/pages/admin/LoginAdmin.tsx` — mesmo padrão das telas de login
+- `src/pages/admin/AdminDashboard.tsx` + `SuperAdminDashboard.tsx` — KPIs em cards escuros, tabela de barbearias com bordas `white/10`
+- `src/pages/cliente/ClienteDashboard.tsx` — hero "Olá, {nome}", card "Próximo agendamento" com glow vermelho, atalhos em grid bento, fidelidade com barra de progresso
 
-## Frente 3 — Novas features pedidas
-
-5. **Confirmação de atendimento + Avaliação pelo cliente**
-   - Dono marca agendamento como `concluido` (já existe no painel do dono).
-   - No painel do cliente, agendamentos `concluido` sem avaliação ganham botão "Avaliar atendimento" → abre modal e salva em `avaliacoes` (tabela já existe com RLS pronto).
-6. **Suporte → botão WhatsApp** abre `https://wa.me/5519989482441` em nova aba.
-7. **Suporte → "Enviar Mensagem"** → encaminhar para `brunocamargocontato@hotmail.com` via edge function `send-transactional-email` (template novo: `suporte-cliente`), além de gravar em `tickets_suporte`.
-8. **Notificações** (item do menu) → explicar/realizar a função: lista as notificações que o cliente recebe (confirmações, lembretes, cancelamentos, promoções). Vou criar a tabela `notificacoes_cliente` (espelhando o que já existe para o dono) ou reaproveitar `notificacoes` com coluna `cliente_id`. Decisão técnica: **adicionar `cliente_id` em `notificacoes`** + RLS para o cliente ver as suas.
+Tema do painel cliente continua respeitando a memória (light no resto), mas o Dashboard ganha header escuro/destaque vermelho coerente com o ClienteLayout que já foi migrado.
 
 ---
 
-## Frente 4 — Configurações: Preferências de Notificação
+## Fase 2 — Visual das demais páginas do Admin
 
-9. Persistir as 5 toggles (App, Email, WhatsApp, Promoções, Lembretes) em uma nova tabela `cliente_preferencias_notificacao` (1:1 com `clientes`), com RLS própria. Hoje os switches não salvam nada.
-
----
-
-## Ordem de execução
-
-1. Frente 1 (tema) — desbloqueia visualmente quase tudo.
-2. Frente 2 (bugs) — corrige o que está realmente quebrado.
-3. Frente 4 (preferências) — pequena migração + UI.
-4. Frente 3 (features novas) — maior esforço, faço por último.
+Reaplicar tokens nos cards/tabelas/formulários sem mudar lógica:
+- `Planos.tsx`, `Assinaturas.tsx`, `DetalhesAssinatura.tsx`
+- `FinanceiroDashboard.tsx`
+- `Usuarios.tsx`, `Monitoramento.tsx`, `Notificacoes.tsx`
+- `IntegracoesGlobais.tsx`, `Seguranca.tsx`, `Suporte.tsx`, `Configuracoes.tsx`
+- `CadastrarBarbearia.tsx`, `EditarBarbearia.tsx`, `DetalhesBarbearia.tsx`, `ServicosBarbearia.tsx`
 
 ---
 
-## Itens técnicos (resumo para o registro)
+## Fase 3 — Funcionalidades do Admin (a parte pesada)
 
-- Migração 1: `notificacoes.cliente_id uuid null` + policies de SELECT/UPDATE para cliente.
-- Migração 2: tabela `cliente_preferencias_notificacao` com grants + RLS.
-- Edge function: ajuste em `signup` não é necessário; criar template `suporte-cliente` em `_shared/transactional-email-templates/`.
-- Frontend: ajustes em `ClienteLayout`, `ClienteDashboard`, `DetalhesAgendamento` (componente de modal), `Pagamentos`, `SuporteCliente`, `ConfiguracoesCliente`, `NotificacoesCliente`, `Avaliacoes`, `index.css`.
-- `ClienteContext.criarPagamento` → upsert por `agendamento_id`.
+Hoje vários módulos do admin usam `src/services/adminApi.ts` apontando para o backend Express legado (`backend/`), que está sendo descontinuado (memória `lovable-cloud-migration`). Para o painel ficar **funcional de verdade no Lovable Cloud** precisamos migrar:
+
+**3a. Autenticação Admin real**
+- Hoje `AdminLayout` permite acesso livre (`handleLogout` só navega). Trocar por `ProtectedRoute requireRole="super_admin"` usando `useAuth` + tabela `user_roles`.
+
+**3b. Financeiro / Pagamentos (prioridade do usuário)**
+- Substituir `FinanceiroDashboard` mockado por leitura direta das tabelas `pagamentos_assinatura`, `faturas`, `assinaturas` via Supabase client.
+- KPIs: MRR, churn, inadimplência, ticket médio (queries SQL agregadas em RPC `get_admin_financeiro_kpis`).
+- Lista de transações com filtro por período + export CSV.
+- Ação "marcar como paga manualmente" + reembolso via Mercado Pago (edge function `mercadopago-refund` nova).
+
+**3c. Gestão de Barbearias**
+- `AdminDashboard` lendo `barbearias` + join `assinaturas` direto do Cloud.
+- Suspender/reativar barbearia (update `status`) com policy `super_admin`.
+- Tela de detalhes mostrando assinatura, último pagamento, dono, profissionais, métricas.
+
+**3d. Planos e Assinaturas**
+- CRUD de `planos` (já existe tabela) via Supabase.
+- Lista de `assinaturas` com status MP, próximo vencimento, ação de cancelar.
+
+**3e. Usuários e Papéis**
+- Listar `auth.users` (via RPC security-definer) + `user_roles`.
+- Promover/rebaixar papel (`super_admin` only).
+
+**3f. Solicitações de Cadastro**
+- Tela para aprovar/rejeitar `solicitacoes_cadastro` (cria barbearia + role owner + envia email).
+
+**3g. Suporte e Notificações**
+- `tickets_suporte`: listar, responder, fechar.
+- `notificacoes`: broadcast para barbearias.
 
 ---
 
-Posso seguir nessa ordem? Se quiser que eu priorize só a Frente 1 (deixar tudo legível) e a Frente 2 (cancelar/pagar funcionando) nesta rodada, e fazer 3+4 depois, me avise — isso entrega valor mais rápido.
+## Como vamos tocar
+
+1. Eu executo **Fase 1 agora** (1 turno).
+2. Você valida visualmente.
+3. Sigo Fase 2 (1 turno).
+4. Fase 3 vai em sub-turnos por módulo, começando por **Auth Admin + Financeiro** (que você priorizou).
+
+---
+
+## Detalhes técnicos
+
+- Não vou tocar `backend/` nem `api/` — serão removidos no fim da migração (já marcado na memória).
+- Novas RPCs (`get_admin_financeiro_kpis`, listar usuários, etc.) entram como migrations com `security definer` + check `has_role(auth.uid(), 'super_admin')`.
+- Edge function `mercadopago-refund` reusa secret `MERCADOPAGO_ACCESS_TOKEN` (token global, ok para refund do admin).
+- Mantemos tokens semânticos em `index.css`; nada de cor hardcoded fora dos componentes de "moldura" (glow/grid) que já seguem o padrão das telas migradas.
+
+Confirma esse plano? Se sim, começo pela **Fase 1** já no próximo turno.

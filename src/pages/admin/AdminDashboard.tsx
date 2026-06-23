@@ -436,7 +436,7 @@ export default function AdminDashboard() {
 
       {/* Dialog de Aprovação/Rejeição */}
       <Dialog open={!!selectedSolicitacao} onOpenChange={(open) => !open && setSelectedSolicitacao(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-black/95 border-white/10 text-white rounded-sm">
           <DialogHeader>
             <DialogTitle>Solicitação de Cadastro</DialogTitle>
             <DialogDescription>

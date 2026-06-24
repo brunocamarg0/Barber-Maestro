@@ -180,9 +180,11 @@ const App = () => (
             <Route
               path="/admin"
               element={
-                <AdminProviders>
-                  <AdminLayout />
-                </AdminProviders>
+                <ProtectedRoute requireRole="super_admin">
+                  <AdminProviders>
+                    <AdminLayout />
+                  </AdminProviders>
+                </ProtectedRoute>
               }
             >
               <Route index element={<AdminDashboard />} />

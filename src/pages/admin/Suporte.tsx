@@ -71,12 +71,41 @@ export default function Suporte() {
   const carregarDados = async () => {
     setLoading(true);
     try {
-      const [ticketsData, statsData] = await Promise.all([
-        listarTicketsAdmin(filtroStatus === "todos" ? undefined : filtroStatus),
-        getTicketEstatisticas(),
-      ]);
-      setTickets(ticketsData);
-      setEstatisticas(statsData);
+      let query = supabase
+        .from("tickets_suporte")
+        .select("*, cliente:clientes(telefone)")
+        .order("created_at", { ascending: false });
+      if (filtroStatus !== "todos") query = query.eq("status", filtroStatus);
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const mapped: TicketSuporte[] = (data ?? []).map((t: any) => ({
+        id: t.id,
+        categoria: t.categoria,
+        assunto: t.assunto,
+        mensagem: t.mensagem,
+        status: t.status,
+        prioridade: t.prioridade,
+        cliente_id: t.cliente_id,
+        clienteNome: t.cliente_nome,
+        clienteEmail: t.cliente_email,
+        cliente: t.cliente ? { telefone: t.cliente.telefone } : undefined,
+        resposta: t.resposta,
+        respondidoPor: t.respondido_por,
+        respondidoEm: t.respondido_em,
+        createdAt: t.created_at,
+      }));
+      setTickets(mapped);
+
+      // estatísticas (independente do filtro)
+      const { data: all } = await supabase.from("tickets_suporte").select("status");
+      const stats: TicketEstatisticas = {
+        total: all?.length ?? 0,
+        abertos: all?.filter((x: any) => x.status === "aberto").length ?? 0,
+        emAndamento: all?.filter((x: any) => x.status === "em_andamento").length ?? 0,
+        resolvidos: all?.filter((x: any) => x.status === "resolvido").length ?? 0,
+      };
+      setEstatisticas(stats);
     } catch (error: any) {
       console.error("Erro ao carregar tickets:", error);
       toast({
@@ -95,21 +124,41 @@ export default function Suporte() {
 
   const handleResponder = async () => {
     if (!ticketSelecionado || !resposta.trim()) {
-      toast({
-        title: "Erro",
-        description: "Digite uma resposta.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "Digite uma resposta.", variant: "destructive" });
       return;
     }
 
     setEnviandoResposta(true);
     try {
-      await responderTicketAdmin(ticketSelecionado.id, resposta, "Admin");
-      toast({
-        title: "Resposta enviada!",
-        description: "O cliente receberá a resposta por email.",
-      });
+      const { error } = await supabase
+        .from("tickets_suporte")
+        .update({
+          resposta,
+          respondido_por: "Admin",
+          respondido_em: new Date().toISOString(),
+          status: ticketSelecionado.status === "aberto" ? "em_andamento" : ticketSelecionado.status,
+        })
+        .eq("id", ticketSelecionado.id);
+      if (error) throw error;
+
+      // Notifica o cliente in-app, se houver cliente_id
+      if (ticketSelecionado.cliente_id) {
+        const { data: cli } = await supabase
+          .from("clientes")
+          .select("user_id")
+          .eq("id", ticketSelecionado.cliente_id)
+          .maybeSingle();
+        if (cli?.user_id) {
+          await supabase.from("notificacoes").insert({
+            user_id: cli.user_id,
+            tipo: "suporte",
+            titulo: "Resposta do suporte",
+            mensagem: `Seu ticket "${ticketSelecionado.assunto}" recebeu uma resposta.`,
+          });
+        }
+      }
+
+      toast({ title: "Resposta enviada!", description: "O cliente foi notificado." });
       setTicketSelecionado(null);
       setResposta("");
       carregarDados();
@@ -126,11 +175,11 @@ export default function Suporte() {
 
   const handleAtualizarStatus = async (ticket: TicketSuporte, novoStatus: string) => {
     try {
-      await atualizarStatusTicket(ticket.id, novoStatus);
-      toast({
-        title: "Status atualizado",
-        description: `Ticket marcado como ${novoStatus}.`,
-      });
+      const patch: any = { status: novoStatus };
+      if (novoStatus === "resolvido") patch.resolvido_em = new Date().toISOString();
+      const { error } = await supabase.from("tickets_suporte").update(patch).eq("id", ticket.id);
+      if (error) throw error;
+      toast({ title: "Status atualizado", description: `Ticket marcado como ${novoStatus}.` });
       carregarDados();
     } catch (error: any) {
       toast({

@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Scissors, Shield, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
-const API_URL = import.meta.env.VITE_API_URL || "https://groom-guru-platform-production.up.railway.app/api";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function LoginAdmin() {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,22 +19,26 @@ export default function LoginAdmin() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.senha,
       });
+      if (error) throw new Error(error.message);
+      if (!data.user) throw new Error("Falha ao autenticar.");
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Erro ao fazer login");
-      if (!data.token) throw new Error("Token não recebido do servidor");
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userType", "admin");
-      if (data.usuario) localStorage.setItem("user", JSON.stringify(data.usuario));
+      // Verifica papel super_admin
+      const { data: isAdmin, error: rpcErr } = await supabase.rpc("has_role", {
+        _user_id: data.user.id,
+        _role: "super_admin",
+      });
+      if (rpcErr) throw new Error(rpcErr.message);
+      if (!isAdmin) {
+        await supabase.auth.signOut();
+        throw new Error("Acesso restrito a administradores.");
+      }
 
       toast.success("Login admin realizado com sucesso!");
-      setTimeout(() => navigate("/admin", { replace: true }), 500);
+      setTimeout(() => navigate("/admin", { replace: true }), 300);
     } catch (error: any) {
       toast.error(traduzirErro(error.message) || "Erro ao fazer login. Verifique suas credenciais.");
     } finally {

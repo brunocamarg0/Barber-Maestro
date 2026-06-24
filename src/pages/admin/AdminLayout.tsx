@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -34,9 +35,11 @@ import { Separator } from "@/components/ui/separator";
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
-  const handleLogout = () => {
-    navigate("/");
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/admin/login");
   };
 
   const menuItems = [

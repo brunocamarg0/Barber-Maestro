@@ -1,14 +1,6 @@
-import { traduzirErro } from "@/lib/traduzirErro";
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Barbearia, NovaBarbearia, StatusBarbearia, ServicoBarbearia, NovoServicoBarbearia } from "@/types/barbearia";
-import { 
-  listarBarbeariasAdmin, 
-  criarBarbeariaAdmin, 
-  atualizarBarbeariaAdmin, 
-  alterarStatusBarbeariaAdmin,
-  deletarBarbeariaAdmin,
-  BarbeariaBackend 
-} from "@/services/adminApi";
 import { useToast } from "@/hooks/use-toast";
 
 interface BarbeariasContextType {
@@ -30,37 +22,24 @@ interface BarbeariasContextType {
 
 const BarbeariasContext = createContext<BarbeariasContextType | undefined>(undefined);
 
-// Função para converter dados do backend para o formato do frontend
-function converterBarbeariaBackend(backend: BarbeariaBackend): Barbearia {
+function mapRow(b: any): Barbearia {
   return {
-    id: backend.id,
-    nome: backend.nome,
-    cnpjCpf: backend.cnpjCpf,
-    responsavel: backend.responsavel,
-    plano: backend.plano as 'basico' | 'premium' | 'enterprise',
-    status: backend.status as StatusBarbearia,
-    dataCriacao: backend.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
-    dataVencimento: backend.dataVencimento?.split('T')[0] || new Date().toISOString().split('T')[0],
-    gatewayPagamento: {
-      nome: '',
-      conectado: false,
-    },
-    servicos: (backend.servicos || []).map(s => ({
-      id: s.id,
-      tipo: s.tipo || 'outro',
-      nome: s.nome,
-      descricao: s.descricao,
-      duracao: s.duracao,
-      valor: s.preco,
-      ativo: s.ativo,
-      ordem: s.ordem,
-    })),
-    email: backend.email,
-    telefone: backend.telefone,
-    endereco: backend.endereco,
-    cidade: backend.cidade,
-    bairro: backend.bairro,
-    cep: backend.cep,
+    id: b.id,
+    nome: b.nome,
+    cnpjCpf: b.cnpj_cpf ?? "",
+    responsavel: b.responsavel ?? "",
+    plano: (b.plano ?? "basico") as any,
+    status: (b.status ?? "em_teste") as StatusBarbearia,
+    dataCriacao: (b.created_at ?? new Date().toISOString()).split("T")[0],
+    dataVencimento: (b.data_vencimento ?? new Date().toISOString()).split("T")[0],
+    gatewayPagamento: { nome: "", conectado: false },
+    servicos: [],
+    email: b.email ?? undefined,
+    telefone: b.telefone ?? undefined,
+    endereco: b.endereco ?? undefined,
+    cidade: b.cidade ?? undefined,
+    bairro: b.bairro ?? undefined,
+    cep: b.cep ?? undefined,
   };
 }
 
@@ -70,245 +49,127 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const carregarBarbearias = useCallback(async () => {
-
+  const carregar = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
     try {
-      console.log('📋 [BARBEARIAS] Carregando barbearias do banco de dados...');
-      const dados = await listarBarbeariasAdmin();
-      console.log('📋 [BARBEARIAS] Barbearias carregadas:', dados.length);
-      
-      const barbeariasConvertidas = dados.map(converterBarbeariaBackend);
-      setBarbearias(barbeariasConvertidas);
+      const { data, error } = await supabase
+        .from("barbearias")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setBarbearias((data ?? []).map(mapRow));
     } catch (err: any) {
-      console.error('❌ [BARBEARIAS] Erro ao carregar:', err);
-      setError(traduzirErro(err.message) || 'Erro ao carregar barbearias');
-      // Não mostrar toast aqui para evitar spam
+      console.error("[BARBEARIAS]", err);
+      setError(err.message || "Erro ao carregar barbearias");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    carregarBarbearias();
-  }, [carregarBarbearias]);
+  useEffect(() => { void carregar(); }, [carregar]);
 
-  const recarregarBarbearias = async () => {
-    await carregarBarbearias();
-  };
-
-  const adicionarBarbearia = async (novaBarbearia: NovaBarbearia) => {
+  const adicionarBarbearia = async (nova: NovaBarbearia) => {
     try {
-      console.log('➕ [BARBEARIAS] Criando nova barbearia:', novaBarbearia.nome);
-      const resultado = await criarBarbeariaAdmin({
-        nome: novaBarbearia.nome,
-        cnpjCpf: novaBarbearia.cnpjCpf,
-        responsavel: novaBarbearia.responsavel,
-        plano: novaBarbearia.plano,
-        email: novaBarbearia.email,
-        telefone: novaBarbearia.telefone,
-        endereco: novaBarbearia.endereco,
-        cidade: novaBarbearia.cidade,
-        bairro: novaBarbearia.bairro,
-        cep: novaBarbearia.cep,
-        enviarEmail: true,
-      });
-      
-      console.log('✅ [BARBEARIAS] Barbearia criada com sucesso');
-      
-      // Recarregar lista
-      await carregarBarbearias();
-      
-      toast({
-        title: "Barbearia criada",
-        description: `${novaBarbearia.nome} foi cadastrada com sucesso.`,
-      });
+      const { error } = await supabase.from("barbearias").insert({
+        nome: nova.nome,
+        cnpj_cpf: nova.cnpjCpf,
+        responsavel: nova.responsavel,
+        plano: nova.plano,
+        email: nova.email,
+        telefone: nova.telefone,
+        endereco: nova.endereco,
+        cidade: nova.cidade,
+        bairro: nova.bairro,
+        cep: nova.cep,
+        status: "em_teste",
+      } as any);
+      if (error) throw error;
+      await carregar();
+      toast({ title: "Barbearia criada", description: `${nova.nome} cadastrada com sucesso.` });
     } catch (err: any) {
-      console.error('❌ [BARBEARIAS] Erro ao criar:', err);
-      toast({
-        title: "Erro ao criar barbearia",
-        description: traduzirErro(err.message),
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao criar", description: err.message, variant: "destructive" });
       throw err;
     }
   };
 
   const editarBarbearia = async (id: string, dados: Partial<Barbearia>) => {
     try {
-      console.log('✏️ [BARBEARIAS] Editando barbearia:', id);
-      await atualizarBarbeariaAdmin(id, {
-        nome: dados.nome,
-        cnpjCpf: dados.cnpjCpf,
-        responsavel: dados.responsavel,
-        plano: dados.plano,
-        email: dados.email,
-        telefone: dados.telefone,
-        endereco: dados.endereco,
-        cidade: dados.cidade,
-        bairro: dados.bairro,
-        cep: dados.cep,
-      });
-      
-      // Recarregar lista
-      await carregarBarbearias();
-      
-      toast({
-        title: "Barbearia atualizada",
-        description: "Os dados foram salvos com sucesso.",
-      });
+      const payload: any = {};
+      if (dados.nome !== undefined) payload.nome = dados.nome;
+      if (dados.cnpjCpf !== undefined) payload.cnpj_cpf = dados.cnpjCpf;
+      if (dados.responsavel !== undefined) payload.responsavel = dados.responsavel;
+      if (dados.plano !== undefined) payload.plano = dados.plano;
+      if (dados.email !== undefined) payload.email = dados.email;
+      if (dados.telefone !== undefined) payload.telefone = dados.telefone;
+      if (dados.endereco !== undefined) payload.endereco = dados.endereco;
+      if (dados.cidade !== undefined) payload.cidade = dados.cidade;
+      if (dados.bairro !== undefined) payload.bairro = dados.bairro;
+      if (dados.cep !== undefined) payload.cep = dados.cep;
+      const { error } = await supabase.from("barbearias").update(payload).eq("id", id);
+      if (error) throw error;
+      await carregar();
+      toast({ title: "Barbearia atualizada", description: "Dados salvos com sucesso." });
     } catch (err: any) {
-      console.error('❌ [BARBEARIAS] Erro ao editar:', err);
-      toast({
-        title: "Erro ao atualizar barbearia",
-        description: traduzirErro(err.message),
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao atualizar", description: err.message, variant: "destructive" });
       throw err;
     }
   };
 
   const alterarStatus = async (id: string, status: StatusBarbearia) => {
     try {
-      console.log('🔄 [BARBEARIAS] Alterando status:', id, '->', status);
-      await alterarStatusBarbeariaAdmin(id, status);
-      
-      // Atualizar localmente para feedback imediato
-      setBarbearias(prev => 
-        prev.map(b => b.id === id ? { ...b, status } : b)
-      );
-      
-      toast({
-        title: "Status alterado",
-        description: `Barbearia ${status === 'ativa' ? 'ativada' : status === 'bloqueada' ? 'bloqueada' : status === 'cancelada' ? 'cancelada' : 'em teste'} com sucesso.`,
-      });
+      const { error } = await supabase.from("barbearias").update({ status }).eq("id", id);
+      if (error) throw error;
+      setBarbearias(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+      const label = status === "ativa" ? "ativada" : status === "bloqueada" ? "bloqueada" : status === "cancelada" ? "cancelada" : "em teste";
+      toast({ title: "Status alterado", description: `Barbearia ${label}.` });
     } catch (err: any) {
-      console.error('❌ [BARBEARIAS] Erro ao alterar status:', err);
-      toast({
-        title: "Erro ao alterar status",
-        description: traduzirErro(err.message),
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao alterar status", description: err.message, variant: "destructive" });
       throw err;
     }
   };
 
-  const suspenderPorInadimplencia = async (id: string) => {
-    await alterarStatus(id, 'bloqueada');
-  };
+  const suspenderPorInadimplencia = async (id: string) => alterarStatus(id, "bloqueada");
 
   const deletarBarbearia = async (id: string) => {
     try {
-      console.log('🗑️ [BARBEARIAS] Deletando barbearia:', id);
-      await deletarBarbeariaAdmin(id);
-      
-      // Remover localmente
+      const { error } = await supabase.from("barbearias").delete().eq("id", id);
+      if (error) throw error;
       setBarbearias(prev => prev.filter(b => b.id !== id));
-      
-      toast({
-        title: "Barbearia removida",
-        description: "A barbearia foi removida com sucesso.",
-      });
+      toast({ title: "Barbearia removida" });
     } catch (err: any) {
-      console.error('❌ [BARBEARIAS] Erro ao deletar:', err);
-      toast({
-        title: "Erro ao remover barbearia",
-        description: traduzirErro(err.message),
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao remover", description: err.message, variant: "destructive" });
       throw err;
     }
   };
 
-  const getBarbearia = (id: string) => {
-    return barbearias.find((b) => b.id === id);
-  };
+  const getBarbearia = (id: string) => barbearias.find(b => b.id === id);
 
-  // Funções de serviços (operações locais por enquanto, podem ser conectadas ao backend depois)
+  // Operações locais de serviços (mantidas para compat — gerenciadas no painel do dono)
   const adicionarServico = (barbeariaId: string, servico: NovoServicoBarbearia) => {
-    const novoServico: ServicoBarbearia = {
-      id: Date.now().toString(),
-      ...servico,
-    };
-    setBarbearias(
-      barbearias.map((b) =>
-        b.id === barbeariaId
-          ? { ...b, servicos: [...(b.servicos || []), novoServico] }
-          : b
-      )
-    );
+    const novo: ServicoBarbearia = { id: Date.now().toString(), ...servico };
+    setBarbearias(prev => prev.map(b => b.id === barbeariaId ? { ...b, servicos: [...(b.servicos || []), novo] } : b));
   };
-
-  const editarServico = (barbeariaId: string, servicoId: string, dados: Partial<ServicoBarbearia>) => {
-    setBarbearias(
-      barbearias.map((b) =>
-        b.id === barbeariaId
-          ? {
-              ...b,
-              servicos: (b.servicos || []).map((s) =>
-                s.id === servicoId ? { ...s, ...dados } : s
-              ),
-            }
-          : b
-      )
-    );
-  };
-
-  const removerServico = (barbeariaId: string, servicoId: string) => {
-    setBarbearias(
-      barbearias.map((b) =>
-        b.id === barbeariaId
-          ? { ...b, servicos: (b.servicos || []).filter((s) => s.id !== servicoId) }
-          : b
-      )
-    );
-  };
-
-  const toggleServicoAtivo = (barbeariaId: string, servicoId: string) => {
-    setBarbearias(
-      barbearias.map((b) =>
-        b.id === barbeariaId
-          ? {
-              ...b,
-              servicos: (b.servicos || []).map((s) =>
-                s.id === servicoId ? { ...s, ativo: !s.ativo } : s
-              ),
-            }
-          : b
-      )
-    );
-  };
+  const editarServico = (barbeariaId: string, servicoId: string, dados: Partial<ServicoBarbearia>) =>
+    setBarbearias(prev => prev.map(b => b.id === barbeariaId ? { ...b, servicos: (b.servicos || []).map(s => s.id === servicoId ? { ...s, ...dados } : s) } : b));
+  const removerServico = (barbeariaId: string, servicoId: string) =>
+    setBarbearias(prev => prev.map(b => b.id === barbeariaId ? { ...b, servicos: (b.servicos || []).filter(s => s.id !== servicoId) } : b));
+  const toggleServicoAtivo = (barbeariaId: string, servicoId: string) =>
+    setBarbearias(prev => prev.map(b => b.id === barbeariaId ? { ...b, servicos: (b.servicos || []).map(s => s.id === servicoId ? { ...s, ativo: !s.ativo } : s) } : b));
 
   return (
-    <BarbeariasContext.Provider
-      value={{
-        barbearias,
-        isLoading,
-        error,
-        recarregarBarbearias,
-        adicionarBarbearia,
-        editarBarbearia,
-        alterarStatus,
-        suspenderPorInadimplencia,
-        deletarBarbearia,
-        getBarbearia,
-        adicionarServico,
-        editarServico,
-        removerServico,
-        toggleServicoAtivo,
-      }}
-    >
-      {children}
-    </BarbeariasContext.Provider>
+    <BarbeariasContext.Provider value={{
+      barbearias, isLoading, error,
+      recarregarBarbearias: carregar,
+      adicionarBarbearia, editarBarbearia, alterarStatus,
+      suspenderPorInadimplencia, deletarBarbearia, getBarbearia,
+      adicionarServico, editarServico, removerServico, toggleServicoAtivo,
+    }}>{children}</BarbeariasContext.Provider>
   );
 }
 
 export function useBarbearias() {
-  const context = useContext(BarbeariasContext);
-  if (!context) {
-    throw new Error("useBarbearias deve ser usado dentro de BarbeariasProvider");
-  }
-  return context;
+  const ctx = useContext(BarbeariasContext);
+  if (!ctx) throw new Error("useBarbearias deve ser usado dentro de BarbeariasProvider");
+  return ctx;
 }

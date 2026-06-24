@@ -38,7 +38,7 @@ import { Plus, MoreHorizontal, Eye, Edit, Power, Ban, Check, X, Loader2, Buildin
 import { Link } from "react-router-dom";
 import { StatusBarbearia } from "@/types/barbearia";
 import { useToast } from "@/hooks/use-toast";
-import { listarSolicitacoes, aprovarSolicitacao, rejeitarSolicitacao, SolicitacaoCadastro } from "@/services/adminApi";
+import { listarSolicitacoesCloud as listarSolicitacoes, aprovarSolicitacaoCloud as aprovarSolicitacao, rejeitarSolicitacaoCloud as rejeitarSolicitacao, SolicitacaoCadastro } from "@/services/solicitacoesCloud";
 
 const statusConfig: Record<StatusBarbearia, { label: string; className: string }> = {
   ativa: { label: "Ativa", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { usePlanos } from "@/context/PlanosContext";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,11 +28,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Check, X } from "lucide-react";
-import { Plano, NovoPlano, RecursoPlano } from "@/types/plano";
+import { Plus, Edit, Trash2, Check, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+
+type RecursoPlano = { id: string; nome: string; descricao?: string };
+type Plano = {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  valorMensal: number;
+  limiteBarbeiros: number;
+  limiteAgendamentos: number;
+  recursos: RecursoPlano[];
+  ativo: boolean;
+};
+type NovoPlano = Omit<Plano, "id" | "ativo">;
 
 const recursosDisponiveis: RecursoPlano[] = [
   { id: "whatsapp", nome: "Integração WhatsApp", descricao: "Envio de notificações via WhatsApp" },
@@ -45,11 +57,16 @@ const recursosDisponiveis: RecursoPlano[] = [
   { id: "multi_unidade", nome: "Múltiplas Unidades", descricao: "Gerenciar várias unidades" },
 ];
 
+const recursoIdToObj = (id: string): RecursoPlano =>
+  recursosDisponiveis.find((r) => r.id === id) ?? { id, nome: id };
+
 export default function Planos() {
-  const { planos, adicionarPlano, editarPlano, excluirPlano } = usePlanos();
   const { toast } = useToast();
+  const [planos, setPlanos] = useState<Plano[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [planoEditando, setPlanoEditando] = useState<Plano | null>(null);
+  const [salvando, setSalvando] = useState(false);
   const [formData, setFormData] = useState<Partial<NovoPlano>>({
     nome: "",
     descricao: "",
@@ -59,12 +76,37 @@ export default function Planos() {
     recursos: [],
   });
 
-  const formatarMoeda = (valor: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(valor);
-  };
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("planos")
+      .select("*")
+      .order("valor_mensal", { ascending: true });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      setPlanos(
+        (data ?? []).map((p: any) => ({
+          id: p.id,
+          nome: p.nome,
+          descricao: p.descricao,
+          valorMensal: Number(p.valor_mensal),
+          limiteBarbeiros: p.limite_barbeiros,
+          limiteAgendamentos: p.limite_agendamentos,
+          recursos: (p.recursos ?? []).map(recursoIdToObj),
+          ativo: p.ativo,
+        }))
+      );
+    }
+    setLoading(false);
+  }, [toast]);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  const formatarMoeda = (valor: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor);
 
   const abrirDialogNovo = () => {
     setPlanoEditando(null);
@@ -83,7 +125,7 @@ export default function Planos() {
     setPlanoEditando(plano);
     setFormData({
       nome: plano.nome,
-      descricao: plano.descricao,
+      descricao: plano.descricao ?? "",
       valorMensal: plano.valorMensal,
       limiteBarbeiros: plano.limiteBarbeiros,
       limiteAgendamentos: plano.limiteAgendamentos,
@@ -92,63 +134,56 @@ export default function Planos() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.nome || !formData.valorMensal) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "Preencha todos os campos obrigatórios.", variant: "destructive" });
       return;
     }
-
-    if (planoEditando) {
-      editarPlano(planoEditando.id, formData);
-      toast({
-        title: "Plano atualizado",
-        description: `${formData.nome} foi atualizado com sucesso.`,
-      });
-    } else {
-      adicionarPlano(formData as NovoPlano);
-      toast({
-        title: "Plano criado",
-        description: `${formData.nome} foi criado com sucesso.`,
-      });
+    setSalvando(true);
+    const payload = {
+      nome: formData.nome!,
+      descricao: formData.descricao ?? null,
+      valor_mensal: formData.valorMensal!,
+      limite_barbeiros: formData.limiteBarbeiros ?? 1,
+      limite_agendamentos: formData.limiteAgendamentos ?? 100,
+      recursos: (formData.recursos ?? []).map((r) => r.id),
+    };
+    const { error } = planoEditando
+      ? await supabase.from("planos").update(payload).eq("id", planoEditando.id)
+      : await supabase.from("planos").insert({ ...payload, ativo: true });
+    setSalvando(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      return;
     }
-
+    toast({ title: planoEditando ? "Plano atualizado" : "Plano criado", description: formData.nome });
     setIsDialogOpen(false);
+    carregar();
   };
 
-  const handleExcluir = (id: string, nome: string) => {
-    if (confirm(`Tem certeza que deseja excluir o plano "${nome}"?`)) {
-      excluirPlano(id);
-      toast({
-        title: "Plano excluído",
-        description: `${nome} foi excluído com sucesso.`,
-      });
+  const handleExcluir = async (id: string, nome: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o plano "${nome}"?`)) return;
+    const { error } = await supabase.from("planos").update({ ativo: false }).eq("id", id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
     }
+    toast({ title: "Plano desativado", description: nome });
+    carregar();
   };
 
   const toggleRecurso = (recursoId: string) => {
     const recursosAtuais = formData.recursos || [];
     const recurso = recursosDisponiveis.find((r) => r.id === recursoId);
-
     if (!recurso) return;
-
     const jaExiste = recursosAtuais.some((r) => r.id === recursoId);
-    if (jaExiste) {
-      setFormData({
-        ...formData,
-        recursos: recursosAtuais.filter((r) => r.id !== recursoId),
-      });
-    } else {
-      setFormData({
-        ...formData,
-        recursos: [...recursosAtuais, recurso],
-      });
-    }
+    setFormData({
+      ...formData,
+      recursos: jaExiste
+        ? recursosAtuais.filter((r) => r.id !== recursoId)
+        : [...recursosAtuais, recurso],
+    });
   };
 
   return (

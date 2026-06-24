@@ -13,7 +13,7 @@ Deno.serve(async () => {
   const user = list.users.find(u => (u.email ?? "").toLowerCase() === email);
   if (!user) return new Response(JSON.stringify({ error: "user not found" }), { status: 404 });
   const { error } = await admin.auth.admin.updateUserById(user.id, {
-    password: "Admin@1706",
+    password: "Camargobenedito09!",
     email_confirm: true,
   });
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });

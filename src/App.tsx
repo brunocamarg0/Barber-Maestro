@@ -164,7 +164,7 @@ const App = () => (
               path="/super-admin"
               element={
                 <AdminProviders>
-                  <ProtectedRoute requireRole="super_admin">
+                  <ProtectedRoute requireRole="super_admin" redirectTo="/admin/login">
                     <SuperAdminDashboard />
                   </ProtectedRoute>
                 </AdminProviders>
@@ -180,7 +180,8 @@ const App = () => (
             <Route
               path="/admin"
               element={
-                <ProtectedRoute requireRole="super_admin">
+                <ProtectedRoute requireRole="super_admin" redirectTo="/admin/login">
+
                   <AdminProviders>
                     <AdminLayout />
                   </AdminProviders>

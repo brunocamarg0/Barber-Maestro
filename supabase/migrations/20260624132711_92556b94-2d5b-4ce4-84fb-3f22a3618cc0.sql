@@ -1,0 +1,1 @@
+CREATE POLICY "Super-admin vê todos os profiles" ON public.profiles FOR SELECT USING (public.has_role(auth.uid(), 'super_admin'::app_role));

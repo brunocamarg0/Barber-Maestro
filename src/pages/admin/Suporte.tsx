@@ -142,20 +142,16 @@ export default function Suporte() {
       if (error) throw error;
 
       // Notifica o cliente in-app, se houver cliente_id
+      // Notifica o cliente in-app
       if (ticketSelecionado.cliente_id) {
-        const { data: cli } = await supabase
-          .from("clientes")
-          .select("user_id")
-          .eq("id", ticketSelecionado.cliente_id)
-          .maybeSingle();
-        if (cli?.user_id) {
-          await supabase.from("notificacoes").insert({
-            user_id: cli.user_id,
-            tipo: "suporte",
-            titulo: "Resposta do suporte",
-            mensagem: `Seu ticket "${ticketSelecionado.assunto}" recebeu uma resposta.`,
-          });
-        }
+        await supabase.from("notificacoes").insert({
+          cliente_id: ticketSelecionado.cliente_id,
+          tipo: "sistema",
+          titulo: "Resposta do suporte",
+          mensagem: `Seu ticket "${ticketSelecionado.assunto}" recebeu uma resposta.`,
+          url_acao: "/cliente/suporte",
+          label_acao: "Ver resposta",
+        } as any);
       }
 
       toast({ title: "Resposta enviada!", description: "O cliente foi notificado." });

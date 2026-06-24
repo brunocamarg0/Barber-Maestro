@@ -83,7 +83,7 @@ export function BarbeariasProvider({ children }: { children: ReactNode }) {
         bairro: nova.bairro,
         cep: nova.cep,
         status: "em_teste",
-      });
+      } as any);
       if (error) throw error;
       await carregar();
       toast({ title: "Barbearia criada", description: `${nova.nome} cadastrada com sucesso.` });

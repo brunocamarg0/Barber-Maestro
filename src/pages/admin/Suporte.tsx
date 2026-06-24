@@ -34,16 +34,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  listarTicketsAdmin, 
-  responderTicketAdmin, 
-  atualizarStatusTicket,
-  getTicketEstatisticas,
-  TicketSuporte,
-  TicketEstatisticas 
-} from "@/services/adminApi";
+import { supabase } from "@/integrations/supabase/client";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+type TicketSuporte = {
+  id: string;
+  categoria: string;
+  assunto: string;
+  mensagem: string;
+  status: string;
+  prioridade: string;
+  cliente_id: string | null;
+  clienteNome: string;
+  clienteEmail: string;
+  cliente?: { telefone?: string | null };
+  resposta: string | null;
+  respondidoPor: string | null;
+  respondidoEm: string | null;
+  createdAt: string;
+};
+type TicketEstatisticas = { total: number; abertos: number; emAndamento: number; resolvidos: number };
 
 export default function Suporte() {
   const { toast } = useToast();

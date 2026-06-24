@@ -68,7 +68,7 @@ export default function Usuarios() {
 
   const remover = async (user_id: string, role: string) => {
     if (!confirm(`Remover papel "${role}" deste usuário?`)) return;
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", user_id).eq("role", role);
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", user_id).eq("role", role as any);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else { toast({ title: "Papel removido" }); carregar(); }
   };

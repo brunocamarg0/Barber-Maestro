@@ -333,7 +333,8 @@ export default function Planos() {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={salvando}>
+                  {salvando && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {planoEditando ? "Salvar Alterações" : "Criar Plano"}
                 </Button>
               </DialogFooter>

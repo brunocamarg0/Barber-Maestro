@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useBarbearias } from "@/context/BarbeariasContext";
+import { StatusBarbearia } from "@/types/barbearia";
+import { Power, Ban, Clock, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,

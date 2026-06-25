@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useBarbearias } from "@/context/BarbeariasContext";
+import { StatusBarbearia } from "@/types/barbearia";
+import { Power, Ban, Clock, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,9 +45,10 @@ const API_URL = import.meta.env.VITE_API_URL || "https://groom-guru-platform-pro
 export default function DetalhesBarbearia() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getBarbearia } = useBarbearias();
+  const { getBarbearia, alterarStatus } = useBarbearias();
   const { toast } = useToast();
   const [barbearia, setBarbearia] = useState<Barbearia | undefined>();
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [emailConvite, setEmailConvite] = useState("");
   const [gerandoConvite, setGerandoConvite] = useState(false);
@@ -286,6 +289,37 @@ export default function DetalhesBarbearia() {
               <Badge variant={statusConfig[barbearia.status].variant} className="mt-1">
                 {statusConfig[barbearia.status].label}
               </Badge>
+            </div>
+            <Separator />
+            <div>
+              <p className="text-sm font-medium mb-2">Controle de Status</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { s: "ativa" as StatusBarbearia, label: "Ativar", icon: Power, cls: "bg-emerald-600 hover:bg-emerald-700 text-white" },
+                  { s: "em_teste" as StatusBarbearia, label: "Em Teste", icon: Clock, cls: "bg-amber-500 hover:bg-amber-600 text-white" },
+                  { s: "bloqueada" as StatusBarbearia, label: "Bloquear", icon: Ban, cls: "bg-red-600 hover:bg-red-700 text-white" },
+                  { s: "cancelada" as StatusBarbearia, label: "Cancelar", icon: XIcon, cls: "bg-gray-600 hover:bg-gray-700 text-white" },
+                ]).map(({ s, label, icon: Icon, cls }) => (
+                  <Button
+                    key={s}
+                    size="sm"
+                    disabled={alterandoStatus || barbearia.status === s}
+                    onClick={async () => {
+                      setAlterandoStatus(true);
+                      try {
+                        await alterarStatus(barbearia.id, s);
+                        setBarbearia({ ...barbearia, status: s });
+                      } finally { setAlterandoStatus(false); }
+                    }}
+                    className={barbearia.status === s ? "opacity-50" : cls}
+                  >
+                    <Icon className="h-4 w-4 mr-1" /> {label}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Bloqueada/Cancelada: o dono perde acesso ao painel.
+              </p>
             </div>
           </CardContent>
         </Card>

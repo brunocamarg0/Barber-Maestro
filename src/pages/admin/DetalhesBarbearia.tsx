@@ -45,9 +45,10 @@ const API_URL = import.meta.env.VITE_API_URL || "https://groom-guru-platform-pro
 export default function DetalhesBarbearia() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getBarbearia } = useBarbearias();
+  const { getBarbearia, alterarStatus } = useBarbearias();
   const { toast } = useToast();
   const [barbearia, setBarbearia] = useState<Barbearia | undefined>();
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [emailConvite, setEmailConvite] = useState("");
   const [gerandoConvite, setGerandoConvite] = useState(false);

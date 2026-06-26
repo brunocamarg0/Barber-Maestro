@@ -1151,10 +1151,11 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: string
-          limite_agendamentos: number
-          limite_barbeiros: number
+          limite_agendamentos: number | null
+          limite_barbeiros: number | null
           nome: string
           recursos: string[]
+          slug: string | null
           updated_at: string
           valor_mensal: number
         }
@@ -1163,10 +1164,11 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
-          limite_agendamentos?: number
-          limite_barbeiros?: number
+          limite_agendamentos?: number | null
+          limite_barbeiros?: number | null
           nome: string
           recursos?: string[]
+          slug?: string | null
           updated_at?: string
           valor_mensal: number
         }
@@ -1175,10 +1177,11 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
-          limite_agendamentos?: number
-          limite_barbeiros?: number
+          limite_agendamentos?: number | null
+          limite_barbeiros?: number | null
           nome?: string
           recursos?: string[]
+          slug?: string | null
           updated_at?: string
           valor_mensal?: number
         }
@@ -1760,6 +1763,19 @@ export type Database = {
           public_key: string
         }[]
       }
+      get_plano_ativo: {
+        Args: { _barbearia_id: string }
+        Returns: {
+          limite_agendamentos: number
+          limite_barbeiros: number
+          nome: string
+          plano_id: string
+          recursos: string[]
+          slug: string
+          status: string
+          valor_mensal: number
+        }[]
+      }
       get_profissionais_publicos_by_barbearia: {
         Args: { _barbearia_ids: string[] }
         Returns: {
@@ -1772,6 +1788,10 @@ export type Database = {
         }[]
       }
       get_user_barbearia_id: { Args: { _user_id: string }; Returns: string }
+      has_feature: {
+        Args: { _barbearia_id: string; _feature_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -49,6 +49,7 @@ function DonoLayoutContent() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { notificacoes, configuracao, loading, barbeariaId } = useDono();
+  const { plano, temAcesso } = usePlanoAtivo();
   const notificacoesNaoLidas = notificacoes?.filter((n) => !n.lida).length || 0;
 
   if (loading) {
@@ -81,19 +82,25 @@ function DonoLayoutContent() {
     navigate("/login");
   };
 
-  const menuItems = [
+  const menuItems: Array<{
+    title: string;
+    url: string;
+    icon: any;
+    badge?: number;
+    feature?: string;
+  }> = [
     { title: "Dashboard", url: "/dono", icon: Home },
-    { title: "Agenda", url: "/dono/agenda", icon: Calendar },
-    { title: "Serviços", url: "/dono/servicos", icon: Scissors },
+    { title: "Agenda", url: "/dono/agenda", icon: Calendar, feature: "agenda" },
+    { title: "Serviços", url: "/dono/servicos", icon: Scissors, feature: "servicos" },
     { title: "Profissionais", url: "/dono/profissionais", icon: Users },
-    { title: "Clientes", url: "/dono/clientes", icon: User },
-    { title: "Planos de Clientes", url: "/dono/planos-cliente", icon: Package },
-    { title: "Assinaturas", url: "/dono/assinaturas-cliente", icon: Receipt },
+    { title: "Clientes", url: "/dono/clientes", icon: User, feature: "clientes" },
+    { title: "Planos de Clientes", url: "/dono/planos-cliente", icon: Package, feature: "planos_cliente" },
+    { title: "Assinaturas", url: "/dono/assinaturas-cliente", icon: Receipt, feature: "planos_cliente" },
     { title: "Financeiro", url: "/dono/financeiro", icon: CreditCard },
-    { title: "Comissões", url: "/dono/comissoes", icon: DollarSign },
-    { title: "Fidelidade", url: "/dono/fidelidade", icon: Gift },
-    { title: "Avaliações", url: "/dono/avaliacoes", icon: Star },
-    { title: "Produtos", url: "/dono/produtos", icon: Package },
+    { title: "Comissões", url: "/dono/comissoes", icon: DollarSign, feature: "comissoes" },
+    { title: "Fidelidade", url: "/dono/fidelidade", icon: Gift, feature: "fidelidade" },
+    { title: "Avaliações", url: "/dono/avaliacoes", icon: Star, feature: "avaliacoes" },
+    { title: "Produtos", url: "/dono/produtos", icon: Package, feature: "estoque" },
     {
       title: "Notificações",
       url: "/dono/notificacoes",
@@ -101,7 +108,7 @@ function DonoLayoutContent() {
       badge: notificacoesNaoLidas > 0 ? notificacoesNaoLidas : undefined,
     },
     { title: "Configurações", url: "/dono/configuracoes", icon: Settings },
-    { title: "Relatórios", url: "/dono/relatorios", icon: FileText },
+    { title: "Relatórios", url: "/dono/relatorios", icon: FileText, feature: "relatorios_basicos" },
   ];
 
   return (
@@ -126,7 +133,16 @@ function DonoLayoutContent() {
                 <span className="font-semibold text-sm text-sidebar-foreground">
                   {configuracao?.nome || "Painel do Dono"}
                 </span>
-                <span className="text-xs text-sidebar-foreground/70">Gestão Completa</span>
+                <span className="text-xs text-sidebar-foreground/70 flex items-center gap-1">
+                  {plano ? (
+                    <>
+                      <Crown className="h-3 w-3 text-primary" />
+                      Plano {plano.nome}
+                    </>
+                  ) : (
+                    "Sem plano ativo"
+                  )}
+                </span>
               </div>
             </div>
           </SidebarHeader>
@@ -135,28 +151,47 @@ function DonoLayoutContent() {
               <SidebarGroupLabel className="text-sidebar-foreground font-semibold">Menu</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {menuItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={
-                          location.pathname === item.url ||
-                          (item.url !== "/dono" && location.pathname.startsWith(item.url + "/"))
-                        }
-                        className="text-gray-900 dark:text-gray-100"
-                      >
-                        <Link to={item.url} className="text-gray-900 dark:text-gray-100">
-                          <item.icon className="h-4 w-4" />
-                          <span className="text-gray-900 dark:text-gray-100">{item.title}</span>
-                          {item.badge && (
-                            <Badge variant="destructive" className="ml-auto">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {menuItems.map((item) => {
+                    const bloqueado = !!item.feature && !!plano && !temAcesso(item.feature);
+                    const destino = bloqueado ? "/planos" : item.url;
+                    const planoMin = item.feature ? planoMinimoPara(item.feature) : null;
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={
+                            !bloqueado &&
+                            (location.pathname === item.url ||
+                              (item.url !== "/dono" && location.pathname.startsWith(item.url + "/")))
+                          }
+                          className="text-gray-900 dark:text-gray-100"
+                          title={
+                            bloqueado && planoMin
+                              ? `Disponível no plano ${PLANOS_LABEL[planoMin]}`
+                              : undefined
+                          }
+                        >
+                          <Link
+                            to={destino}
+                            className={`text-gray-900 dark:text-gray-100 ${
+                              bloqueado ? "opacity-60" : ""
+                            }`}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span className="text-gray-900 dark:text-gray-100">{item.title}</span>
+                            {bloqueado && (
+                              <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
+                            )}
+                            {!bloqueado && item.badge && (
+                              <Badge variant="destructive" className="ml-auto">
+                                {item.badge}
+                              </Badge>
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

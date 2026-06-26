@@ -30,7 +30,11 @@ import {
   LogOut,
   Building2,
   Receipt,
+  Lock,
+  Crown,
 } from "lucide-react";
+import { usePlanoAtivo } from "@/hooks/usePlanoAtivo";
+import { PLANOS_LABEL, planoMinimoPara } from "@/config/features";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";

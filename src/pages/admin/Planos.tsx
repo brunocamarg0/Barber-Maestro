@@ -32,33 +32,30 @@ import { Plus, Edit, Trash2, Check, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FEATURES } from "@/config/features";
 
-type RecursoPlano = { id: string; nome: string; descricao?: string };
 type Plano = {
   id: string;
+  slug: string | null;
   nome: string;
   descricao: string | null;
   valorMensal: number;
-  limiteBarbeiros: number;
-  limiteAgendamentos: number;
-  recursos: RecursoPlano[];
+  limiteBarbeiros: number | null;
+  limiteAgendamentos: number | null;
+  recursos: string[];
   ativo: boolean;
 };
-type NovoPlano = Omit<Plano, "id" | "ativo">;
 
-const recursosDisponiveis: RecursoPlano[] = [
-  { id: "whatsapp", nome: "Integração WhatsApp", descricao: "Envio de notificações via WhatsApp" },
-  { id: "pagamentos", nome: "Gateway de Pagamentos", descricao: "Integração com gateways de pagamento" },
-  { id: "relatorios", nome: "Relatórios Avançados", descricao: "Relatórios detalhados de performance" },
-  { id: "agendamento_online", nome: "Agendamento Online", descricao: "Sistema de agendamento para clientes" },
-  { id: "app_mobile", nome: "App Mobile", descricao: "Aplicativo mobile para barbeiros" },
-  { id: "suporte_prioritario", nome: "Suporte Prioritário", descricao: "Atendimento prioritário 24/7" },
-  { id: "marketing", nome: "Ferramentas de Marketing", descricao: "Campanhas e promoções" },
-  { id: "multi_unidade", nome: "Múltiplas Unidades", descricao: "Gerenciar várias unidades" },
-];
+type FormState = {
+  nome: string;
+  descricao: string;
+  valorMensal: number;
+  limiteBarbeiros: number;
+  limiteAgendamentos: number;
+  recursos: string[];
+};
 
-const recursoIdToObj = (id: string): RecursoPlano =>
-  recursosDisponiveis.find((r) => r.id === id) ?? { id, nome: id };
+const FEATURES_LIST = Object.values(FEATURES);
 
 export default function Planos() {
   const { toast } = useToast();
@@ -67,7 +64,7 @@ export default function Planos() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [planoEditando, setPlanoEditando] = useState<Plano | null>(null);
   const [salvando, setSalvando] = useState(false);
-  const [formData, setFormData] = useState<Partial<NovoPlano>>({
+  const [formData, setFormData] = useState<FormState>({
     nome: "",
     descricao: "",
     valorMensal: 0,
@@ -88,12 +85,13 @@ export default function Planos() {
       setPlanos(
         (data ?? []).map((p: any) => ({
           id: p.id,
+          slug: p.slug,
           nome: p.nome,
           descricao: p.descricao,
           valorMensal: Number(p.valor_mensal),
           limiteBarbeiros: p.limite_barbeiros,
           limiteAgendamentos: p.limite_agendamentos,
-          recursos: (p.recursos ?? []).map(recursoIdToObj),
+          recursos: p.recursos ?? [],
           ativo: p.ativo,
         }))
       );
@@ -105,8 +103,10 @@ export default function Planos() {
     carregar();
   }, [carregar]);
 
-  const formatarMoeda = (valor: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor);
+  const formatarValor = (valor: number) =>
+    valor === 0
+      ? "Sob consulta"
+      : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor);
 
   const abrirDialogNovo = () => {
     setPlanoEditando(null);
@@ -127,8 +127,8 @@ export default function Planos() {
       nome: plano.nome,
       descricao: plano.descricao ?? "",
       valorMensal: plano.valorMensal,
-      limiteBarbeiros: plano.limiteBarbeiros,
-      limiteAgendamentos: plano.limiteAgendamentos,
+      limiteBarbeiros: plano.limiteBarbeiros ?? 1,
+      limiteAgendamentos: plano.limiteAgendamentos ?? 100,
       recursos: plano.recursos,
     });
     setIsDialogOpen(true);
@@ -136,18 +136,18 @@ export default function Planos() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nome || !formData.valorMensal) {
-      toast({ title: "Erro", description: "Preencha todos os campos obrigatórios.", variant: "destructive" });
+    if (!formData.nome) {
+      toast({ title: "Erro", description: "Informe o nome do plano.", variant: "destructive" });
       return;
     }
     setSalvando(true);
     const payload = {
-      nome: formData.nome!,
-      descricao: formData.descricao ?? null,
-      valor_mensal: formData.valorMensal!,
-      limite_barbeiros: formData.limiteBarbeiros ?? 1,
-      limite_agendamentos: formData.limiteAgendamentos ?? 100,
-      recursos: (formData.recursos ?? []).map((r) => r.id),
+      nome: formData.nome,
+      descricao: formData.descricao || null,
+      valor_mensal: formData.valorMensal,
+      limite_barbeiros: formData.limiteBarbeiros,
+      limite_agendamentos: formData.limiteAgendamentos,
+      recursos: formData.recursos,
     };
     const { error } = planoEditando
       ? await supabase.from("planos").update(payload).eq("id", planoEditando.id)
@@ -163,7 +163,7 @@ export default function Planos() {
   };
 
   const handleExcluir = async (id: string, nome: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o plano "${nome}"?`)) return;
+    if (!confirm(`Tem certeza que deseja desativar o plano "${nome}"?`)) return;
     const { error } = await supabase.from("planos").update({ ativo: false }).eq("id", id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -174,17 +174,18 @@ export default function Planos() {
   };
 
   const toggleRecurso = (recursoId: string) => {
-    const recursosAtuais = formData.recursos || [];
-    const recurso = recursosDisponiveis.find((r) => r.id === recursoId);
-    if (!recurso) return;
-    const jaExiste = recursosAtuais.some((r) => r.id === recursoId);
-    setFormData({
-      ...formData,
-      recursos: jaExiste
-        ? recursosAtuais.filter((r) => r.id !== recursoId)
-        : [...recursosAtuais, recurso],
-    });
+    setFormData((prev) => ({
+      ...prev,
+      recursos: prev.recursos.includes(recursoId)
+        ? prev.recursos.filter((r) => r !== recursoId)
+        : [...prev.recursos, recursoId],
+    }));
   };
+
+  // Estilos para forçar fundo branco / texto preto dentro do dialog
+  const inputCls =
+    "bg-white text-black border-gray-300 placeholder:text-gray-400 focus-visible:ring-gray-400";
+  const labelCls = "text-black font-semibold";
 
   return (
     <div className="space-y-6">
@@ -202,12 +203,12 @@ export default function Planos() {
               Novo Plano
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white text-black border-gray-200">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-black">
                 {planoEditando ? "Editar Plano" : "Novo Plano"}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-gray-600">
                 {planoEditando
                   ? "Atualize as informações do plano"
                   : "Preencha os dados para criar um novo plano"}
@@ -215,59 +216,53 @@ export default function Planos() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="nome">Nome do Plano *</Label>
+                <Label htmlFor="nome" className={labelCls}>Nome do Plano *</Label>
                 <Input
                   id="nome"
-                  value={formData.nome || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nome: e.target.value })
-                  }
+                  className={inputCls}
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição</Label>
+                <Label htmlFor="descricao" className={labelCls}>Descrição</Label>
                 <Textarea
                   id="descricao"
-                  value={formData.descricao || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, descricao: e.target.value })
-                  }
+                  className={inputCls}
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="valorMensal">Valor Mensal (R$) *</Label>
+                  <Label htmlFor="valorMensal" className={labelCls}>Valor Mensal (R$)</Label>
                   <Input
                     id="valorMensal"
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.valorMensal || 0}
+                    className={inputCls}
+                    value={formData.valorMensal}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        valorMensal: parseFloat(e.target.value) || 0,
-                      })
+                      setFormData({ ...formData, valorMensal: parseFloat(e.target.value) || 0 })
                     }
-                    required
                   />
+                  <p className="text-xs text-gray-500">Use 0 para "Sob consulta".</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="limiteBarbeiros">Limite de Barbeiros *</Label>
+                  <Label htmlFor="limiteBarbeiros" className={labelCls}>Limite de Barbeiros *</Label>
                   <Input
                     id="limiteBarbeiros"
                     type="number"
                     min="1"
-                    value={formData.limiteBarbeiros || 1}
+                    className={inputCls}
+                    value={formData.limiteBarbeiros}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        limiteBarbeiros: parseInt(e.target.value) || 1,
-                      })
+                      setFormData({ ...formData, limiteBarbeiros: parseInt(e.target.value) || 1 })
                     }
                     required
                   />
@@ -275,51 +270,47 @@ export default function Planos() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="limiteAgendamentos">
-                  Limite de Agendamentos *</Label>
+                <Label htmlFor="limiteAgendamentos" className={labelCls}>
+                  Limite de Agendamentos *
+                </Label>
                 <Input
                   id="limiteAgendamentos"
                   type="number"
                   min="1"
-                  value={formData.limiteAgendamentos || 100}
+                  className={inputCls}
+                  value={formData.limiteAgendamentos}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      limiteAgendamentos: parseInt(e.target.value) || 100,
-                    })
+                    setFormData({ ...formData, limiteAgendamentos: parseInt(e.target.value) || 100 })
                   }
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Recursos Liberados</Label>
-                <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 border rounded-md">
-                  {recursosDisponiveis.map((recurso) => {
-                    const selecionado = formData.recursos?.some(
-                      (r) => r.id === recurso.id
-                    );
+                <Label className={labelCls}>Recursos Liberados</Label>
+                <p className="text-xs text-gray-600">
+                  Marque as funcionalidades que serão liberadas para barbearias deste plano.
+                  Estes IDs são usados pelo sistema para liberar (ou bloquear) cada tela.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-72 overflow-y-auto p-2 border border-gray-300 rounded-md bg-white">
+                  {FEATURES_LIST.map((recurso) => {
+                    const selecionado = formData.recursos.includes(recurso.id);
                     return (
-                      <div
+                      <label
                         key={recurso.id}
-                        className="flex items-start space-x-2 p-2 rounded hover:bg-accent cursor-pointer"
-                        onClick={() => toggleRecurso(recurso.id)}
+                        className="flex items-start gap-2 p-2 rounded hover:bg-gray-100 cursor-pointer text-black"
                       >
                         <Checkbox
                           checked={selecionado}
                           onCheckedChange={() => toggleRecurso(recurso.id)}
+                          className="mt-0.5 border-gray-400 data-[state=checked]:bg-black data-[state=checked]:text-white"
                         />
                         <div className="flex-1">
-                          <div className="font-medium text-sm">
-                            {recurso.nome}
-                          </div>
-                          {recurso.descricao && (
-                            <div className="text-xs text-muted-foreground">
-                              {recurso.descricao}
-                            </div>
-                          )}
+                          <div className="font-medium text-sm text-black">{recurso.nome}</div>
+                          <div className="text-xs text-gray-600">{recurso.descricao}</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5">id: {recurso.id}</div>
                         </div>
-                      </div>
+                      </label>
                     );
                   })}
                 </div>
@@ -329,11 +320,12 @@ export default function Planos() {
                 <Button
                   type="button"
                   variant="outline"
+                  className="bg-white text-black border-gray-300 hover:bg-gray-100"
                   onClick={() => setIsDialogOpen(false)}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={salvando}>
+                <Button type="submit" disabled={salvando} className="bg-black text-white hover:bg-gray-800">
                   {salvando && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {planoEditando ? "Salvar Alterações" : "Criar Plano"}
                 </Button>
@@ -364,7 +356,13 @@ export default function Planos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {planos.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    Carregando...
+                  </TableCell>
+                </TableRow>
+              ) : planos.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
                     Nenhum plano cadastrado
@@ -374,14 +372,14 @@ export default function Planos() {
                 planos.map((plano) => (
                   <TableRow key={plano.id}>
                     <TableCell className="font-medium">{plano.nome}</TableCell>
-                    <TableCell>{formatarMoeda(plano.valorMensal)}</TableCell>
-                    <TableCell>{plano.limiteBarbeiros}</TableCell>
-                    <TableCell>{plano.limiteAgendamentos}</TableCell>
+                    <TableCell>{formatarValor(plano.valorMensal)}</TableCell>
+                    <TableCell>{plano.limiteBarbeiros ?? "Ilimitado"}</TableCell>
+                    <TableCell>{plano.limiteAgendamentos ?? "Ilimitado"}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {plano.recursos.slice(0, 2).map((recurso) => (
-                          <Badge key={recurso.id} variant="secondary" className="text-xs">
-                            {recurso.nome}
+                        {plano.recursos.slice(0, 2).map((rid) => (
+                          <Badge key={rid} variant="secondary" className="text-xs">
+                            {FEATURES[rid]?.nome ?? rid}
                           </Badge>
                         ))}
                         {plano.recursos.length > 2 && (
@@ -432,10 +430,3 @@ export default function Planos() {
     </div>
   );
 }
-
-
-
-
-
-
-

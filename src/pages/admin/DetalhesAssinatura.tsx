@@ -47,7 +47,7 @@ export default function DetalhesAssinatura() {
     setLoading(true);
     const [aRes, pRes, planosRes] = await Promise.all([
       supabase.from("assinaturas")
-        .select("*, barbearia:barbearias(id,nome,email), plano:planos(id,nome,valor_mensal)")
+        .select("*, barbearia:barbearias(id,nome,email), plano:planos(id,slug,nome,valor_mensal,recursos,limite_barbeiros,limite_agendamentos)")
         .eq("id", id).maybeSingle(),
       supabase.from("pagamentos_assinatura").select("*").eq("assinatura_id", id).order("created_at", { ascending: false }),
       supabase.from("planos").select("id,nome,valor_mensal,ativo").eq("ativo", true),

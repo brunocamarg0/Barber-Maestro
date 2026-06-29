@@ -15,8 +15,9 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Calendar, Loader2, CheckCircle2, RefreshCw, Ban } from "lucide-react";
+import { ArrowLeft, Calendar, Loader2, CheckCircle2, RefreshCw, Ban, Check, X, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FEATURES } from "@/config/features";
 
 const formatMoeda = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);

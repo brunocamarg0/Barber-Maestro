@@ -15,8 +15,9 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Calendar, Loader2, CheckCircle2, RefreshCw, Ban } from "lucide-react";
+import { ArrowLeft, Calendar, Loader2, CheckCircle2, RefreshCw, Ban, Check, X, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FEATURES } from "@/config/features";
 
 const formatMoeda = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
@@ -46,7 +47,7 @@ export default function DetalhesAssinatura() {
     setLoading(true);
     const [aRes, pRes, planosRes] = await Promise.all([
       supabase.from("assinaturas")
-        .select("*, barbearia:barbearias(id,nome,email), plano:planos(id,nome,valor_mensal)")
+        .select("*, barbearia:barbearias(id,nome,email), plano:planos(id,slug,nome,valor_mensal,recursos,limite_barbeiros,limite_agendamentos)")
         .eq("id", id).maybeSingle(),
       supabase.from("pagamentos_assinatura").select("*").eq("assinatura_id", id).order("created_at", { ascending: false }),
       supabase.from("planos").select("id,nome,valor_mensal,ativo").eq("ativo", true),
@@ -279,6 +280,75 @@ export default function DetalhesAssinatura() {
           </div>
         </CardContent>
       </Card>
+
+      {(() => {
+        const recursosAtivos: string[] = assinatura.plano?.recursos || [];
+        const todasFeatures = Object.values(FEATURES);
+        const incluidas = todasFeatures.filter((f) => recursosAtivos.includes(f.id));
+        const naoIncluidas = todasFeatures.filter((f) => !recursosAtivos.includes(f.id));
+        const limB = assinatura.plano?.limite_barbeiros;
+        const limA = assinatura.plano?.limite_agendamentos;
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    Funcionalidades incluídas neste plano
+                  </CardTitle>
+                  <CardDescription>
+                    {incluidas.length} de {todasFeatures.length} funcionalidades liberadas no plano{" "}
+                    <strong>{assinatura.plano?.nome}</strong>
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <Badge variant="outline">
+                    Barbeiros: {limB === null || limB === undefined ? "Ilimitado" : limB}
+                  </Badge>
+                  <Badge variant="outline">
+                    Agendamentos/mês: {limA === null || limA === undefined ? "Ilimitado" : limA}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-2">Ativas ({incluidas.length})</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {incluidas.map((f) => (
+                    <div key={f.id} className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 p-2">
+                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium leading-tight">{f.nome}</p>
+                        <p className="text-xs text-muted-foreground leading-tight">{f.descricao}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {naoIncluidas.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground mb-2">
+                    Não incluídas ({naoIncluidas.length})
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {naoIncluidas.map((f) => (
+                      <div key={f.id} className="flex items-start gap-2 rounded-md border p-2 opacity-60">
+                        <X className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-tight">{f.nome}</p>
+                          <p className="text-xs text-muted-foreground leading-tight">{f.descricao}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       <Card>
         <CardHeader>

@@ -59,6 +59,7 @@ import MinhaAssinatura from "./pages/cliente/MinhaAssinatura";
 import PlanosDisponiveis from "./pages/cliente/PlanosDisponiveis";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import DonoLayout from "./pages/dono/DonoLayout";
+import { FeatureGate } from "@/components/dono/FeatureGate";
 import DonoDashboard from "./pages/dono/DonoDashboard";
 import AgendaInteligente from "./pages/dono/AgendaInteligente";
 import GestaoServicos from "./pages/dono/GestaoServicos";

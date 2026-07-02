@@ -232,20 +232,21 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={<ErrorBoundary><DonoDashboard /></ErrorBoundary>} />
-              <Route path="agenda" element={<ErrorBoundary><AgendaInteligente /></ErrorBoundary>} />
-              <Route path="servicos" element={<ErrorBoundary><GestaoServicos /></ErrorBoundary>} />
+              <Route path="agenda" element={<ErrorBoundary><FeatureGate feature="agenda"><AgendaInteligente /></FeatureGate></ErrorBoundary>} />
+              <Route path="servicos" element={<ErrorBoundary><FeatureGate feature="servicos"><GestaoServicos /></FeatureGate></ErrorBoundary>} />
               <Route path="profissionais" element={<ErrorBoundary><GestaoProfissionais /></ErrorBoundary>} />
-              <Route path="clientes" element={<ErrorBoundary><GestaoClientes /></ErrorBoundary>} />
-              <Route path="planos-cliente" element={<ErrorBoundary><GestaoPlanosCliente /></ErrorBoundary>} />
-              <Route path="assinaturas-cliente" element={<ErrorBoundary><GestaoAssinaturasCliente /></ErrorBoundary>} />
+              <Route path="clientes" element={<ErrorBoundary><FeatureGate feature="clientes"><GestaoClientes /></FeatureGate></ErrorBoundary>} />
+              <Route path="planos-cliente" element={<ErrorBoundary><FeatureGate feature="planos_cliente"><GestaoPlanosCliente /></FeatureGate></ErrorBoundary>} />
+              <Route path="assinaturas-cliente" element={<ErrorBoundary><FeatureGate feature="planos_cliente"><GestaoAssinaturasCliente /></FeatureGate></ErrorBoundary>} />
               <Route path="financeiro" element={<ErrorBoundary><FinanceiroPagamentos /></ErrorBoundary>} />
-              <Route path="comissoes" element={<ErrorBoundary><ComissoesBarbeiros /></ErrorBoundary>} />
-              <Route path="fidelidade" element={<ErrorBoundary><FidelidadePromocoes /></ErrorBoundary>} />
-              <Route path="avaliacoes" element={<ErrorBoundary><AvaliacoesReputacao /></ErrorBoundary>} />
-              <Route path="produtos" element={<ErrorBoundary><ProdutosEstoque /></ErrorBoundary>} />
+              <Route path="comissoes" element={<ErrorBoundary><FeatureGate feature="comissoes"><ComissoesBarbeiros /></FeatureGate></ErrorBoundary>} />
+              <Route path="fidelidade" element={<ErrorBoundary><FeatureGate feature="fidelidade"><FidelidadePromocoes /></FeatureGate></ErrorBoundary>} />
+              <Route path="avaliacoes" element={<ErrorBoundary><FeatureGate feature="avaliacoes"><AvaliacoesReputacao /></FeatureGate></ErrorBoundary>} />
+              <Route path="produtos" element={<ErrorBoundary><FeatureGate feature="estoque"><ProdutosEstoque /></FeatureGate></ErrorBoundary>} />
               <Route path="notificacoes" element={<ErrorBoundary><ComunicacaoNotificacoes /></ErrorBoundary>} />
               <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesBarbearia /></ErrorBoundary>} />
-              <Route path="relatorios" element={<ErrorBoundary><RelatoriosAvancados /></ErrorBoundary>} />
+              <Route path="relatorios" element={<ErrorBoundary><FeatureGate feature="relatorios_basicos"><RelatoriosAvancados /></FeatureGate></ErrorBoundary>} />
+
             </Route>
             <Route path="/:slug" element={<BarbeariaPublica />} />
             <Route path="*" element={<NotFound />} />

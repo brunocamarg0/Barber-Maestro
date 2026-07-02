@@ -154,7 +154,36 @@ Deno.serve(async (req) => {
         ? "processando"
         : status;
 
-    if (externalRef?.startsWith("plano_cliente:")) {
+    if (externalRef?.startsWith("assinatura_")) {
+      // Cobrança recorrente do dono (SaaS): formato "assinatura_<id>_<ts>"
+      const assinaturaId = externalRef.split("_")[1];
+      await admin
+        .from("pagamentos_assinatura")
+        .update({
+          status: mapped,
+          mercadopago_payment_id: String(paymentId),
+          mercadopago_status: status,
+          data_pagamento: status === "approved" ? new Date().toISOString() : null,
+        })
+        .eq("assinatura_id", assinaturaId)
+        .in("status", ["pendente", "aguardando", "processando"]);
+
+      if (status === "approved") {
+        // Avança proximo_vencimento em 1 mês a partir do vencimento atual
+        const { data: assin } = await admin
+          .from("assinaturas")
+          .select("proximo_vencimento")
+          .eq("id", assinaturaId)
+          .maybeSingle();
+        const base = assin?.proximo_vencimento ? new Date(assin.proximo_vencimento) : new Date();
+        const proximo = new Date(base);
+        proximo.setMonth(proximo.getMonth() + 1);
+        await admin
+          .from("assinaturas")
+          .update({ status: "ativa", proximo_vencimento: proximo.toISOString() })
+          .eq("id", assinaturaId);
+      }
+    } else if (externalRef?.startsWith("plano_cliente:")) {
       const assinaturaId = externalRef.split(":")[1];
       await admin
         .from("pagamentos_assinatura")

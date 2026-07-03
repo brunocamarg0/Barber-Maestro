@@ -115,24 +115,34 @@ export default function MinhaAssinatura() {
         },
       });
 
-      const { data: fats } = await supabase
-        .from("faturas")
-        .select("id, valor, data_vencimento, data_pagamento, status, metodo_pagamento, link_pagamento, qr_code_pix")
-        .eq("assinatura_id", ass.id)
-        .order("data_vencimento", { ascending: false });
+      // Carrega cobranças recorrentes (fonte usada pelo cron/webhook) e faturas legadas
+      const [{ data: pags }, { data: fats }] = await Promise.all([
+        supabase
+          .from("pagamentos_assinatura")
+          .select("id, valor, data_vencimento, data_pagamento, status, metodo_pagamento, link_pagamento, qr_code_pix")
+          .eq("assinatura_id", ass.id)
+          .order("data_vencimento", { ascending: false }),
+        supabase
+          .from("faturas")
+          .select("id, valor, data_vencimento, data_pagamento, status, metodo_pagamento, link_pagamento, qr_code_pix")
+          .eq("assinatura_id", ass.id)
+          .order("data_vencimento", { ascending: false }),
+      ]);
 
-      setFaturas(
-        (fats || []).map((f: any) => ({
-          id: f.id,
-          valor: Number(f.valor) || 0,
-          dataVencimento: f.data_vencimento,
-          dataPagamento: f.data_pagamento,
-          status: f.status,
-          metodoPagamento: f.metodo_pagamento,
-          linkPagamento: f.link_pagamento,
-          qrCodePix: f.qr_code_pix,
-        }))
-      );
+      const mapear = (f: any): Fatura => ({
+        id: f.id,
+        valor: Number(f.valor) || 0,
+        dataVencimento: f.data_vencimento,
+        dataPagamento: f.data_pagamento,
+        status: f.status === "pago" ? "paga" : f.status,
+        metodoPagamento: f.metodo_pagamento,
+        linkPagamento: f.link_pagamento,
+        qrCodePix: f.qr_code_pix,
+      });
+
+      const combinadas = [...(pags || []).map(mapear), ...(fats || []).map(mapear)]
+        .sort((a, b) => (a.dataVencimento < b.dataVencimento ? 1 : -1));
+      setFaturas(combinadas);
     } catch (error: any) {
       console.error("Erro ao carregar assinatura:", error);
       toast.error("Erro ao carregar dados da assinatura");

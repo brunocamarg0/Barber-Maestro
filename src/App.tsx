@@ -75,6 +75,7 @@ import ProdutosEstoque from "./pages/dono/ProdutosEstoque";
 import ComunicacaoNotificacoes from "./pages/dono/ComunicacaoNotificacoes";
 import ConfiguracoesBarbearia from "./pages/dono/ConfiguracoesBarbearia";
 import RelatoriosAvancados from "./pages/dono/RelatoriosAvancados";
+import MinhaAssinaturaDono from "./pages/dono/MinhaAssinatura";
 import AtivarConta from "./pages/AtivarConta";
 import AuthCallback from "./pages/AuthCallback";
 import Funcionalidades from "./pages/Funcionalidades";
@@ -246,6 +247,8 @@ const App = () => (
               <Route path="notificacoes" element={<ErrorBoundary><ComunicacaoNotificacoes /></ErrorBoundary>} />
               <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesBarbearia /></ErrorBoundary>} />
               <Route path="relatorios" element={<ErrorBoundary><FeatureGate feature="relatorios_basicos"><RelatoriosAvancados /></FeatureGate></ErrorBoundary>} />
+              <Route path="minha-assinatura" element={<ErrorBoundary><MinhaAssinaturaDono /></ErrorBoundary>} />
+
 
             </Route>
             <Route path="/:slug" element={<BarbeariaPublica />} />

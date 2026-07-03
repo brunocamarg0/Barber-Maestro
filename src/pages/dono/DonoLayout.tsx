@@ -109,6 +109,7 @@ function DonoLayoutContent() {
     },
     { title: "Configurações", url: "/dono/configuracoes", icon: Settings },
     { title: "Relatórios", url: "/dono/relatorios", icon: FileText, feature: "relatorios_basicos" },
+    { title: "Minha Assinatura", url: "/dono/minha-assinatura", icon: Crown },
   ];
 
   return (

@@ -116,6 +116,32 @@ Deno.serve(async (req) => {
           observacoes: "Cobrança recorrente automática",
         });
 
+        // Notifica o dono por e-mail (best-effort — não bloqueia)
+        if (barb?.email) {
+          try {
+            const dataVenc = new Date(a.proximo_vencimento).toLocaleDateString("pt-BR");
+            const valorFmt = new Intl.NumberFormat("pt-BR", {
+              style: "currency", currency: "BRL",
+            }).format(valor);
+            await admin.functions.invoke("send-transactional-email", {
+              body: {
+                template: "cobranca-gerada",
+                to: barb.email,
+                data: {
+                  nomeDono: barb?.nome ?? "Barbeiro",
+                  nomeBarbearia: barb?.nome ?? "sua barbearia",
+                  planoNome: plano?.nome ?? "seu plano",
+                  valor: valorFmt,
+                  dataVencimento: dataVenc,
+                  linkPagamento: link,
+                },
+              },
+            });
+          } catch (mailErr) {
+            console.error("Falha ao enviar e-mail de cobrança", a.id, mailErr);
+          }
+        }
+
         resumo.geradas++;
       } catch (e: any) {
         console.error("Falha ao cobrar assinatura", a.id, e);

@@ -161,10 +161,10 @@ export default function IntegracoesGlobais() {
       </Card>
 
       <Dialog open={!!integracaoAberta} onOpenChange={(o) => !o && setIntegracaoAberta(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg !bg-neutral-950 !text-neutral-50 border-2 border-primary/40">
           <DialogHeader>
-            <DialogTitle className="text-foreground text-xl">Configurar Integração</DialogTitle>
-            <DialogDescription className="text-foreground/80">
+            <DialogTitle className="!text-neutral-50 text-xl font-bold">Configurar Integração</DialogTitle>
+            <DialogDescription className="!text-neutral-300">
               Ajuste os dados, credenciais e limites de uso da integração.
             </DialogDescription>
           </DialogHeader>

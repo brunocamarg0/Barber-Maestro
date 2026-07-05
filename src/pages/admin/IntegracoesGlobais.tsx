@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useIntegracoesGlobais } from "@/context/IntegracoesGlobaisContext";
 import {
   Card,
@@ -8,17 +9,71 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Settings, Check, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { IntegracaoGlobal } from "@/types/integracao";
 
 export default function IntegracoesGlobais() {
-  const { integracoes, webhooks } = useIntegracoesGlobais();
+  const { integracoes, webhooks, atualizarIntegracao } = useIntegracoesGlobais();
+  const { toast } = useToast();
 
-  const formatarMoeda = (valor: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(valor);
+  const [integracaoAberta, setIntegracaoAberta] = useState<IntegracaoGlobal | null>(null);
+  const [form, setForm] = useState({
+    nome: "",
+    provider: "",
+    ativa: true,
+    porUso: 0,
+    limiteMensal: 0,
+    configuracoes: {} as Record<string, any>,
+  });
+
+  const formatarMoeda = (valor: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor);
+
+  const abrirConfigurar = (integracao: IntegracaoGlobal) => {
+    setIntegracaoAberta(integracao);
+    setForm({
+      nome: integracao.nome,
+      provider: integracao.provider,
+      ativa: integracao.ativa,
+      porUso: integracao.custos.porUso,
+      limiteMensal: integracao.custos.limiteMensal,
+      configuracoes: { ...integracao.configuracoes },
+    });
   };
+
+  const salvar = () => {
+    if (!integracaoAberta) return;
+    atualizarIntegracao(integracaoAberta.id, {
+      nome: form.nome,
+      provider: form.provider,
+      ativa: form.ativa,
+      configuracoes: form.configuracoes,
+      custos: {
+        ...integracaoAberta.custos,
+        porUso: Number(form.porUso) || 0,
+        limiteMensal: Number(form.limiteMensal) || 0,
+      },
+    });
+    toast({
+      title: "Integração atualizada",
+      description: `${form.nome} foi salva com sucesso.`,
+    });
+    setIntegracaoAberta(null);
+  };
+
+  const configKeys = Object.keys(form.configuracoes);
 
   return (
     <div className="space-y-6">
@@ -62,7 +117,11 @@ export default function IntegracoesGlobais() {
                   {integracao.custos.usadoEsteMes} / {integracao.custos.limiteMensal}
                 </p>
               </div>
-              <Button variant="outline" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => abrirConfigurar(integracao)}
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Configurar
               </Button>
@@ -100,13 +159,100 @@ export default function IntegracoesGlobais() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!integracaoAberta} onOpenChange={(o) => !o && setIntegracaoAberta(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Configurar Integração</DialogTitle>
+            <DialogDescription>
+              Ajuste os dados, credenciais e limites de uso da integração.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <p className="font-medium">Integração ativa</p>
+                <p className="text-sm text-muted-foreground">
+                  Habilita o uso em todas as barbearias
+                </p>
+              </div>
+              <Switch
+                checked={form.ativa}
+                onCheckedChange={(v) => setForm((f) => ({ ...f, ativa: v }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input
+                  value={form.nome}
+                  onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Provider</Label>
+                <Input
+                  value={form.provider}
+                  onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Custo por uso (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.porUso}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, porUso: Number(e.target.value) }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Limite mensal</Label>
+                <Input
+                  type="number"
+                  value={form.limiteMensal}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, limiteMensal: Number(e.target.value) }))
+                  }
+                />
+              </div>
+            </div>
+
+            {configKeys.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Credenciais</Label>
+                {configKeys.map((key) => (
+                  <div key={key} className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">{key}</Label>
+                    <Input
+                      value={String(form.configuracoes[key] ?? "")}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          configuracoes: { ...f.configuracoes, [key]: e.target.value },
+                        }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIntegracaoAberta(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={salvar}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
-
-
-
-
-
-

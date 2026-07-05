@@ -161,19 +161,19 @@ export default function IntegracoesGlobais() {
       </Card>
 
       <Dialog open={!!integracaoAberta} onOpenChange={(o) => !o && setIntegracaoAberta(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg !bg-neutral-950 !text-neutral-50 border-2 border-primary/40">
           <DialogHeader>
-            <DialogTitle className="text-foreground text-xl">Configurar Integração</DialogTitle>
-            <DialogDescription className="text-foreground/80">
+            <DialogTitle className="!text-neutral-50 text-xl font-bold">Configurar Integração</DialogTitle>
+            <DialogDescription className="!text-neutral-300">
               Ajuste os dados, credenciais e limites de uso da integração.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
-            <div className="flex items-center justify-between rounded-lg border-2 border-primary/40 bg-primary/5 p-3">
+            <div className="flex items-center justify-between rounded-lg border-2 border-primary/40 bg-primary/10 p-3">
               <div>
-                <p className="font-semibold text-foreground">Integração ativa</p>
-                <p className="text-sm text-foreground/70">
+                <p className="font-semibold !text-neutral-50">Integração ativa</p>
+                <p className="text-sm !text-neutral-300">
                   Habilita o uso em todas as barbearias
                 </p>
               </div>
@@ -185,15 +185,17 @@ export default function IntegracoesGlobais() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label className="text-foreground font-semibold">Nome</Label>
+                <Label className="!text-neutral-50 font-semibold">Nome</Label>
                 <Input
+                  className="!bg-neutral-900 !text-neutral-50 !border-neutral-700"
                   value={form.nome}
                   onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground font-semibold">Provider</Label>
+                <Label className="!text-neutral-50 font-semibold">Provider</Label>
                 <Input
+                  className="!bg-neutral-900 !text-neutral-50 !border-neutral-700"
                   value={form.provider}
                   onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
                 />
@@ -202,10 +204,11 @@ export default function IntegracoesGlobais() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label className="text-foreground font-semibold">Custo por uso (R$)</Label>
+                <Label className="!text-neutral-50 font-semibold">Custo por uso (R$)</Label>
                 <Input
                   type="number"
                   step="0.01"
+                  className="!bg-neutral-900 !text-neutral-50 !border-neutral-700"
                   value={form.porUso}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, porUso: Number(e.target.value) }))
@@ -213,9 +216,10 @@ export default function IntegracoesGlobais() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground font-semibold">Limite mensal</Label>
+                <Label className="!text-neutral-50 font-semibold">Limite mensal</Label>
                 <Input
                   type="number"
+                  className="!bg-neutral-900 !text-neutral-50 !border-neutral-700"
                   value={form.limiteMensal}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, limiteMensal: Number(e.target.value) }))
@@ -225,14 +229,15 @@ export default function IntegracoesGlobais() {
             </div>
 
             {configKeys.length > 0 && (
-              <div className="space-y-3 rounded-lg border border-border p-3">
-                <Label className="text-sm font-bold text-primary uppercase tracking-wide">
+              <div className="space-y-3 rounded-lg border border-neutral-700 p-3">
+                <Label className="text-sm font-bold !text-primary uppercase tracking-wide">
                   Credenciais
                 </Label>
                 {configKeys.map((key) => (
                   <div key={key} className="space-y-2">
-                    <Label className="text-xs font-semibold text-foreground/90">{key}</Label>
+                    <Label className="text-xs font-semibold !text-neutral-200">{key}</Label>
                     <Input
+                      className="!bg-neutral-900 !text-neutral-50 !border-neutral-700"
                       value={String(form.configuracoes[key] ?? "")}
                       onChange={(e) =>
                         setForm((f) => ({
@@ -248,10 +253,16 @@ export default function IntegracoesGlobais() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIntegracaoAberta(null)}>
+            <Button
+              variant="outline"
+              className="!bg-neutral-800 !text-neutral-50 !border-neutral-600 hover:!bg-neutral-700"
+              onClick={() => setIntegracaoAberta(null)}
+            >
               Cancelar
             </Button>
-            <Button onClick={salvar}>Salvar</Button>
+            <Button className="!bg-primary !text-primary-foreground hover:!bg-primary/90" onClick={salvar}>
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

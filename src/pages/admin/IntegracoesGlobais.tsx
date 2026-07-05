@@ -163,17 +163,17 @@ export default function IntegracoesGlobais() {
       <Dialog open={!!integracaoAberta} onOpenChange={(o) => !o && setIntegracaoAberta(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Configurar Integração</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-foreground text-xl">Configurar Integração</DialogTitle>
+            <DialogDescription className="text-foreground/80">
               Ajuste os dados, credenciais e limites de uso da integração.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
-            <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="flex items-center justify-between rounded-lg border-2 border-primary/40 bg-primary/5 p-3">
               <div>
-                <p className="font-medium">Integração ativa</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-semibold text-foreground">Integração ativa</p>
+                <p className="text-sm text-foreground/70">
                   Habilita o uso em todas as barbearias
                 </p>
               </div>
@@ -185,14 +185,14 @@ export default function IntegracoesGlobais() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Nome</Label>
+                <Label className="text-foreground font-semibold">Nome</Label>
                 <Input
                   value={form.nome}
                   onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Provider</Label>
+                <Label className="text-foreground font-semibold">Provider</Label>
                 <Input
                   value={form.provider}
                   onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
@@ -202,7 +202,7 @@ export default function IntegracoesGlobais() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Custo por uso (R$)</Label>
+                <Label className="text-foreground font-semibold">Custo por uso (R$)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -213,7 +213,7 @@ export default function IntegracoesGlobais() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Limite mensal</Label>
+                <Label className="text-foreground font-semibold">Limite mensal</Label>
                 <Input
                   type="number"
                   value={form.limiteMensal}
@@ -225,11 +225,13 @@ export default function IntegracoesGlobais() {
             </div>
 
             {configKeys.length > 0 && (
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold">Credenciais</Label>
+              <div className="space-y-3 rounded-lg border border-border p-3">
+                <Label className="text-sm font-bold text-primary uppercase tracking-wide">
+                  Credenciais
+                </Label>
                 {configKeys.map((key) => (
                   <div key={key} className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">{key}</Label>
+                    <Label className="text-xs font-semibold text-foreground/90">{key}</Label>
                     <Input
                       value={String(form.configuracoes[key] ?? "")}
                       onChange={(e) =>

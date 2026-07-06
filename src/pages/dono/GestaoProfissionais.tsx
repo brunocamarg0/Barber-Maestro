@@ -149,6 +149,7 @@ export default function GestaoProfissionais() {
           valor: parseFloat(formData.comissaoValor) || 0,
         },
         comissaoAssinatura: parseFloat(formData.comissaoAssinatura) || 0,
+        foto: formData.foto || null,
       } as any);
 
       setIsEditDialogOpen(false);

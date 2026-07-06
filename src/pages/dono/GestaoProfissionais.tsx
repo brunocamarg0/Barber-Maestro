@@ -122,6 +122,7 @@ export default function GestaoProfissionais() {
       comissaoTipo: profissional.comissao.tipo,
       comissaoValor: String(profissional.comissao.valor ?? ""),
       comissaoAssinatura: String((profissional as any).comissaoAssinatura ?? ""),
+      foto: profissional.foto || "",
     });
     setIsEditDialogOpen(true);
   };

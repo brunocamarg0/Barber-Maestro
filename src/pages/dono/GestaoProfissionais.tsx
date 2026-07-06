@@ -47,7 +47,20 @@ export default function GestaoProfissionais() {
     comissaoTipo: "percentual" as "percentual" | "fixo",
     comissaoValor: "40" as string,
     comissaoAssinatura: "" as string,
+    foto: "" as string,
   });
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Imagem muito grande", description: "Envie uma imagem de até 2MB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setFormData((prev) => ({ ...prev, foto: String(reader.result || "") }));
+    reader.readAsDataURL(file);
+  };
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {

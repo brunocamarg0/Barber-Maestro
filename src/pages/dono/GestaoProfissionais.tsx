@@ -28,7 +28,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Star, TrendingUp } from "lucide-react";
+import { Plus, Edit, Trash2, Star, TrendingUp, Upload, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { ProfissionalDono } from "@/types/dono";
 

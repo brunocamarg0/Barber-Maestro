@@ -274,23 +274,66 @@ All colors MUST be HSL.
 /* Dialogs do painel (renderizam em portal, fora de #cliente-panel).
    Marcamos cada DialogContent do cliente com a classe `cliente-dialog`. */
 [data-radix-dialog-content].cliente-dialog,
-[data-radix-alert-dialog-content].cliente-dialog {
-  background-color: hsl(0 0% 100%) !important;
-  color: hsl(0 0% 3.9%) !important;
-  --background: 0 0% 100%;
-  --foreground: 0 0% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 3.9%;
-  --muted: 0 0% 96.1%;
-  --muted-foreground: 0 0% 35%;
-  --border: 0 0% 89.8%;
-  --input: 0 0% 96.1%;
+[data-radix-alert-dialog-content].cliente-dialog,
+[data-radix-dialog-content].panel-dialog,
+[data-radix-alert-dialog-content].panel-dialog {
+  --background: 0 0% 4%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 72% 51%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 0 72% 51%;
+  --accent-foreground: 0 0% 100%;
+  --border: 0 0% 18%;
+  --input: 0 0% 10%;
+  --ring: 0 72% 51%;
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+  border-radius: 2px !important;
+  font-family: 'Barlow', system-ui, sans-serif;
 }
-.cliente-dialog * {
+.cliente-dialog *,
+.panel-dialog * {
   border-color: hsl(var(--border));
 }
+.cliente-dialog h1, .cliente-dialog h2, .cliente-dialog h3,
+.panel-dialog h1, .panel-dialog h2, .panel-dialog h3 {
+  font-family: 'Bebas Neue', sans-serif !important;
+  letter-spacing: 0.04em;
+  color: hsl(var(--foreground)) !important;
+}
+.cliente-dialog .text-gray-900, .cliente-dialog .text-gray-800, .cliente-dialog .text-gray-700,
+.panel-dialog .text-gray-900, .panel-dialog .text-gray-800, .panel-dialog .text-gray-700 {
+  color: hsl(var(--foreground)) !important;
+}
+.cliente-dialog .text-gray-600, .cliente-dialog .text-gray-500, .cliente-dialog .text-gray-400,
+.panel-dialog .text-gray-600, .panel-dialog .text-gray-500, .panel-dialog .text-gray-400 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.cliente-dialog .bg-white, .cliente-dialog .bg-gray-50, .cliente-dialog .bg-gray-100,
+.panel-dialog .bg-white, .panel-dialog .bg-gray-50, .panel-dialog .bg-gray-100 {
+  background-color: hsl(var(--card)) !important;
+}
+.cliente-dialog input, .cliente-dialog textarea, .cliente-dialog select,
+.panel-dialog input, .panel-dialog textarea, .panel-dialog select {
+  background-color: hsl(var(--input)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+  border-radius: 2px !important;
+}
+
+/* Default dialogs (sem classe explícita) também herdam o tema do painel,
+   já que o Radix portaliza o conteúdo fora dos wrappers #dono-panel /
+   #cliente-panel. Como o root já é dark, o fundo cinza claro do shadcn
+   antigo foi trocado por bg-background/text-foreground em dialog.tsx. */
 
 /* =========================================================================
    Painel Monochrome Red — Dono & Cliente

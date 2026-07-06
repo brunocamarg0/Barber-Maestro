@@ -453,7 +453,7 @@ export default function GestaoClientes() {
             <Button
               variant="outline"
               onClick={() => setModalAberto(false)}
-              variant="outline" className=""
+
             >
               Cancelar
             </Button>
@@ -530,7 +530,7 @@ export default function GestaoClientes() {
                 setClienteEditando(null);
                 setFormCliente({ nome: "", email: "", telefone: "" });
               }}
-              variant="outline" className=""
+
             >
               Cancelar
             </Button>
@@ -592,7 +592,7 @@ export default function GestaoClientes() {
                 setProfissionalSelecionado("");
               }}
               disabled={atribuindo}
-              variant="outline" className=""
+
             >
               Cancelar
             </Button>

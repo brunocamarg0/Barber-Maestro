@@ -103,6 +103,7 @@ export default function GestaoProfissionais() {
         comissaoTipo: "percentual",
         comissaoValor: "40",
         comissaoAssinatura: "",
+        foto: "",
       });
     } catch (error) {
       // Erro já é tratado no contexto
@@ -158,6 +159,7 @@ export default function GestaoProfissionais() {
         comissaoTipo: "percentual",
         comissaoValor: "40",
         comissaoAssinatura: "",
+        foto: "",
       });
     } catch (error) {
       // Erro já é tratado no contexto

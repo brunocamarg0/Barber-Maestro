@@ -397,16 +397,16 @@ export default function GestaoClientes() {
 
       {/* Modal para adicionar novo cliente */}
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
-        <DialogContent className="bg-white text-gray-900">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-gray-900">Novo Cliente</DialogTitle>
-            <DialogDescription className="text-gray-600">
+            <DialogTitle>Novo Cliente</DialogTitle>
+            <DialogDescription>
               Adicione um novo cliente ao sistema
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="nome" className="text-gray-900">
+              <Label htmlFor="nome">
                 Nome *
               </Label>
               <Input
@@ -416,11 +416,11 @@ export default function GestaoClientes() {
                 onChange={(e) =>
                   setFormCliente({ ...formCliente, nome: e.target.value })
                 }
-                className="bg-white text-gray-900 border-gray-300"
+                className=""
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-900">
+              <Label htmlFor="email">
                 Email *
               </Label>
               <Input
@@ -431,11 +431,11 @@ export default function GestaoClientes() {
                 onChange={(e) =>
                   setFormCliente({ ...formCliente, email: e.target.value })
                 }
-                className="bg-white text-gray-900 border-gray-300"
+                className=""
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="telefone" className="text-gray-900">
+              <Label htmlFor="telefone">
                 Telefone *
               </Label>
               <Input
@@ -445,7 +445,7 @@ export default function GestaoClientes() {
                 onChange={(e) =>
                   setFormCliente({ ...formCliente, telefone: e.target.value })
                 }
-                className="bg-white text-gray-900 border-gray-300"
+                className=""
               />
             </div>
           </div>
@@ -453,13 +453,13 @@ export default function GestaoClientes() {
             <Button
               variant="outline"
               onClick={() => setModalAberto(false)}
-              className="text-gray-900 border-gray-300"
+              variant="outline" className=""
             >
               Cancelar
             </Button>
             <Button 
               onClick={handleSalvar} 
-              className="bg-blue-600 hover:bg-blue-700"
+              
               disabled={salvando}
             >
               {salvando ? "Salvando..." : "Salvar Cliente"}
@@ -470,16 +470,16 @@ export default function GestaoClientes() {
 
       {/* Modal para editar cliente */}
       <Dialog open={modalEdicaoAberto} onOpenChange={setModalEdicaoAberto}>
-        <DialogContent className="bg-white text-gray-900">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-gray-900">Editar Cliente</DialogTitle>
-            <DialogDescription className="text-gray-600">
+            <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogDescription>
               Atualize as informações do cliente
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-nome" className="text-gray-900">
+              <Label htmlFor="edit-nome">
                 Nome *
               </Label>
               <Input
@@ -489,11 +489,11 @@ export default function GestaoClientes() {
                 onChange={(e) =>
                   setFormCliente({ ...formCliente, nome: e.target.value })
                 }
-                className="bg-white text-gray-900 border-gray-300"
+                className=""
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-email" className="text-gray-900">
+              <Label htmlFor="edit-email">
                 Email *
               </Label>
               <Input
@@ -504,11 +504,11 @@ export default function GestaoClientes() {
                 onChange={(e) =>
                   setFormCliente({ ...formCliente, email: e.target.value })
                 }
-                className="bg-white text-gray-900 border-gray-300"
+                className=""
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-telefone" className="text-gray-900">
+              <Label htmlFor="edit-telefone">
                 Telefone *
               </Label>
               <Input
@@ -518,7 +518,7 @@ export default function GestaoClientes() {
                 onChange={(e) =>
                   setFormCliente({ ...formCliente, telefone: e.target.value })
                 }
-                className="bg-white text-gray-900 border-gray-300"
+                className=""
               />
             </div>
           </div>
@@ -530,13 +530,13 @@ export default function GestaoClientes() {
                 setClienteEditando(null);
                 setFormCliente({ nome: "", email: "", telefone: "" });
               }}
-              className="text-gray-900 border-gray-300"
+              variant="outline" className=""
             >
               Cancelar
             </Button>
             <Button 
               onClick={handleSalvarEdicao} 
-              className="bg-blue-600 hover:bg-blue-700"
+              
               disabled={salvando}
             >
               {salvando ? "Salvando..." : "Salvar Alterações"}
@@ -547,23 +547,23 @@ export default function GestaoClientes() {
 
       {/* Modal de Atribuir Profissional */}
       <Dialog open={modalAtribuirAberto} onOpenChange={setModalAtribuirAberto}>
-        <DialogContent className="bg-white text-gray-900">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-gray-900">Atribuir Cliente a Profissional</DialogTitle>
-            <DialogDescription className="text-gray-600">
+            <DialogTitle>Atribuir Cliente a Profissional</DialogTitle>
+            <DialogDescription>
               {clienteAtribuindo && `Atribuir ${clienteAtribuindo.nome} a um profissional`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="profissional" className="text-gray-900">
+              <Label htmlFor="profissional">
                 Profissional *
               </Label>
               <Select
                 value={profissionalSelecionado || undefined}
                 onValueChange={(value) => setProfissionalSelecionado(value || "")}
               >
-                <SelectTrigger id="profissional" className="bg-white text-gray-900 border-gray-300">
+                <SelectTrigger id="profissional" className="">
                   <SelectValue placeholder="Selecione um profissional" />
                 </SelectTrigger>
                 <SelectContent>
@@ -592,14 +592,14 @@ export default function GestaoClientes() {
                 setProfissionalSelecionado("");
               }}
               disabled={atribuindo}
-              className="text-gray-900 border-gray-300"
+              variant="outline" className=""
             >
               Cancelar
             </Button>
             <Button 
               onClick={handleSalvarAtribuicao} 
               disabled={atribuindo || !profissionalSelecionado}
-              className="bg-blue-600 hover:bg-blue-700"
+              
             >
               {atribuindo ? "Atribuindo..." : "Atribuir"}
             </Button>

@@ -639,7 +639,12 @@ export default function AgendamentoOnline() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <User className="h-5 w-5" />
+                        <Avatar className="h-12 w-12 border-2 border-primary/20">
+                          <AvatarImage src={profissional.foto || undefined} alt={profissional.nome} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                            {profissional.nome?.charAt(0)?.toUpperCase() || "P"}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
                           <p className="font-medium">{profissional.nome}</p>
                           {profissional.especialidades && profissional.especialidades.length > 0 && (

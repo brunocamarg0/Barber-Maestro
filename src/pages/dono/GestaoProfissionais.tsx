@@ -28,7 +28,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Star, TrendingUp } from "lucide-react";
+import { Plus, Edit, Trash2, Star, TrendingUp, Upload, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { ProfissionalDono } from "@/types/dono";
 
@@ -47,7 +48,20 @@ export default function GestaoProfissionais() {
     comissaoTipo: "percentual" as "percentual" | "fixo",
     comissaoValor: "40" as string,
     comissaoAssinatura: "" as string,
+    foto: "" as string,
   });
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Imagem muito grande", description: "Envie uma imagem de até 2MB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setFormData((prev) => ({ ...prev, foto: String(reader.result || "") }));
+    reader.readAsDataURL(file);
+  };
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -78,6 +92,7 @@ export default function GestaoProfissionais() {
           valor: parseFloat(formData.comissaoValor) || 0,
         },
         comissaoAssinatura: parseFloat(formData.comissaoAssinatura) || 0,
+        foto: formData.foto || undefined,
         ativo: true,
       } as any);
 
@@ -90,6 +105,7 @@ export default function GestaoProfissionais() {
         comissaoTipo: "percentual",
         comissaoValor: "40",
         comissaoAssinatura: "",
+        foto: "",
       });
     } catch (error) {
       // Erro já é tratado no contexto
@@ -108,6 +124,7 @@ export default function GestaoProfissionais() {
       comissaoTipo: profissional.comissao.tipo,
       comissaoValor: String(profissional.comissao.valor ?? ""),
       comissaoAssinatura: String((profissional as any).comissaoAssinatura ?? ""),
+      foto: profissional.foto || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -133,6 +150,7 @@ export default function GestaoProfissionais() {
           valor: parseFloat(formData.comissaoValor) || 0,
         },
         comissaoAssinatura: parseFloat(formData.comissaoAssinatura) || 0,
+        foto: formData.foto || null,
       } as any);
 
       setIsEditDialogOpen(false);
@@ -145,6 +163,7 @@ export default function GestaoProfissionais() {
         comissaoTipo: "percentual",
         comissaoValor: "40",
         comissaoAssinatura: "",
+        foto: "",
       });
     } catch (error) {
       // Erro já é tratado no contexto
@@ -187,6 +206,28 @@ export default function GestaoProfissionais() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Foto do Profissional</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16 border-2 border-primary/20">
+                    <AvatarImage src={formData.foto || undefined} alt="Foto" />
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                      {formData.nome?.charAt(0)?.toUpperCase() || "P"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex gap-2">
+                    <Label htmlFor="foto-upload" className="cursor-pointer inline-flex items-center gap-2 h-9 px-3 rounded-md border border-input bg-background hover:bg-accent text-sm">
+                      <Upload className="h-4 w-4" /> Enviar foto
+                    </Label>
+                    <Input id="foto-upload" type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
+                    {formData.foto && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setFormData({ ...formData, foto: "" })}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="nome">Nome *</Label>
                 <Input
@@ -283,6 +324,28 @@ export default function GestaoProfissionais() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Foto do Profissional</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16 border-2 border-primary/20">
+                    <AvatarImage src={formData.foto || undefined} alt="Foto" />
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                      {formData.nome?.charAt(0)?.toUpperCase() || "P"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex gap-2">
+                    <Label htmlFor="edit-foto-upload" className="cursor-pointer inline-flex items-center gap-2 h-9 px-3 rounded-md border border-input bg-background hover:bg-accent text-sm">
+                      <Upload className="h-4 w-4" /> Enviar foto
+                    </Label>
+                    <Input id="edit-foto-upload" type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
+                    {formData.foto && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setFormData({ ...formData, foto: "" })}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-nome">Nome *</Label>
                 <Input

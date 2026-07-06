@@ -325,6 +325,28 @@ export default function GestaoProfissionais() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
+                <Label>Foto do Profissional</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16 border-2 border-primary/20">
+                    <AvatarImage src={formData.foto || undefined} alt="Foto" />
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                      {formData.nome?.charAt(0)?.toUpperCase() || "P"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex gap-2">
+                    <Label htmlFor="edit-foto-upload" className="cursor-pointer inline-flex items-center gap-2 h-9 px-3 rounded-md border border-input bg-background hover:bg-accent text-sm">
+                      <Upload className="h-4 w-4" /> Enviar foto
+                    </Label>
+                    <Input id="edit-foto-upload" type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
+                    {formData.foto && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setFormData({ ...formData, foto: "" })}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="edit-nome">Nome *</Label>
                 <Input
                   id="edit-nome"

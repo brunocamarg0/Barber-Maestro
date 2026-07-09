@@ -52,7 +52,7 @@ export default function Monitoramento() {
           .select("id", { count: "exact", head: true })
           .gte("data", hojeInicio.toISOString())
           .lte("data", hojeFim.toISOString())
-          .eq("status_pagamento", "pago"),
+          .eq("pago", true),
       ]);
 
       const barbeariasOnline = barbeariasRes.count ?? 0;

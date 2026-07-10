@@ -74,13 +74,7 @@ export default function BarbeariaPublica() {
         setLoading(false);
         return;
       }
-      // Complementa com horário de funcionamento (público)
-      const { data: extra } = await supabase
-        .from("barbearias")
-        .select("horario_funcionamento")
-        .eq("id", (row as any).id)
-        .maybeSingle();
-      setBarbearia({ ...(row as any), horario_funcionamento: extra?.horario_funcionamento });
+      setBarbearia(row as any);
 
       const [{ data: servs }, { data: profs }] = await Promise.all([
         supabase.from("servicos").select("*").eq("barbearia_id", (row as any).id).eq("ativo", true).order("ordem", { ascending: true }),

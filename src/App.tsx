@@ -89,6 +89,8 @@ import LoginAdmin from "./pages/admin/LoginAdmin";
 import BarbeariaPublica from "./pages/public/BarbeariaPublica";
 import Unsubscribe from "./pages/Unsubscribe";
 import Trust from "./pages/Trust";
+import PaginaLegal from "./pages/PaginaLegal";
+import { MaintenanceGate } from "./components/MaintenanceGate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -148,6 +150,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <MaintenanceGate>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
@@ -161,6 +164,8 @@ const App = () => (
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/trust" element={<Trust />} />
             <Route path="/seguranca" element={<Trust />} />
+            <Route path="/termos" element={<PaginaLegal campo="termos_uso" titulo="Termos de Uso" />} />
+            <Route path="/politica-privacidade" element={<PaginaLegal campo="politica_privacidade" titulo="Política de Privacidade" />} />
             <Route path="/admin/login" element={<LoginAdmin />} />
             <Route
               path="/super-admin"
@@ -254,6 +259,7 @@ const App = () => (
             <Route path="/:slug" element={<BarbeariaPublica />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </MaintenanceGate>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

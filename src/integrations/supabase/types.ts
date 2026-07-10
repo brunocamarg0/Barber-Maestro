@@ -1234,6 +1234,48 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          created_at: string
+          dominio: string
+          email_contato: string
+          id: number
+          mensagem_manutencao: string | null
+          modo_manutencao: boolean
+          nome_sistema: string
+          politica_privacidade: string | null
+          telefone_contato: string | null
+          termos_uso: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dominio?: string
+          email_contato?: string
+          id?: number
+          mensagem_manutencao?: string | null
+          modo_manutencao?: boolean
+          nome_sistema?: string
+          politica_privacidade?: string | null
+          telefone_contato?: string | null
+          termos_uso?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dominio?: string
+          email_contato?: string
+          id?: number
+          mensagem_manutencao?: string | null
+          modo_manutencao?: boolean
+          nome_sistema?: string
+          politica_privacidade?: string | null
+          telefone_contato?: string | null
+          termos_uso?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       produtos: {
         Row: {
           ativo: boolean

@@ -50,6 +50,15 @@ export default function BarbeariaPublica() {
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
 
+  // Gate de acesso: escolha inicial entre login, cadastro ou seguir como convidado
+  const [modoAcesso, setModoAcesso] = useState<"escolha" | "login" | "cadastro" | "convidado">("escolha");
+  const [autenticado, setAutenticado] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authSenha, setAuthSenha] = useState("");
+  const [authNome, setAuthNome] = useState("");
+  const [authTel, setAuthTel] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [servicoId, setServicoId] = useState<string>("");
   const [profissionalId, setProfissionalId] = useState<string>("");
@@ -62,6 +71,78 @@ export default function BarbeariaPublica() {
   const [observacoes, setObservacoes] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState(false);
+
+  // Detecta sessão ativa e pré-preenche dados
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setAutenticado(true);
+        setModoAcesso("convidado"); // pula gate
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("nome, email")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        const { data: cli } = await supabase
+          .from("clientes")
+          .select("nome, telefone")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        setNome(cli?.nome || prof?.nome || session.user.user_metadata?.nome || "");
+        setTelefone(cli?.telefone || "");
+      }
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAutenticado(!!session?.user);
+    });
+    return () => { sub.subscription.unsubscribe(); };
+  }, []);
+
+  async function entrar() {
+    if (!authEmail || !authSenha) {
+      toast({ title: "Preencha email e senha", variant: "destructive" });
+      return;
+    }
+    setAuthLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authSenha });
+    setAuthLoading(false);
+    if (error) {
+      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Bem-vindo de volta!" });
+    setModoAcesso("convidado");
+  }
+
+  async function cadastrar() {
+    if (!authNome || !authEmail || !authSenha) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    if (authSenha.length < 6) {
+      toast({ title: "Senha deve ter no mínimo 6 caracteres", variant: "destructive" });
+      return;
+    }
+    setAuthLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email: authEmail,
+      password: authSenha,
+      options: {
+        emailRedirectTo: window.location.href,
+        data: { nome: authNome, telefone: authTel },
+      },
+    });
+    setAuthLoading(false);
+    if (error) {
+      toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Conta criada!", description: "Você já pode agendar." });
+    setNome(authNome);
+    setTelefone(authTel);
+    setModoAcesso("convidado");
+  }
+
 
   useEffect(() => {
     if (!slug) return;
@@ -241,6 +322,96 @@ export default function BarbeariaPublica() {
       </div>
 
       <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4">
+        {modoAcesso === "escolha" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Bem-vindo à {barbearia.nome}</CardTitle>
+              <CardDescription>Entre na sua conta para agendar mais rápido — ou continue sem cadastro.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button className="w-full" onClick={() => setModoAcesso("login")}>Entrar na minha conta</Button>
+              <Button className="w-full" variant="outline" onClick={() => setModoAcesso("cadastro")}>Criar conta rápida</Button>
+              <div className="relative py-1">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center"><span className="bg-card px-2 text-xs text-muted-foreground">ou</span></div>
+              </div>
+              <Button className="w-full" variant="ghost" onClick={() => setModoAcesso("convidado")}>
+                Continuar sem cadastro
+              </Button>
+              <p className="text-[11px] text-center text-muted-foreground">
+                Sem conta você ainda consegue agendar, mas não terá histórico nem lembretes automáticos.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {modoAcesso === "login" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Entrar</CardTitle>
+              <CardDescription>Use o email e a senha da sua conta de cliente.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label htmlFor="loginEmail">Email</Label>
+                <Input id="loginEmail" type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="loginSenha">Senha</Label>
+                <Input id="loginSenha" type="password" value={authSenha} onChange={(e) => setAuthSenha(e.target.value)} />
+              </div>
+              <Button className="w-full" onClick={entrar} disabled={authLoading}>
+                {authLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Entrar
+              </Button>
+              <div className="flex justify-between text-xs">
+                <button className="text-primary hover:underline" onClick={() => setModoAcesso("cadastro")}>Criar conta</button>
+                <button className="text-muted-foreground hover:underline" onClick={() => setModoAcesso("convidado")}>Continuar sem cadastro</button>
+              </div>
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => setModoAcesso("escolha")}>
+                <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {modoAcesso === "cadastro" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Criar conta rápida</CardTitle>
+              <CardDescription>Leva menos de 1 minuto e você acompanha seus agendamentos.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label htmlFor="regNome">Nome completo</Label>
+                <Input id="regNome" value={authNome} onChange={(e) => setAuthNome(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="regTel">Telefone (WhatsApp)</Label>
+                <Input id="regTel" value={authTel} onChange={(e) => setAuthTel(e.target.value)} placeholder="(11) 91234-5678" />
+              </div>
+              <div>
+                <Label htmlFor="regEmail">Email</Label>
+                <Input id="regEmail" type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="regSenha">Senha (mín. 6 caracteres)</Label>
+                <Input id="regSenha" type="password" value={authSenha} onChange={(e) => setAuthSenha(e.target.value)} />
+              </div>
+              <Button className="w-full" onClick={cadastrar} disabled={authLoading}>
+                {authLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Criar conta
+              </Button>
+              <div className="flex justify-between text-xs">
+                <button className="text-primary hover:underline" onClick={() => setModoAcesso("login")}>Já tenho conta</button>
+                <button className="text-muted-foreground hover:underline" onClick={() => setModoAcesso("convidado")}>Continuar sem cadastro</button>
+              </div>
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => setModoAcesso("escolha")}>
+                <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {modoAcesso === "convidado" && (<>
         {/* Stepper simples */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {["Serviço", "Profissional", "Data e horário", "Seus dados"].map((label, i) => (
@@ -249,6 +420,11 @@ export default function BarbeariaPublica() {
             </div>
           ))}
         </div>
+        {!autenticado && (
+          <p className="text-xs text-muted-foreground">
+            Agendando sem cadastro. <button className="text-primary hover:underline" onClick={() => setModoAcesso("escolha")}>Entrar ou criar conta</button>
+          </p>
+        )}
 
         {step > 1 && (
           <Button variant="ghost" size="sm" onClick={() => setStep((s) => (s - 1) as any)}>
@@ -398,6 +574,7 @@ export default function BarbeariaPublica() {
             </CardContent>
           </Card>
         )}
+        </>)}
       </div>
     </div>
   );

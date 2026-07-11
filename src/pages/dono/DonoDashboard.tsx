@@ -77,7 +77,7 @@ export default function DonoDashboard() {
   };
 
   const agendamentosHoje = (agendamentos || []).filter(
-    (a) => a.data === new Date().toISOString().split("T")[0]
+    (a) => a.data === new Date().toLocaleDateString("en-CA")
   );
 
   // Resumo de comissões: em migração — render condicional vazio por enquanto

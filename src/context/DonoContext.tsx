@@ -445,7 +445,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
   // KPI derivado
   const kpi = useMemo<KPI>(() => {
     if (!agendamentos.length) return kpiZero;
-    const hojeStr = new Date().toISOString().slice(0, 10);
+    // Data local (evita bug de fuso: toISOString retorna UTC e desloca o dia)
+    const hojeStr = new Date().toLocaleDateString("en-CA");
     const hoje = new Date();
     const inicioSemana = new Date(hoje);
     inicioSemana.setDate(hoje.getDate() - hoje.getDay());
@@ -459,7 +460,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
 
     agendamentos.forEach((a) => {
       const d = new Date(a.data + "T12:00:00Z");
-      const concluido = a.status === "concluido" || a.status === "confirmado";
+      // Faturamento só conta serviços efetivamente concluídos
+      const concluido = a.status === "concluido";
       if (a.data === hojeStr) agendamentosHoje++;
       if (a.status === "cancelado" || a.status === "recusado") {
         if (d >= inicioMes) cancelamentos++;

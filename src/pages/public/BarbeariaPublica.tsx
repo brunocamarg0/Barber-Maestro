@@ -322,6 +322,96 @@ export default function BarbeariaPublica() {
       </div>
 
       <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4">
+        {modoAcesso === "escolha" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Bem-vindo à {barbearia.nome}</CardTitle>
+              <CardDescription>Entre na sua conta para agendar mais rápido — ou continue sem cadastro.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button className="w-full" onClick={() => setModoAcesso("login")}>Entrar na minha conta</Button>
+              <Button className="w-full" variant="outline" onClick={() => setModoAcesso("cadastro")}>Criar conta rápida</Button>
+              <div className="relative py-1">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center"><span className="bg-card px-2 text-xs text-muted-foreground">ou</span></div>
+              </div>
+              <Button className="w-full" variant="ghost" onClick={() => setModoAcesso("convidado")}>
+                Continuar sem cadastro
+              </Button>
+              <p className="text-[11px] text-center text-muted-foreground">
+                Sem conta você ainda consegue agendar, mas não terá histórico nem lembretes automáticos.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {modoAcesso === "login" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Entrar</CardTitle>
+              <CardDescription>Use o email e a senha da sua conta de cliente.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label htmlFor="loginEmail">Email</Label>
+                <Input id="loginEmail" type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="loginSenha">Senha</Label>
+                <Input id="loginSenha" type="password" value={authSenha} onChange={(e) => setAuthSenha(e.target.value)} />
+              </div>
+              <Button className="w-full" onClick={entrar} disabled={authLoading}>
+                {authLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Entrar
+              </Button>
+              <div className="flex justify-between text-xs">
+                <button className="text-primary hover:underline" onClick={() => setModoAcesso("cadastro")}>Criar conta</button>
+                <button className="text-muted-foreground hover:underline" onClick={() => setModoAcesso("convidado")}>Continuar sem cadastro</button>
+              </div>
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => setModoAcesso("escolha")}>
+                <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {modoAcesso === "cadastro" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Criar conta rápida</CardTitle>
+              <CardDescription>Leva menos de 1 minuto e você acompanha seus agendamentos.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label htmlFor="regNome">Nome completo</Label>
+                <Input id="regNome" value={authNome} onChange={(e) => setAuthNome(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="regTel">Telefone (WhatsApp)</Label>
+                <Input id="regTel" value={authTel} onChange={(e) => setAuthTel(e.target.value)} placeholder="(11) 91234-5678" />
+              </div>
+              <div>
+                <Label htmlFor="regEmail">Email</Label>
+                <Input id="regEmail" type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="regSenha">Senha (mín. 6 caracteres)</Label>
+                <Input id="regSenha" type="password" value={authSenha} onChange={(e) => setAuthSenha(e.target.value)} />
+              </div>
+              <Button className="w-full" onClick={cadastrar} disabled={authLoading}>
+                {authLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Criar conta
+              </Button>
+              <div className="flex justify-between text-xs">
+                <button className="text-primary hover:underline" onClick={() => setModoAcesso("login")}>Já tenho conta</button>
+                <button className="text-muted-foreground hover:underline" onClick={() => setModoAcesso("convidado")}>Continuar sem cadastro</button>
+              </div>
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => setModoAcesso("escolha")}>
+                <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {modoAcesso === "convidado" && (<>
         {/* Stepper simples */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {["Serviço", "Profissional", "Data e horário", "Seus dados"].map((label, i) => (
@@ -330,6 +420,11 @@ export default function BarbeariaPublica() {
             </div>
           ))}
         </div>
+        {!autenticado && (
+          <p className="text-xs text-muted-foreground">
+            Agendando sem cadastro. <button className="text-primary hover:underline" onClick={() => setModoAcesso("escolha")}>Entrar ou criar conta</button>
+          </p>
+        )}
 
         {step > 1 && (
           <Button variant="ghost" size="sm" onClick={() => setStep((s) => (s - 1) as any)}>

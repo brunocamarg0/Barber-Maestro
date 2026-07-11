@@ -50,6 +50,15 @@ export default function BarbeariaPublica() {
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
 
+  // Gate de acesso: escolha inicial entre login, cadastro ou seguir como convidado
+  const [modoAcesso, setModoAcesso] = useState<"escolha" | "login" | "cadastro" | "convidado">("escolha");
+  const [autenticado, setAutenticado] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authSenha, setAuthSenha] = useState("");
+  const [authNome, setAuthNome] = useState("");
+  const [authTel, setAuthTel] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [servicoId, setServicoId] = useState<string>("");
   const [profissionalId, setProfissionalId] = useState<string>("");
@@ -62,6 +71,78 @@ export default function BarbeariaPublica() {
   const [observacoes, setObservacoes] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState(false);
+
+  // Detecta sessão ativa e pré-preenche dados
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setAutenticado(true);
+        setModoAcesso("convidado"); // pula gate
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("nome, email")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        const { data: cli } = await supabase
+          .from("clientes")
+          .select("nome, telefone")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        setNome(cli?.nome || prof?.nome || session.user.user_metadata?.nome || "");
+        setTelefone(cli?.telefone || "");
+      }
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAutenticado(!!session?.user);
+    });
+    return () => { sub.subscription.unsubscribe(); };
+  }, []);
+
+  async function entrar() {
+    if (!authEmail || !authSenha) {
+      toast({ title: "Preencha email e senha", variant: "destructive" });
+      return;
+    }
+    setAuthLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authSenha });
+    setAuthLoading(false);
+    if (error) {
+      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Bem-vindo de volta!" });
+    setModoAcesso("convidado");
+  }
+
+  async function cadastrar() {
+    if (!authNome || !authEmail || !authSenha) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    if (authSenha.length < 6) {
+      toast({ title: "Senha deve ter no mínimo 6 caracteres", variant: "destructive" });
+      return;
+    }
+    setAuthLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email: authEmail,
+      password: authSenha,
+      options: {
+        emailRedirectTo: window.location.href,
+        data: { nome: authNome, telefone: authTel },
+      },
+    });
+    setAuthLoading(false);
+    if (error) {
+      toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Conta criada!", description: "Você já pode agendar." });
+    setNome(authNome);
+    setTelefone(authTel);
+    setModoAcesso("convidado");
+  }
+
 
   useEffect(() => {
     if (!slug) return;

@@ -58,6 +58,7 @@ export default function DonoDashboard() {
   };
 
   const handleConcluir = async (id: string) => {
+    if (!window.confirm("Confirmar que o atendimento foi realmente concluído? Esta ação não pode ser desfeita.")) return;
     setAcaoEmProgresso(id);
     try {
       await atualizarAgendamento(id, { status: "concluido" });
@@ -77,7 +78,7 @@ export default function DonoDashboard() {
   };
 
   const agendamentosHoje = (agendamentos || []).filter(
-    (a) => a.data === new Date().toISOString().split("T")[0]
+    (a) => a.data === new Date().toLocaleDateString("en-CA")
   );
 
   // Resumo de comissões: em migração — render condicional vazio por enquanto

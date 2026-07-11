@@ -574,6 +574,7 @@ export default function BarbeariaPublica() {
             </CardContent>
           </Card>
         )}
+        </>)}
       </div>
     </div>
   );

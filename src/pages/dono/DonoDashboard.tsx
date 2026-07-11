@@ -58,6 +58,7 @@ export default function DonoDashboard() {
   };
 
   const handleConcluir = async (id: string) => {
+    if (!window.confirm("Confirmar que o atendimento foi realmente concluído? Esta ação não pode ser desfeita.")) return;
     setAcaoEmProgresso(id);
     try {
       await atualizarAgendamento(id, { status: "concluido" });

@@ -30,6 +30,8 @@ Deno.serve(async (req) => {
     const plano = String(body.plano || "basico").toLowerCase();
     const nome = String(body.nome || "").trim();
     const email = String(body.email || "").trim().toLowerCase();
+    const extrasRaw = Number(body.profissionaisExtras ?? 0);
+    const extras = Number.isFinite(extrasRaw) ? Math.max(0, Math.min(50, Math.floor(extrasRaw))) : 0;
 
     const cfg = PLANOS[plano];
     if (!cfg) {
@@ -44,14 +46,17 @@ Deno.serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || "https://barbermaestro.com";
+    const extrasValor = cfg.permiteExtras ? extras * PRECO_PROFISSIONAL_EXTRA : 0;
+    const valorTotal = cfg.valor + extrasValor;
+    const tituloExtras = extrasValor > 0 ? ` + ${extras} prof. extra` : "";
 
     const preference = {
       items: [{
         id: `assinatura-${plano}`,
-        title: cfg.nome,
-        description: `Mensalidade ${cfg.nome}`,
+        title: `${cfg.nome}${tituloExtras}`,
+        description: `Mensalidade ${cfg.nome}${tituloExtras}`,
         quantity: 1,
-        unit_price: cfg.valor,
+        unit_price: Number(valorTotal.toFixed(2)),
         currency_id: "BRL",
       }],
       payer: { name: nome, email },
@@ -62,8 +67,8 @@ Deno.serve(async (req) => {
       },
       auto_return: "approved",
       statement_descriptor: "BARBER MAESTRO",
-      metadata: { plano, tipo: "assinatura_dono", email },
-      external_reference: `assinatura_${plano}_${Date.now()}`,
+      metadata: { plano, tipo: "assinatura_dono", email, profissionais_extras: extras },
+      external_reference: `assinatura_${plano}_${extras}_${Date.now()}`,
     };
 
     const resp = await fetch("https://api.mercadopago.com/checkout/preferences", {

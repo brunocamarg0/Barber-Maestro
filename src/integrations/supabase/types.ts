@@ -1750,6 +1750,19 @@ export type Database = {
       }
     }
     Functions: {
+      criar_agendamento_publico: {
+        Args: {
+          _barbearia_id: string
+          _cliente_nome: string
+          _data: string
+          _horario: string
+          _observacao: string
+          _profissional_id: string
+          _servico_id: string
+          _telefone: string
+        }
+        Returns: string
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean

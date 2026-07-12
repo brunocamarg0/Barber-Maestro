@@ -8,11 +8,12 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const PLANOS: Record<string, { nome: string; valor: number }> = {
-  basico: { nome: "Plano Básico - Barber Maestro", valor: 97 },
+const PLANOS: Record<string, { nome: string; valor: number; permiteExtras?: boolean }> = {
+  basico: { nome: "Plano Básico - Barber Maestro", valor: 99.9, permiteExtras: true },
   profissional: { nome: "Plano Profissional - Barber Maestro", valor: 197 },
   professional: { nome: "Plano Profissional - Barber Maestro", valor: 197 },
 };
+const PRECO_PROFISSIONAL_EXTRA = 20;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });

@@ -212,6 +212,25 @@ export default function CheckoutAssinatura() {
                   Enviaremos o comprovante e instruções para este e-mail.
                 </p>
               </div>
+              {plano.permiteExtras && (
+                <div className="space-y-2">
+                  <Label htmlFor="extras" className="text-xs uppercase tracking-wider text-white/70">
+                    Profissionais adicionais (+ R$ 20/mês cada)
+                  </Label>
+                  <Input
+                    id="extras"
+                    type="number"
+                    min={0}
+                    max={50}
+                    value={extras}
+                    onChange={(e) => setExtras(Math.max(0, parseInt(e.target.value || "0", 10)))}
+                    className="rounded-none bg-white text-black border-white/10 focus-visible:ring-0 focus-visible:border-[#dc2626] h-11"
+                  />
+                  <p className="text-xs text-white/40">
+                    O plano Básico inclui 1 profissional. Adicione mais se sua equipe crescer.
+                  </p>
+                </div>
+              )}
               <Button
                 type="submit"
                 disabled={loading}

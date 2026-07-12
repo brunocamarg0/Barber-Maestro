@@ -164,7 +164,7 @@ export default function SuporteCliente() {
         await supabase.functions.invoke("send-transactional-email", {
           body: {
             templateName: "suporte-cliente",
-            recipientEmail: "brunocamargocontato@hotmail.com",
+            recipientEmail: "contato.barbermaestro@hotmail.com",
             templateData: {
               clienteNome: dadosTicket.clienteNome,
               clienteEmail: dadosTicket.clienteEmail,
@@ -255,7 +255,7 @@ export default function SuporteCliente() {
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2 text-sm">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>brunocamargocontato@hotmail.com</span>
+              <span>contato.barbermaestro@hotmail.com</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Phone className="h-4 w-4 text-muted-foreground" />

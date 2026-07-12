@@ -73,7 +73,7 @@ export function ProtectedRoute({ children, requireRole, redirectTo = "/login" }:
             ? "Sua barbearia foi cancelada pelo administrador. Entre em contato com o suporte para mais informações."
             : "Sua barbearia está suspensa. Regularize sua assinatura ou entre em contato com o suporte."}
         </p>
-        <a href="mailto:suporte@barbermaestro.com" className="text-primary underline">Falar com o suporte</a>
+        <a href="mailto:contato.barbermaestro@hotmail.com" className="text-primary underline">Falar com o suporte</a>
       </div>
     );
   }

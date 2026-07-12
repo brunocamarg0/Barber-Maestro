@@ -7,17 +7,21 @@ import { ArrowLeft, ShieldCheck, Loader2, CheckCircle2, Scissors } from "lucide-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const PLANOS: Record<string, { nome: string; valor: number; descricao: string; beneficios: string[] }> = {
+const PRECO_PROFISSIONAL_EXTRA = 20;
+
+const PLANOS: Record<string, { nome: string; valor: number; descricao: string; beneficios: string[]; permiteExtras?: boolean }> = {
   basico: {
     nome: "Básico",
-    valor: 97,
+    valor: 99.9,
     descricao: "Ideal para barbearias começando a digitalizar a gestão.",
     beneficios: [
+      "1 profissional incluso",
+      "Profissionais adicionais por R$ 20/mês cada",
       "Agendamentos online ilimitados",
-      "Até 2 profissionais",
       "Painel financeiro essencial",
       "Suporte por e-mail",
     ],
+    permiteExtras: true,
   },
   profissional: {
     nome: "Profissional",
@@ -54,7 +58,10 @@ export default function CheckoutAssinatura() {
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [extras, setExtras] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const valorTotal = plano.valor + (plano.permiteExtras ? extras * PRECO_PROFISSIONAL_EXTRA : 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +72,7 @@ export default function CheckoutAssinatura() {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("mercadopago-assinatura-checkout", {
-        body: { plano: planoKey, nome: nome.trim(), email: email.trim() },
+        body: { plano: planoKey, nome: nome.trim(), email: email.trim(), profissionaisExtras: plano.permiteExtras ? extras : 0 },
       });
 
       let serverMsg: string | null = (data as any)?.error ?? null;
@@ -205,6 +212,25 @@ export default function CheckoutAssinatura() {
                   Enviaremos o comprovante e instruções para este e-mail.
                 </p>
               </div>
+              {plano.permiteExtras && (
+                <div className="space-y-2">
+                  <Label htmlFor="extras" className="text-xs uppercase tracking-wider text-white/70">
+                    Profissionais adicionais (+ R$ 20/mês cada)
+                  </Label>
+                  <Input
+                    id="extras"
+                    type="number"
+                    min={0}
+                    max={50}
+                    value={extras}
+                    onChange={(e) => setExtras(Math.max(0, parseInt(e.target.value || "0", 10)))}
+                    className="rounded-none bg-white text-black border-white/10 focus-visible:ring-0 focus-visible:border-[#dc2626] h-11"
+                  />
+                  <p className="text-xs text-white/40">
+                    O plano Básico inclui 1 profissional. Adicione mais se sua equipe crescer.
+                  </p>
+                </div>
+              )}
               <Button
                 type="submit"
                 disabled={loading}
@@ -238,9 +264,21 @@ export default function CheckoutAssinatura() {
 
             <div className="mb-6">
               <div className="font-display text-5xl text-[#dc2626] leading-none">
-                R$ {plano.valor.toFixed(2).replace(".", ",")}
+                R$ {valorTotal.toFixed(2).replace(".", ",")}
               </div>
               <div className="text-white/40 text-xs uppercase tracking-wider mt-1">por mês</div>
+              {plano.permiteExtras && extras > 0 && (
+                <div className="mt-3 text-xs text-white/60 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Plano {plano.nome}</span>
+                    <span>R$ {plano.valor.toFixed(2).replace(".", ",")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{extras} profissional{extras > 1 ? "is" : ""} extra</span>
+                    <span>R$ {(extras * PRECO_PROFISSIONAL_EXTRA).toFixed(2).replace(".", ",")}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <ul className="space-y-3 text-sm">

@@ -6,11 +6,12 @@ const plans = [
   {
     name: "Básico",
     slug: "basico",
-    price: "R$ 97",
+    price: "R$ 99,90",
     description: "Ideal para barbearias iniciantes",
     features: [
-      "Até 100 agendamentos/mês",
-      "1 barbeiro",
+      "1 profissional incluso",
+      "+ R$ 20/mês por profissional adicional",
+      "Agendamentos ilimitados",
       "Agendamento online",
       "Notificações por email",
       "Suporte por email",

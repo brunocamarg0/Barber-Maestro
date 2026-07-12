@@ -7,17 +7,21 @@ import { ArrowLeft, ShieldCheck, Loader2, CheckCircle2, Scissors } from "lucide-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const PLANOS: Record<string, { nome: string; valor: number; descricao: string; beneficios: string[] }> = {
+const PRECO_PROFISSIONAL_EXTRA = 20;
+
+const PLANOS: Record<string, { nome: string; valor: number; descricao: string; beneficios: string[]; permiteExtras?: boolean }> = {
   basico: {
     nome: "Básico",
-    valor: 97,
+    valor: 99.9,
     descricao: "Ideal para barbearias começando a digitalizar a gestão.",
     beneficios: [
+      "1 profissional incluso",
+      "Profissionais adicionais por R$ 20/mês cada",
       "Agendamentos online ilimitados",
-      "Até 2 profissionais",
       "Painel financeiro essencial",
       "Suporte por e-mail",
     ],
+    permiteExtras: true,
   },
   profissional: {
     nome: "Profissional",

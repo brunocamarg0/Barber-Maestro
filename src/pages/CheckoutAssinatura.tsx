@@ -264,9 +264,21 @@ export default function CheckoutAssinatura() {
 
             <div className="mb-6">
               <div className="font-display text-5xl text-[#dc2626] leading-none">
-                R$ {plano.valor.toFixed(2).replace(".", ",")}
+                R$ {valorTotal.toFixed(2).replace(".", ",")}
               </div>
               <div className="text-white/40 text-xs uppercase tracking-wider mt-1">por mês</div>
+              {plano.permiteExtras && extras > 0 && (
+                <div className="mt-3 text-xs text-white/60 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Plano {plano.nome}</span>
+                    <span>R$ {plano.valor.toFixed(2).replace(".", ",")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{extras} profissional{extras > 1 ? "is" : ""} extra</span>
+                    <span>R$ {(extras * PRECO_PROFISSIONAL_EXTRA).toFixed(2).replace(".", ",")}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <ul className="space-y-3 text-sm">

@@ -58,7 +58,10 @@ export default function CheckoutAssinatura() {
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [extras, setExtras] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const valorTotal = plano.valor + (plano.permiteExtras ? extras * PRECO_PROFISSIONAL_EXTRA : 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +72,7 @@ export default function CheckoutAssinatura() {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("mercadopago-assinatura-checkout", {
-        body: { plano: planoKey, nome: nome.trim(), email: email.trim() },
+        body: { plano: planoKey, nome: nome.trim(), email: email.trim(), profissionaisExtras: plano.permiteExtras ? extras : 0 },
       });
 
       let serverMsg: string | null = (data as any)?.error ?? null;

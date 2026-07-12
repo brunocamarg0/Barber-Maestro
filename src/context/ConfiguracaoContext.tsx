@@ -14,7 +14,7 @@ const configuracaoInicial: ConfiguracaoPlataforma = {
   nomeSistema: "Barber Maestro",
   dominio: "barbermaestro.com",
   modoManutencao: false,
-  emailContato: "contato@barbermaestro.com",
+  emailContato: "suporte.barbermaestro@hotmail.com",
   telefoneContato: "+55 11 99999-9999",
   configuracoesAvancadas: {},
 };

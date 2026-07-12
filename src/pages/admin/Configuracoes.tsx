@@ -29,7 +29,7 @@ interface PlatformSettings {
 const defaultSettings: PlatformSettings = {
   nome_sistema: "Barber Maestro",
   dominio: "barbermaestro.com",
-  email_contato: "contato@barbermaestro.com",
+  email_contato: "suporte.barbermaestro@hotmail.com",
   telefone_contato: "",
   termos_uso: "",
   politica_privacidade: "",

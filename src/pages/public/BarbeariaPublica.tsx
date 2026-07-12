@@ -205,40 +205,17 @@ export default function BarbeariaPublica() {
     try {
       // Data como ISO com meio-dia UTC (padrão do projeto)
       const dataISO = `${data}T12:00:00.000Z`;
-      const { error } = await supabase.from("agendamentos").insert({
-        barbearia_id: barbearia.id,
-        servico_id: servicoSel.id,
-        cliente_id: null,
-        cliente_nome: nome.trim(),
-        telefone: telefone.trim(),
-        data: dataISO,
-        horario: hora,
-        status: "pendente",
-        observacao: observacoes.trim() || null,
-        confirmado_automaticamente: false,
-      } as any);
+      const { error } = await supabase.rpc("criar_agendamento_publico" as any, {
+        _barbearia_id: barbearia.id,
+        _servico_id: servicoSel.id,
+        _profissional_id: profissionalId || null,
+        _cliente_nome: nome.trim(),
+        _telefone: telefone.trim(),
+        _data: dataISO,
+        _horario: hora,
+        _observacao: observacoes.trim() || null,
+      });
       if (error) throw error;
-
-      if (profissionalId) {
-        // best-effort: liga profissional (ignora erro se policy negar)
-        try {
-          const { data: created } = await supabase
-            .from("agendamentos")
-            .select("id")
-            .eq("barbearia_id", barbearia.id)
-            .eq("horario", hora)
-            .eq("data", dataISO)
-            .order("created_at", { ascending: false })
-            .limit(1);
-          const agId = created?.[0]?.id;
-          if (agId) {
-            await supabase.from("agendamento_profissional").insert({
-              agendamento_id: agId,
-              profissional_id: profissionalId,
-            } as any);
-          }
-        } catch { /* ignore */ }
-      }
 
       setSucesso(true);
     } catch (err: any) {

@@ -200,28 +200,37 @@ export default function BarbeariaPublica() {
   const minData = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 
   async function confirmar() {
-    if (!barbearia || !servicoSel || !data || !hora) return;
+    if (!barbearia || servicosSel.length === 0 || !data || !hora) return;
     if (nome.trim().length < 2 || telefone.replace(/\D/g, "").length < 8) {
       toast({ title: "Dados incompletos", description: "Informe nome e telefone válidos.", variant: "destructive" });
       return;
     }
     setEnviando(true);
     try {
-      // Data como ISO com meio-dia UTC (padrão do projeto)
       const dataISO = `${data}T12:00:00.000Z`;
-      const { error } = await supabase.rpc("criar_agendamento_publico" as any, {
-        _barbearia_id: barbearia.id,
-        _servico_id: servicoSel.id,
-        _profissional_id: profissionalId || null,
-        _cliente_nome: nome.trim(),
-        _telefone: telefone.trim(),
-        _data: dataISO,
-        _horario: hora,
-        _observacao: observacoes.trim() || null,
-      });
-      if (error) throw error;
+      const [hh, mm] = hora.split(":").map(Number);
+      let offsetMin = 0;
+      for (const s of servicosSel) {
+        const total = hh * 60 + mm + offsetMin;
+        const h2 = String(Math.floor(total / 60)).padStart(2, "0");
+        const m2 = String(total % 60).padStart(2, "0");
+        const horarioServico = `${h2}:${m2}`;
+        const { error } = await supabase.rpc("criar_agendamento_publico" as any, {
+          _barbearia_id: barbearia.id,
+          _servico_id: s.id,
+          _profissional_id: profissionalId || null,
+          _cliente_nome: nome.trim(),
+          _telefone: telefone.trim(),
+          _data: dataISO,
+          _horario: horarioServico,
+          _observacao: observacoes.trim() || null,
+        });
+        if (error) throw error;
+        offsetMin += s.duracao || 40;
+      }
 
       setSucesso(true);
+
     } catch (err: any) {
       toast({ title: "Erro ao agendar", description: err.message || "Tente novamente.", variant: "destructive" });
     } finally {

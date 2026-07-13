@@ -571,7 +571,7 @@ export default function BarbeariaPublica() {
               </div>
 
               <div className="rounded-md bg-muted p-3 text-sm space-y-1">
-                <div><b>Serviço:</b> {servicoSel?.nome} — {brl(Number(servicoSel?.preco ?? 0))}</div>
+                <div><b>Serviços:</b> {servicosSel.map((s) => s.nome).join(", ")} — {brl(valorTotal)}</div>
                 <div><b>Data:</b> {data.split("-").reverse().join("/")} às {hora}</div>
                 {profissionalId && (
                   <div><b>Profissional:</b> {profissionais.find((p) => p.id === profissionalId)?.nome}</div>

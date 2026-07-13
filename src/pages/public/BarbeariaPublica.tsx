@@ -182,16 +182,19 @@ export default function BarbeariaPublica() {
     })();
   }, [barbearia?.id, data]);
 
-  const servicoSel = servicos.find((s) => s.id === servicoId);
+  const servicosSel = servicoIds.map((id) => servicos.find((s) => s.id === id)).filter(Boolean) as Servico[];
+  const duracaoTotal = servicosSel.reduce((acc, s) => acc + (s.duracao || 40), 0) || 40;
+  const valorTotal = servicosSel.reduce((acc, s) => acc + Number(s.preco || 0), 0);
   const horarioFunc = useMemo(
     () => parseHorarioFuncionamento(barbearia?.horario_funcionamento),
     [barbearia?.horario_funcionamento]
   );
   const horariosDisponiveis = useMemo(() => {
-    if (!data || !servicoSel) return [];
-    const todos = gerarHorariosDoDia(horarioFunc, data, servicoSel.duracao || 40);
+    if (!data || servicosSel.length === 0) return [];
+    const todos = gerarHorariosDoDia(horarioFunc, data, duracaoTotal);
     return todos.filter((h) => !horariosOcupados.includes(h));
-  }, [data, servicoSel, horarioFunc, horariosOcupados]);
+  }, [data, servicosSel.length, duracaoTotal, horarioFunc, horariosOcupados]);
+
 
   const hoje = new Date();
   const minData = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;

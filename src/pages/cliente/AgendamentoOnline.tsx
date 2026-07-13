@@ -162,28 +162,39 @@ export default function AgendamentoOnline() {
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    if (!formData.servicoId || !formData.data || !formData.hora) {
+    if (servicoIds.length === 0 || !formData.data || !formData.hora) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios.",
+        description: "Selecione ao menos um serviço, a data e o horário.",
         variant: "destructive",
       });
       return;
     }
 
     setIsSubmitting(true);
-    
-    try {
-      const novoAgendamento = await criarAgendamento({
-        barbeariaId: formData.barbeariaId!,
-        servicoId: formData.servicoId!,
-        profissionalId: formData.profissionalId,
-        data: formData.data!,
-        hora: formData.hora!,
-        observacoes: formData.observacoes,
-      });
 
-      // Se é reagendamento, cancela o anterior (libera o slot antigo)
+    try {
+      const [hh, mm] = String(formData.hora).split(":").map(Number);
+      let offsetMin = 0;
+      const idsCriados: string[] = [];
+      for (const s of servicosSelecionados) {
+        const total = hh * 60 + mm + offsetMin;
+        const h2 = String(Math.floor(total / 60)).padStart(2, "0");
+        const m2 = String(total % 60).padStart(2, "0");
+        const horarioServico = `${h2}:${m2}`;
+        const novo = await criarAgendamento({
+          barbeariaId: formData.barbeariaId!,
+          servicoId: s.id,
+          profissionalId: formData.profissionalId,
+          data: formData.data!,
+          hora: horarioServico,
+          observacoes: formData.observacoes,
+        });
+        idsCriados.push(novo.id);
+        offsetMin += s.duracao || 40;
+      }
+
+      // Se é reagendamento, cancela o anterior
       if (reagendarId) {
         try {
           await cancelarAgendamento(reagendarId);
@@ -194,12 +205,17 @@ export default function AgendamentoOnline() {
 
       toast({
         title: reagendarId ? "Reagendamento confirmado!" : "Agendamento criado!",
-        description: "Escolha a forma de pagamento...",
+        description: servicosSelecionados.length > 1 ? `${servicosSelecionados.length} serviços agendados em sequência.` : "Escolha a forma de pagamento...",
       });
 
-      // Ir para step 5 (seleção de forma de pagamento)
-      setAgendamentoIdAtual(novoAgendamento.id);
-      setStep(5);
+      setAgendamentoIdsCriados(idsCriados);
+      // Pagamento online só é suportado para 1 serviço; combos vão direto ao painel
+      if (servicosSelecionados.length === 1) {
+        setAgendamentoIdAtual(idsCriados[0]);
+        setStep(5);
+      } else {
+        setTimeout(() => navigate("/cliente"), 1200);
+      }
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -210,6 +226,7 @@ export default function AgendamentoOnline() {
       setIsSubmitting(false);
     }
   };
+
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {

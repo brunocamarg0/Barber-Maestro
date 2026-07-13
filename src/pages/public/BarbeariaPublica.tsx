@@ -271,7 +271,7 @@ export default function BarbeariaPublica() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="rounded-md border p-3 text-sm space-y-1">
-              <div><b>Serviço:</b> {servicoSel?.nome}</div>
+              <div><b>Serviços:</b> {servicosSel.map((s) => s.nome).join(", ")}</div>
               <div><b>Data:</b> {data.split("-").reverse().join("/")}</div>
               <div><b>Horário:</b> {hora}</div>
               <div><b>Cliente:</b> {nome}</div>

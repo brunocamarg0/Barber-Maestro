@@ -62,6 +62,11 @@ export default function AgendamentoOnline() {
     hora: "",
     observacoes: "",
   });
+  const [servicoIds, setServicoIds] = useState<string[]>(
+    agendamentoAnterior?.servicoId ? [agendamentoAnterior.servicoId] : []
+  );
+  const [agendamentoIdsCriados, setAgendamentoIdsCriados] = useState<string[]>([]);
+
 
   // Carregar todas as barbearias ao montar o componente
   useEffect(() => {

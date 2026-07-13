@@ -879,7 +879,7 @@ export default function AgendamentoOnline() {
             <CardContent className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Serviço:</span>
-                <span className="font-medium">{servicoSelecionado?.nome}</span>
+                <span className="font-medium">{servicosSelecionados[0]?.nome}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Data:</span>
@@ -889,14 +889,15 @@ export default function AgendamentoOnline() {
               </div>
               <div className="flex items-center justify-between font-bold text-lg pt-2 border-t">
                 <span>Total:</span>
-                <span>{formatarMoeda(servicoSelecionado?.preco || 0)}</span>
+                <span>{formatarMoeda(servicosSelecionados[0]?.preco || 0)}</span>
               </div>
             </CardContent>
           </Card>
           
           <SelecaoFormaPagamento
             agendamentoId={agendamentoIdAtual || ""}
-            valor={servicoSelecionado?.preco || 0}
+            valor={servicosSelecionados[0]?.preco || 0}
+
             onPagamentoPresencial={() => {
               toast({
                 title: "Agendamento confirmado!",

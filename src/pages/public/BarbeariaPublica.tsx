@@ -60,11 +60,12 @@ export default function BarbeariaPublica() {
   const [authLoading, setAuthLoading] = useState(false);
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [servicoId, setServicoId] = useState<string>("");
+  const [servicoIds, setServicoIds] = useState<string[]>([]);
   const [profissionalId, setProfissionalId] = useState<string>("");
   const [data, setData] = useState<string>("");
   const [hora, setHora] = useState<string>("");
   const [horariosOcupados, setHorariosOcupados] = useState<string[]>([]);
+
 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");

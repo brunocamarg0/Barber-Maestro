@@ -568,12 +568,12 @@ export default function AgendamentoOnline() {
         ))}
       </div>
 
-      {/* Step 1: Escolher Serviço */}
+      {/* Step 1: Escolher Serviços */}
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>1. Escolha o Serviço</CardTitle>
-            <CardDescription>Selecione o serviço desejado</CardDescription>
+            <CardTitle>1. Escolha os Serviços</CardTitle>
+            <CardDescription>Você pode selecionar mais de um serviço</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {servicosDisponiveis.length === 0 ? (
@@ -581,48 +581,60 @@ export default function AgendamentoOnline() {
                 Nenhum serviço disponível nesta barbearia.
               </p>
             ) : (
-              servicosDisponiveis.map((servico: any) => (
-                <div
-                  key={servico.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${formData.servicoId === servico.id
-                      ? "border-primary bg-primary/5"
-                      : "hover:bg-accent"
-                    }`}
-                  onClick={() => setFormData({ ...formData, servicoId: servico.id })}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Scissors className="h-5 w-5" />
-                      <div>
-                        <p className="font-medium">{servico?.nome || 'Serviço sem nome'}</p>
-                        {servico?.descricao && (
+              servicosDisponiveis.map((servico: any) => {
+                const selecionado = servicoIds.includes(servico.id);
+                return (
+                  <div
+                    key={servico.id}
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selecionado ? "border-primary bg-primary/5" : "hover:bg-accent"}`}
+                    onClick={() =>
+                      setServicoIds((prev) =>
+                        prev.includes(servico.id) ? prev.filter((id) => id !== servico.id) : [...prev, servico.id]
+                      )
+                    }
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${selecionado ? "bg-primary border-primary" : "border-muted-foreground"}`}>
+                          {selecionado && <CheckCircle className="w-3 h-3 text-primary-foreground" />}
+                        </div>
+                        <Scissors className="h-5 w-5" />
+                        <div>
+                          <p className="font-medium">{servico?.nome || 'Serviço sem nome'}</p>
+                          {servico?.descricao && (
+                            <p className="text-sm text-muted-foreground">{servico.descricao}</p>
+                          )}
                           <p className="text-sm text-muted-foreground">
-                            {servico.descricao}
+                            <Clock className="h-3 w-3 inline mr-1" />
+                            {servico.duracao} minutos
                           </p>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          {servico.duracao} minutos
-                        </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">{formatarMoeda(servico.preco)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold">{formatarMoeda(servico.preco)}</p>
-                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
+            )}
+            {servicosSelecionados.length > 0 && (
+              <div className="flex justify-between items-center p-3 rounded-md bg-muted text-sm">
+                <span>{servicosSelecionados.length} serviço(s) — {duracaoTotal} min</span>
+                <span className="font-bold">{formatarMoeda(valorTotal)}</span>
+              </div>
             )}
             <Button
               className="w-full mt-4"
               onClick={() => setStep(2)}
-              disabled={!formData.servicoId}
+              disabled={servicoIds.length === 0}
             >
               Continuar
             </Button>
           </CardContent>
         </Card>
       )}
+
 
       {/* Step 2: Escolher Profissional (opcional) */}
       {step === 2 && (

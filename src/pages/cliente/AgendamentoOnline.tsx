@@ -814,9 +814,11 @@ export default function AgendamentoOnline() {
                 <span className="text-muted-foreground">Barbearia:</span>
                 <span className="font-medium">{barbearia?.nome || 'Barbearia sem nome'}</span>
               </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="text-muted-foreground">Serviço:</span>
-                <span className="font-medium">{servicoSelecionado?.nome}</span>
+              <div className="flex items-start justify-between p-3 border rounded-lg gap-3">
+                <span className="text-muted-foreground">Serviços:</span>
+                <span className="font-medium text-right">
+                  {servicosSelecionados.map((s) => s.nome).join(", ")}
+                </span>
               </div>
               {profissionalSelecionado && (
                 <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -831,18 +833,19 @@ export default function AgendamentoOnline() {
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="text-muted-foreground">Horário:</span>
+                <span className="text-muted-foreground">Horário inicial:</span>
                 <span className="font-medium">{formData.hora}</span>
               </div>
               <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="text-muted-foreground">Duração:</span>
-                <span className="font-medium">{servicoSelecionado?.duracao} minutos</span>
+                <span className="text-muted-foreground">Duração total:</span>
+                <span className="font-medium">{duracaoTotal} minutos</span>
               </div>
               <div className="flex items-center justify-between p-3 border rounded-lg font-bold text-lg">
                 <span>Total:</span>
-                <span>{formatarMoeda(servicoSelecionado?.preco || 0)}</span>
+                <span>{formatarMoeda(valorTotal)}</span>
               </div>
             </div>
+
             <div className="flex gap-2 mt-6">
               <Button variant="outline" onClick={() => setStep(3)} disabled={isSubmitting}>
                 Voltar

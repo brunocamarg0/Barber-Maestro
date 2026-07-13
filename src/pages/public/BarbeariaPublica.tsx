@@ -425,33 +425,57 @@ export default function BarbeariaPublica() {
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>Escolha o serviço</CardTitle>
+              <CardTitle>Escolha os serviços</CardTitle>
+              <CardDescription>Você pode selecionar mais de um serviço.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
               {servicos.length === 0 && (
                 <p className="text-sm text-muted-foreground">Nenhum serviço disponível no momento.</p>
               )}
-              {servicos.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => { setServicoId(s.id); setStep(2); }}
-                  className={`text-left border rounded-md p-3 hover:border-primary transition ${servicoId === s.id ? "border-primary bg-primary/5" : ""}`}
-                >
-                  <div className="flex justify-between items-start gap-3">
-                    <div>
-                      <div className="font-semibold">{s.nome}</div>
-                      {s.descricao && <div className="text-sm text-muted-foreground">{s.descricao}</div>}
-                      <div className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {s.duracao} min
+              {servicos.map((s) => {
+                const selecionado = servicoIds.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() =>
+                      setServicoIds((prev) =>
+                        prev.includes(s.id) ? prev.filter((id) => id !== s.id) : [...prev, s.id]
+                      )
+                    }
+                    className={`text-left border rounded-md p-3 hover:border-primary transition ${selecionado ? "border-primary bg-primary/5" : ""}`}
+                  >
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-1 w-4 h-4 rounded border flex items-center justify-center ${selecionado ? "bg-primary border-primary" : "border-muted-foreground"}`}>
+                          {selecionado && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+                        </div>
+                        <div>
+                          <div className="font-semibold">{s.nome}</div>
+                          {s.descricao && <div className="text-sm text-muted-foreground">{s.descricao}</div>}
+                          <div className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {s.duracao} min
+                          </div>
+                        </div>
                       </div>
+                      <div className="font-bold text-primary whitespace-nowrap">{brl(Number(s.preco))}</div>
                     </div>
-                    <div className="font-bold text-primary whitespace-nowrap">{brl(Number(s.preco))}</div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
+              {servicosSel.length > 0 && (
+                <div className="rounded-md bg-muted p-3 text-sm flex justify-between">
+                  <span>{servicosSel.length} serviço(s) — {duracaoTotal} min</span>
+                  <span className="font-bold">{brl(valorTotal)}</span>
+                </div>
+              )}
+              <Button className="w-full" disabled={servicosSel.length === 0} onClick={() => setStep(2)}>
+                Continuar
+              </Button>
             </CardContent>
           </Card>
         )}
+
+
 
         {step === 2 && (
           <Card>

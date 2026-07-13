@@ -60,11 +60,12 @@ export default function BarbeariaPublica() {
   const [authLoading, setAuthLoading] = useState(false);
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [servicoId, setServicoId] = useState<string>("");
+  const [servicoIds, setServicoIds] = useState<string[]>([]);
   const [profissionalId, setProfissionalId] = useState<string>("");
   const [data, setData] = useState<string>("");
   const [hora, setHora] = useState<string>("");
   const [horariosOcupados, setHorariosOcupados] = useState<string[]>([]);
+
 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -181,43 +182,55 @@ export default function BarbeariaPublica() {
     })();
   }, [barbearia?.id, data]);
 
-  const servicoSel = servicos.find((s) => s.id === servicoId);
+  const servicosSel = servicoIds.map((id) => servicos.find((s) => s.id === id)).filter(Boolean) as Servico[];
+  const duracaoTotal = servicosSel.reduce((acc, s) => acc + (s.duracao || 40), 0) || 40;
+  const valorTotal = servicosSel.reduce((acc, s) => acc + Number(s.preco || 0), 0);
   const horarioFunc = useMemo(
     () => parseHorarioFuncionamento(barbearia?.horario_funcionamento),
     [barbearia?.horario_funcionamento]
   );
   const horariosDisponiveis = useMemo(() => {
-    if (!data || !servicoSel) return [];
-    const todos = gerarHorariosDoDia(horarioFunc, data, servicoSel.duracao || 40);
+    if (!data || servicosSel.length === 0) return [];
+    const todos = gerarHorariosDoDia(horarioFunc, data, duracaoTotal);
     return todos.filter((h) => !horariosOcupados.includes(h));
-  }, [data, servicoSel, horarioFunc, horariosOcupados]);
+  }, [data, servicosSel.length, duracaoTotal, horarioFunc, horariosOcupados]);
+
 
   const hoje = new Date();
   const minData = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 
   async function confirmar() {
-    if (!barbearia || !servicoSel || !data || !hora) return;
+    if (!barbearia || servicosSel.length === 0 || !data || !hora) return;
     if (nome.trim().length < 2 || telefone.replace(/\D/g, "").length < 8) {
       toast({ title: "Dados incompletos", description: "Informe nome e telefone válidos.", variant: "destructive" });
       return;
     }
     setEnviando(true);
     try {
-      // Data como ISO com meio-dia UTC (padrão do projeto)
       const dataISO = `${data}T12:00:00.000Z`;
-      const { error } = await supabase.rpc("criar_agendamento_publico" as any, {
-        _barbearia_id: barbearia.id,
-        _servico_id: servicoSel.id,
-        _profissional_id: profissionalId || null,
-        _cliente_nome: nome.trim(),
-        _telefone: telefone.trim(),
-        _data: dataISO,
-        _horario: hora,
-        _observacao: observacoes.trim() || null,
-      });
-      if (error) throw error;
+      const [hh, mm] = hora.split(":").map(Number);
+      let offsetMin = 0;
+      for (const s of servicosSel) {
+        const total = hh * 60 + mm + offsetMin;
+        const h2 = String(Math.floor(total / 60)).padStart(2, "0");
+        const m2 = String(total % 60).padStart(2, "0");
+        const horarioServico = `${h2}:${m2}`;
+        const { error } = await supabase.rpc("criar_agendamento_publico" as any, {
+          _barbearia_id: barbearia.id,
+          _servico_id: s.id,
+          _profissional_id: profissionalId || null,
+          _cliente_nome: nome.trim(),
+          _telefone: telefone.trim(),
+          _data: dataISO,
+          _horario: horarioServico,
+          _observacao: observacoes.trim() || null,
+        });
+        if (error) throw error;
+        offsetMin += s.duracao || 40;
+      }
 
       setSucesso(true);
+
     } catch (err: any) {
       toast({ title: "Erro ao agendar", description: err.message || "Tente novamente.", variant: "destructive" });
     } finally {
@@ -258,7 +271,7 @@ export default function BarbeariaPublica() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="rounded-md border p-3 text-sm space-y-1">
-              <div><b>Serviço:</b> {servicoSel?.nome}</div>
+              <div><b>Serviços:</b> {servicosSel.map((s) => s.nome).join(", ")}</div>
               <div><b>Data:</b> {data.split("-").reverse().join("/")}</div>
               <div><b>Horário:</b> {hora}</div>
               <div><b>Cliente:</b> {nome}</div>
@@ -412,33 +425,57 @@ export default function BarbeariaPublica() {
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>Escolha o serviço</CardTitle>
+              <CardTitle>Escolha os serviços</CardTitle>
+              <CardDescription>Você pode selecionar mais de um serviço.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
               {servicos.length === 0 && (
                 <p className="text-sm text-muted-foreground">Nenhum serviço disponível no momento.</p>
               )}
-              {servicos.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => { setServicoId(s.id); setStep(2); }}
-                  className={`text-left border rounded-md p-3 hover:border-primary transition ${servicoId === s.id ? "border-primary bg-primary/5" : ""}`}
-                >
-                  <div className="flex justify-between items-start gap-3">
-                    <div>
-                      <div className="font-semibold">{s.nome}</div>
-                      {s.descricao && <div className="text-sm text-muted-foreground">{s.descricao}</div>}
-                      <div className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {s.duracao} min
+              {servicos.map((s) => {
+                const selecionado = servicoIds.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() =>
+                      setServicoIds((prev) =>
+                        prev.includes(s.id) ? prev.filter((id) => id !== s.id) : [...prev, s.id]
+                      )
+                    }
+                    className={`text-left border rounded-md p-3 hover:border-primary transition ${selecionado ? "border-primary bg-primary/5" : ""}`}
+                  >
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-1 w-4 h-4 rounded border flex items-center justify-center ${selecionado ? "bg-primary border-primary" : "border-muted-foreground"}`}>
+                          {selecionado && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+                        </div>
+                        <div>
+                          <div className="font-semibold">{s.nome}</div>
+                          {s.descricao && <div className="text-sm text-muted-foreground">{s.descricao}</div>}
+                          <div className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {s.duracao} min
+                          </div>
+                        </div>
                       </div>
+                      <div className="font-bold text-primary whitespace-nowrap">{brl(Number(s.preco))}</div>
                     </div>
-                    <div className="font-bold text-primary whitespace-nowrap">{brl(Number(s.preco))}</div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
+              {servicosSel.length > 0 && (
+                <div className="rounded-md bg-muted p-3 text-sm flex justify-between">
+                  <span>{servicosSel.length} serviço(s) — {duracaoTotal} min</span>
+                  <span className="font-bold">{brl(valorTotal)}</span>
+                </div>
+              )}
+              <Button className="w-full" disabled={servicosSel.length === 0} onClick={() => setStep(2)}>
+                Continuar
+              </Button>
             </CardContent>
           </Card>
         )}
+
+
 
         {step === 2 && (
           <Card>
@@ -534,7 +571,7 @@ export default function BarbeariaPublica() {
               </div>
 
               <div className="rounded-md bg-muted p-3 text-sm space-y-1">
-                <div><b>Serviço:</b> {servicoSel?.nome} — {brl(Number(servicoSel?.preco ?? 0))}</div>
+                <div><b>Serviços:</b> {servicosSel.map((s) => s.nome).join(", ")} — {brl(valorTotal)}</div>
                 <div><b>Data:</b> {data.split("-").reverse().join("/")} às {hora}</div>
                 {profissionalId && (
                   <div><b>Profissional:</b> {profissionais.find((p) => p.id === profissionalId)?.nome}</div>

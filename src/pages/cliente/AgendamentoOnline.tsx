@@ -62,6 +62,11 @@ export default function AgendamentoOnline() {
     hora: "",
     observacoes: "",
   });
+  const [servicoIds, setServicoIds] = useState<string[]>(
+    agendamentoAnterior?.servicoId ? [agendamentoAnterior.servicoId] : []
+  );
+  const [agendamentoIdsCriados, setAgendamentoIdsCriados] = useState<string[]>([]);
+
 
   // Carregar todas as barbearias ao montar o componente
   useEffect(() => {
@@ -131,16 +136,22 @@ export default function AgendamentoOnline() {
     carregarHorariosOcupados();
   }, [formData.barbeariaId, formData.data]);
 
-  // Horários possíveis a partir do funcionamento da barbearia + duração do serviço
-  const servicoAtual = (barbearia?.servicos || []).find((s: any) => s.id === formData.servicoId);
-  const duracaoAtual = servicoAtual?.duracao || 40;
+  const servicosDisponiveis = (barbearia?.servicos || []).filter((s: any) => s.ativo !== false);
+  const profissionaisDisponiveis = (barbearia?.profissionais || []).filter((p: any) => p.ativo !== false);
+  const servicosSelecionados = servicoIds
+    .map((id) => servicosDisponiveis.find((s: any) => s.id === id))
+    .filter(Boolean) as any[];
+  const duracaoTotal = servicosSelecionados.reduce((acc, s) => acc + (s.duracao || 40), 0) || 40;
+  const valorTotal = servicosSelecionados.reduce((acc, s) => acc + Number(s.preco || 0), 0);
+  const profissionalSelecionado = profissionaisDisponiveis.find((p: any) => p.id === formData.profissionalId);
+
   const horarioFuncionamento = useMemo(
     () => parseHorarioFuncionamento(barbearia?.horario_funcionamento),
     [barbearia?.horario_funcionamento]
   );
   const todosHorarios = useMemo(
-    () => (formData.data ? gerarHorariosDoDia(horarioFuncionamento, formData.data, duracaoAtual) : []),
-    [horarioFuncionamento, formData.data, duracaoAtual]
+    () => (formData.data ? gerarHorariosDoDia(horarioFuncionamento, formData.data, duracaoTotal) : []),
+    [horarioFuncionamento, formData.data, duracaoTotal]
   );
 
   // Calcular horários disponíveis
@@ -148,35 +159,42 @@ export default function AgendamentoOnline() {
     return todosHorarios.filter(horario => !horariosOcupados.includes(horario));
   }, [todosHorarios, horariosOcupados]);
 
-  const servicosDisponiveis = (barbearia?.servicos || []).filter((s: any) => s.ativo !== false);
-  const profissionaisDisponiveis = (barbearia?.profissionais || []).filter((p: any) => p.ativo !== false);
-  const servicoSelecionado = servicosDisponiveis.find((s: any) => s.id === formData.servicoId);
-  const profissionalSelecionado = profissionaisDisponiveis.find((p: any) => p.id === formData.profissionalId);
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    if (!formData.servicoId || !formData.data || !formData.hora) {
+    if (servicoIds.length === 0 || !formData.data || !formData.hora) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios.",
+        description: "Selecione ao menos um serviço, a data e o horário.",
         variant: "destructive",
       });
       return;
     }
 
     setIsSubmitting(true);
-    
-    try {
-      const novoAgendamento = await criarAgendamento({
-        barbeariaId: formData.barbeariaId!,
-        servicoId: formData.servicoId!,
-        profissionalId: formData.profissionalId,
-        data: formData.data!,
-        hora: formData.hora!,
-        observacoes: formData.observacoes,
-      });
 
-      // Se é reagendamento, cancela o anterior (libera o slot antigo)
+    try {
+      const [hh, mm] = String(formData.hora).split(":").map(Number);
+      let offsetMin = 0;
+      const idsCriados: string[] = [];
+      for (const s of servicosSelecionados) {
+        const total = hh * 60 + mm + offsetMin;
+        const h2 = String(Math.floor(total / 60)).padStart(2, "0");
+        const m2 = String(total % 60).padStart(2, "0");
+        const horarioServico = `${h2}:${m2}`;
+        const novo = await criarAgendamento({
+          barbeariaId: formData.barbeariaId!,
+          servicoId: s.id,
+          profissionalId: formData.profissionalId,
+          data: formData.data!,
+          hora: horarioServico,
+          observacoes: formData.observacoes,
+        });
+        idsCriados.push(novo.id);
+        offsetMin += s.duracao || 40;
+      }
+
+      // Se é reagendamento, cancela o anterior
       if (reagendarId) {
         try {
           await cancelarAgendamento(reagendarId);
@@ -187,12 +205,17 @@ export default function AgendamentoOnline() {
 
       toast({
         title: reagendarId ? "Reagendamento confirmado!" : "Agendamento criado!",
-        description: "Escolha a forma de pagamento...",
+        description: servicosSelecionados.length > 1 ? `${servicosSelecionados.length} serviços agendados em sequência.` : "Escolha a forma de pagamento...",
       });
 
-      // Ir para step 5 (seleção de forma de pagamento)
-      setAgendamentoIdAtual(novoAgendamento.id);
-      setStep(5);
+      setAgendamentoIdsCriados(idsCriados);
+      // Pagamento online só é suportado para 1 serviço; combos vão direto ao painel
+      if (servicosSelecionados.length === 1) {
+        setAgendamentoIdAtual(idsCriados[0]);
+        setStep(5);
+      } else {
+        setTimeout(() => navigate("/cliente"), 1200);
+      }
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -203,6 +226,7 @@ export default function AgendamentoOnline() {
       setIsSubmitting(false);
     }
   };
+
 
   const formatarMoeda = (valor: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -544,12 +568,12 @@ export default function AgendamentoOnline() {
         ))}
       </div>
 
-      {/* Step 1: Escolher Serviço */}
+      {/* Step 1: Escolher Serviços */}
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>1. Escolha o Serviço</CardTitle>
-            <CardDescription>Selecione o serviço desejado</CardDescription>
+            <CardTitle>1. Escolha os Serviços</CardTitle>
+            <CardDescription>Você pode selecionar mais de um serviço</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {servicosDisponiveis.length === 0 ? (
@@ -557,48 +581,60 @@ export default function AgendamentoOnline() {
                 Nenhum serviço disponível nesta barbearia.
               </p>
             ) : (
-              servicosDisponiveis.map((servico: any) => (
-                <div
-                  key={servico.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${formData.servicoId === servico.id
-                      ? "border-primary bg-primary/5"
-                      : "hover:bg-accent"
-                    }`}
-                  onClick={() => setFormData({ ...formData, servicoId: servico.id })}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Scissors className="h-5 w-5" />
-                      <div>
-                        <p className="font-medium">{servico?.nome || 'Serviço sem nome'}</p>
-                        {servico?.descricao && (
+              servicosDisponiveis.map((servico: any) => {
+                const selecionado = servicoIds.includes(servico.id);
+                return (
+                  <div
+                    key={servico.id}
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selecionado ? "border-primary bg-primary/5" : "hover:bg-accent"}`}
+                    onClick={() =>
+                      setServicoIds((prev) =>
+                        prev.includes(servico.id) ? prev.filter((id) => id !== servico.id) : [...prev, servico.id]
+                      )
+                    }
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${selecionado ? "bg-primary border-primary" : "border-muted-foreground"}`}>
+                          {selecionado && <CheckCircle className="w-3 h-3 text-primary-foreground" />}
+                        </div>
+                        <Scissors className="h-5 w-5" />
+                        <div>
+                          <p className="font-medium">{servico?.nome || 'Serviço sem nome'}</p>
+                          {servico?.descricao && (
+                            <p className="text-sm text-muted-foreground">{servico.descricao}</p>
+                          )}
                           <p className="text-sm text-muted-foreground">
-                            {servico.descricao}
+                            <Clock className="h-3 w-3 inline mr-1" />
+                            {servico.duracao} minutos
                           </p>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          {servico.duracao} minutos
-                        </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">{formatarMoeda(servico.preco)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold">{formatarMoeda(servico.preco)}</p>
-                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
+            )}
+            {servicosSelecionados.length > 0 && (
+              <div className="flex justify-between items-center p-3 rounded-md bg-muted text-sm">
+                <span>{servicosSelecionados.length} serviço(s) — {duracaoTotal} min</span>
+                <span className="font-bold">{formatarMoeda(valorTotal)}</span>
+              </div>
             )}
             <Button
               className="w-full mt-4"
               onClick={() => setStep(2)}
-              disabled={!formData.servicoId}
+              disabled={servicoIds.length === 0}
             >
               Continuar
             </Button>
           </CardContent>
         </Card>
       )}
+
 
       {/* Step 2: Escolher Profissional (opcional) */}
       {step === 2 && (
@@ -778,9 +814,11 @@ export default function AgendamentoOnline() {
                 <span className="text-muted-foreground">Barbearia:</span>
                 <span className="font-medium">{barbearia?.nome || 'Barbearia sem nome'}</span>
               </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="text-muted-foreground">Serviço:</span>
-                <span className="font-medium">{servicoSelecionado?.nome}</span>
+              <div className="flex items-start justify-between p-3 border rounded-lg gap-3">
+                <span className="text-muted-foreground">Serviços:</span>
+                <span className="font-medium text-right">
+                  {servicosSelecionados.map((s) => s.nome).join(", ")}
+                </span>
               </div>
               {profissionalSelecionado && (
                 <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -795,18 +833,19 @@ export default function AgendamentoOnline() {
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="text-muted-foreground">Horário:</span>
+                <span className="text-muted-foreground">Horário inicial:</span>
                 <span className="font-medium">{formData.hora}</span>
               </div>
               <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="text-muted-foreground">Duração:</span>
-                <span className="font-medium">{servicoSelecionado?.duracao} minutos</span>
+                <span className="text-muted-foreground">Duração total:</span>
+                <span className="font-medium">{duracaoTotal} minutos</span>
               </div>
               <div className="flex items-center justify-between p-3 border rounded-lg font-bold text-lg">
                 <span>Total:</span>
-                <span>{formatarMoeda(servicoSelecionado?.preco || 0)}</span>
+                <span>{formatarMoeda(valorTotal)}</span>
               </div>
             </div>
+
             <div className="flex gap-2 mt-6">
               <Button variant="outline" onClick={() => setStep(3)} disabled={isSubmitting}>
                 Voltar
@@ -840,7 +879,7 @@ export default function AgendamentoOnline() {
             <CardContent className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Serviço:</span>
-                <span className="font-medium">{servicoSelecionado?.nome}</span>
+                <span className="font-medium">{servicosSelecionados[0]?.nome}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Data:</span>
@@ -850,14 +889,15 @@ export default function AgendamentoOnline() {
               </div>
               <div className="flex items-center justify-between font-bold text-lg pt-2 border-t">
                 <span>Total:</span>
-                <span>{formatarMoeda(servicoSelecionado?.preco || 0)}</span>
+                <span>{formatarMoeda(servicosSelecionados[0]?.preco || 0)}</span>
               </div>
             </CardContent>
           </Card>
           
           <SelecaoFormaPagamento
             agendamentoId={agendamentoIdAtual || ""}
-            valor={servicoSelecionado?.preco || 0}
+            valor={servicosSelecionados[0]?.preco || 0}
+
             onPagamentoPresencial={() => {
               toast({
                 title: "Agendamento confirmado!",

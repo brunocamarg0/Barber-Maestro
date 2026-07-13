@@ -136,16 +136,22 @@ export default function AgendamentoOnline() {
     carregarHorariosOcupados();
   }, [formData.barbeariaId, formData.data]);
 
-  // Horários possíveis a partir do funcionamento da barbearia + duração do serviço
-  const servicoAtual = (barbearia?.servicos || []).find((s: any) => s.id === formData.servicoId);
-  const duracaoAtual = servicoAtual?.duracao || 40;
+  const servicosDisponiveis = (barbearia?.servicos || []).filter((s: any) => s.ativo !== false);
+  const profissionaisDisponiveis = (barbearia?.profissionais || []).filter((p: any) => p.ativo !== false);
+  const servicosSelecionados = servicoIds
+    .map((id) => servicosDisponiveis.find((s: any) => s.id === id))
+    .filter(Boolean) as any[];
+  const duracaoTotal = servicosSelecionados.reduce((acc, s) => acc + (s.duracao || 40), 0) || 40;
+  const valorTotal = servicosSelecionados.reduce((acc, s) => acc + Number(s.preco || 0), 0);
+  const profissionalSelecionado = profissionaisDisponiveis.find((p: any) => p.id === formData.profissionalId);
+
   const horarioFuncionamento = useMemo(
     () => parseHorarioFuncionamento(barbearia?.horario_funcionamento),
     [barbearia?.horario_funcionamento]
   );
   const todosHorarios = useMemo(
-    () => (formData.data ? gerarHorariosDoDia(horarioFuncionamento, formData.data, duracaoAtual) : []),
-    [horarioFuncionamento, formData.data, duracaoAtual]
+    () => (formData.data ? gerarHorariosDoDia(horarioFuncionamento, formData.data, duracaoTotal) : []),
+    [horarioFuncionamento, formData.data, duracaoTotal]
   );
 
   // Calcular horários disponíveis
@@ -153,10 +159,6 @@ export default function AgendamentoOnline() {
     return todosHorarios.filter(horario => !horariosOcupados.includes(horario));
   }, [todosHorarios, horariosOcupados]);
 
-  const servicosDisponiveis = (barbearia?.servicos || []).filter((s: any) => s.ativo !== false);
-  const profissionaisDisponiveis = (barbearia?.profissionais || []).filter((p: any) => p.ativo !== false);
-  const servicoSelecionado = servicosDisponiveis.find((s: any) => s.id === formData.servicoId);
-  const profissionalSelecionado = profissionaisDisponiveis.find((p: any) => p.id === formData.profissionalId);
 
   const handleSubmit = async () => {
     if (isSubmitting) return;

@@ -76,10 +76,10 @@ export default function Trust() {
             <p className="text-muted-foreground">
               Dúvidas de segurança ou privacidade:{" "}
               <a
-                href="mailto:contato.barbermaestro@hotmail.com"
+                href="mailto:contato.barbermaestro@outlook.com"
                 className="text-primary hover:underline"
               >
-                contato.barbermaestro@hotmail.com
+                contato.barbermaestro@outlook.com
               </a>
             </p>
           </Section>

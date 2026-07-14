@@ -811,7 +811,7 @@ export default function AgendaInteligente() {
                     {agendamentosDoDia.map((agendamento) => (
                       <div
                         key={agendamento.id}
-                        className="p-3 border rounded-lg hover:bg-accent"
+                        className="p-3 border rounded-lg transition-colors hover:bg-muted/40 hover:border-primary/40"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">

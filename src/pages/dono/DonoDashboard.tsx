@@ -301,34 +301,49 @@ export default function DonoDashboard() {
           .filter((a) => a.status === "pendente")
           .sort((a, b) => (a.data + (a.horario || "")).localeCompare(b.data + (b.horario || "")));
         return (
-          <Card className="border-yellow-500/40">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
+          <Card className="relative overflow-hidden bg-[hsl(0_0%_5%)] border-[hsl(0_0%_14%)]">
+            {/* Linha vermelha animada no topo */}
+            <div className="absolute top-0 left-0 h-[2px] w-full overflow-hidden">
+              <div className="h-full w-1/3 bg-primary animate-[slide_2.5s_ease-in-out_infinite]" />
+            </div>
+            {/* Grid decorativo de fundo */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-40"
+              style={{
+                backgroundImage:
+                  "linear-gradient(hsl(0 0% 100% / 0.03) 1px, transparent 1px), linear-gradient(90deg, hsl(0 0% 100% / 0.03) 1px, transparent 1px)",
+                backgroundSize: "32px 32px",
+              }}
+            />
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center gap-2 uppercase tracking-wider">
+                <Clock className="h-5 w-5 text-primary" />
                 Confirmações Pendentes
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="uppercase tracking-widest text-xs">
                 {pendentes.length === 0
                   ? "Nenhum agendamento aguardando confirmação"
                   : `${pendentes.length} agendamento(s) aguardando confirmação`}
               </CardDescription>
             </CardHeader>
             {pendentes.length > 0 && (
-              <CardContent>
+              <CardContent className="relative">
                 <div className="space-y-2">
                   {pendentes.slice(0, 8).map((a) => (
                     <div
                       key={a.id}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg"
+                      className="group relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[hsl(0_0%_7%)] border border-[hsl(0_0%_14%)] hover:border-primary/50 hover:bg-[hsl(0_0%_9%)] transition-all duration-300 overflow-hidden"
                     >
-                      <div className="flex-1">
+                      {/* Linha vermelha correndo no hover */}
+                      <div className="pointer-events-none absolute bottom-0 left-0 h-[2px] w-0 bg-primary transition-all duration-500 group-hover:w-full" />
+                      <div className="flex-1 relative">
                         <p className="font-medium">{a.clienteNome}</p>
                         <p className="text-sm text-muted-foreground">
                           {a.servicoNome} • {a.profissionalNome} • {a.data} {a.horario}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{formatarMoeda(a.valor)}</span>
+                      <div className="flex items-center gap-2 relative">
+                        <span className="font-medium text-primary">{formatarMoeda(a.valor)}</span>
                         <Button
                           size="sm"
                           variant="outline"

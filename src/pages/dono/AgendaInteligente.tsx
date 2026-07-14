@@ -811,7 +811,7 @@ export default function AgendaInteligente() {
                     {agendamentosDoDia.map((agendamento) => (
                       <div
                         key={agendamento.id}
-                        className="p-3 border rounded-lg hover:bg-accent"
+                        className="p-3 border rounded-lg transition-colors hover:bg-muted/40 hover:border-primary/40"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -854,7 +854,7 @@ export default function AgendaInteligente() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="border-red-600/40 text-red-500 hover:bg-red-600 hover:text-white hover:border-red-600"
                                   onClick={() => setAgendamentoParaRecusar({ id: agendamento.id, clienteNome: agendamento.clienteNome })}
                                   disabled={!!processingId}
                                 >

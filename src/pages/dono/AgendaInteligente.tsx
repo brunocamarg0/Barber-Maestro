@@ -635,57 +635,72 @@ export default function AgendaInteligente() {
 
       {/* Seção de Agendamentos Pendentes */}
       {listaAgendamentosPendentes.length > 0 && (
-        <Card className="border-yellow-500 bg-yellow-50/50">
-          <CardHeader>
+        <Card className="relative overflow-hidden bg-[hsl(0_0%_5%)] border-[hsl(0_0%_14%)]">
+          {/* Linha vermelha animada no topo */}
+          <div className="absolute top-0 left-0 h-[2px] w-full overflow-hidden">
+            <div className="h-full w-1/3 bg-primary animate-[slide_2.5s_ease-in-out_infinite]" />
+          </div>
+          {/* Grid decorativo de fundo */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-40"
+            style={{
+              backgroundImage:
+                "linear-gradient(hsl(0 0% 100% / 0.03) 1px, transparent 1px), linear-gradient(90deg, hsl(0 0% 100% / 0.03) 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
+            }}
+          />
+          <CardHeader className="relative">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                  <AlertCircle className="h-5 w-5 text-yellow-600" />
+                <CardTitle className="flex items-center gap-2 uppercase tracking-wider">
+                  <AlertCircle className="h-5 w-5 text-primary" />
                   Agendamentos Pendentes de Confirmação
                 </CardTitle>
-                <CardDescription className="text-gray-700 dark:text-gray-300">
+                <CardDescription className="uppercase tracking-widest text-xs mt-1">
                   {listaAgendamentosPendentes.length} agendamento(s) aguardando sua confirmação
                 </CardDescription>
               </div>
-              <Badge variant="destructive" className="text-lg px-3 py-1">
+              <Badge className="text-lg px-3 py-1 bg-primary text-primary-foreground border-0 rounded-sm">
                 {listaAgendamentosPendentes.length}
               </Badge>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-5">
+          <CardContent className="relative">
+            <div className="space-y-3">
               {listaAgendamentosPendentes.slice(0, 5).map((agendamento) => (
                 <div
                   key={agendamento.id}
-                  className="p-6 border border-yellow-300 rounded-lg bg-white hover:bg-yellow-50 transition-colors"
+                  className="group relative p-6 bg-[hsl(0_0%_7%)] border border-[hsl(0_0%_14%)] hover:border-primary/50 hover:bg-[hsl(0_0%_9%)] transition-all duration-300 overflow-hidden"
                 >
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                  {/* Linha vermelha correndo no hover */}
+                  <div className="pointer-events-none absolute bottom-0 left-0 h-[2px] w-0 bg-primary transition-all duration-500 group-hover:w-full" />
+                  <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
                     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-x-8 gap-y-4 flex-1">
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Data</span>
+                        <span className="text-xs uppercase tracking-widest text-muted-foreground">Data</span>
                         <span className="font-semibold">
                           {format(parseDateOnlyToSafeDate(agendamento.data), "dd/MM/yyyy", { locale: ptBR })}
                         </span>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Horário</span>
+                        <span className="text-xs uppercase tracking-widest text-muted-foreground">Horário</span>
                         <span className="font-semibold">{agendamento.horario}</span>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Cliente</span>
+                        <span className="text-xs uppercase tracking-widest text-muted-foreground">Cliente</span>
                         <span className="font-semibold">{agendamento.clienteNome}</span>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Profissional</span>
+                        <span className="text-xs uppercase tracking-widest text-muted-foreground">Profissional</span>
                         <span className="font-medium">{agendamento.profissionalNome}</span>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Serviço</span>
+                        <span className="text-xs uppercase tracking-widest text-muted-foreground">Serviço</span>
                         <span className="font-medium">{agendamento.servicoNome}</span>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Valor</span>
-                        <span className="font-bold text-green-600">{formatarMoeda(agendamento.valor)}</span>
+                        <span className="text-xs uppercase tracking-widest text-muted-foreground">Valor</span>
+                        <span className="font-bold text-primary">{formatarMoeda(agendamento.valor)}</span>
                       </div>
                     </div>
                     <div className="flex gap-3 lg:flex-col xl:flex-row shrink-0">
@@ -693,7 +708,6 @@ export default function AgendaInteligente() {
                         size="sm"
                         onClick={() => handleConfirmar(agendamento.id)}
                         disabled={processingId === agendamento.id}
-                        className="bg-green-600 hover:bg-green-700"
                       >
                         {processingId === agendamento.id ? (
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -705,7 +719,6 @@ export default function AgendaInteligente() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         onClick={() => setAgendamentoParaRecusar({ id: agendamento.id, clienteNome: agendamento.clienteNome })}
                         disabled={!!processingId}
                       >
@@ -717,7 +730,7 @@ export default function AgendaInteligente() {
                 </div>
               ))}
               {listaAgendamentosPendentes.length > 5 && (
-                <p className="text-sm text-center text-muted-foreground pt-2">
+                <p className="text-sm text-center text-muted-foreground pt-2 uppercase tracking-widest">
                   E mais {listaAgendamentosPendentes.length - 5} agendamento(s) pendente(s).
                   Use os filtros para visualizar todos.
                 </p>

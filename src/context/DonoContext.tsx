@@ -1064,6 +1064,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         toggleServicoAtivo,
         registrarPagamento,
         registrarPagamentoManual,
+        confirmarPagamento,
+        cancelarPagamento,
         criarPromocao,
         atualizarPromocao,
         removerPromocao,

@@ -1024,10 +1024,10 @@ export default function AgendaInteligente() {
                     {semana.map(({ dia, agendamentos, pertenceAoMes }) => (
                       <div
                         key={dia.toISOString()}
-                        className={`border rounded-lg p-2 min-h-[120px] ${!pertenceAoMes ? "opacity-40" : ""
-                          } ${isSameDay(dia, new Date()) ? "bg-blue-50 border-blue-300" : ""
+                        className={`border rounded-lg p-2 min-h-[120px] transition-colors ${!pertenceAoMes ? "opacity-40" : ""
+                          } ${isSameDay(dia, new Date()) ? "bg-primary/10 border-primary/40" : "hover:bg-muted/30 hover:border-primary/30"
                           } ${isSameDay(dia, dataSelecionada) ? "ring-2 ring-primary" : ""
-                          } cursor-pointer hover:bg-accent`}
+                          } cursor-pointer`}
                         onClick={() => {
                           setDataSelecionada(dia);
                           setVisualizacao("dia");

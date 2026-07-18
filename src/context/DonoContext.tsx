@@ -61,6 +61,8 @@ interface DonoContextType {
 
   registrarPagamento: (p: any) => Promise<void>;
   registrarPagamentoManual: (agendamentoId: string, valor: number, metodo: string, observacao?: string) => Promise<void>;
+  confirmarPagamento: (pagamentoId: string, metodo: string) => Promise<void>;
+  cancelarPagamento: (pagamentoId: string) => Promise<void>;
 
   criarPromocao: (p: any) => Promise<void>;
   atualizarPromocao: (id: string, dados: any) => Promise<void>;
@@ -905,6 +907,27 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     carregar();
   };
 
+  const confirmarPagamento = async (pagamentoId: string, metodo: string) => {
+    const { error } = await supabase
+      .from("pagamentos")
+      .update({
+        status: "pago",
+        metodo,
+        data_pagamento: new Date().toISOString(),
+      })
+      .eq("id", pagamentoId);
+    if (error) { toast.error(traduzirErro(error.message)); return; }
+    toast.success("Pagamento confirmado");
+    carregar();
+  };
+
+  const cancelarPagamento = async (pagamentoId: string) => {
+    const { error } = await supabase.from("pagamentos").delete().eq("id", pagamentoId);
+    if (error) { toast.error(traduzirErro(error.message)); return; }
+    toast.success("Pagamento removido");
+    carregar();
+  };
+
   // ===== Planos cliente =====
   const criarPlanoCliente = async (p: any) => {
     if (!guardBarbearia()) return;
@@ -1041,6 +1064,8 @@ export function DonoProvider({ children }: { children: ReactNode }) {
         toggleServicoAtivo,
         registrarPagamento,
         registrarPagamentoManual,
+        confirmarPagamento,
+        cancelarPagamento,
         criarPromocao,
         atualizarPromocao,
         removerPromocao,

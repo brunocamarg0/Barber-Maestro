@@ -32,7 +32,10 @@ import {
   Calendar,
   Filter,
   Plus,
-  Loader2
+  Loader2,
+  CheckCircle2,
+  Trash2,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -53,7 +56,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 export default function FinanceiroPagamentos() {
-  const { pagamentos, agendamentos, registrarPagamentoManual } = useDono();
+  const { pagamentos, agendamentos, registrarPagamentoManual, confirmarPagamento, cancelarPagamento } = useDono();
+  const [modalConfirmar, setModalConfirmar] = useState<{ id: string; valor: number } | null>(null);
+  const [metodoConfirmar, setMetodoConfirmar] = useState<"dinheiro" | "pix" | "cartao_credito" | "cartao_debito">("dinheiro");
+  const [confirmando, setConfirmando] = useState(false);
   const [dataInicio, setDataInicio] = useState(
     new Date(new Date().setDate(1)).toISOString().split("T")[0]
   );
@@ -228,30 +234,47 @@ export default function FinanceiroPagamentos() {
       <TableHeader>
         <TableRow>
           <TableHead>Data</TableHead>
+          <TableHead>Cliente / Serviço</TableHead>
           <TableHead>Método</TableHead>
           <TableHead>Valor</TableHead>
           <TableHead>Taxa Gateway</TableHead>
           <TableHead>Líquido</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {pagamentosLista.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+            <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
               Nenhum pagamento encontrado
             </TableCell>
           </TableRow>
         ) : (
-          pagamentosLista.map((pagamento) => (
+          pagamentosLista.map((pagamento) => {
+            const ag = agendamentos.find(a => a.id === pagamento.agendamentoId);
+            const isPendente = pagamento.status === "pendente";
+            return (
             <TableRow key={pagamento.id}>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   {pagamento.dataPagamento
                     ? new Date(pagamento.dataPagamento).toLocaleDateString("pt-BR")
-                    : "-"}
+                    : ag?.data
+                      ? <span className="text-muted-foreground">
+                          {format(parseDateOnlyToSafeDate(ag.data), "dd/MM/yyyy")} (previsto)
+                        </span>
+                      : "-"}
                 </div>
+              </TableCell>
+              <TableCell className="text-sm">
+                {ag ? (
+                  <div>
+                    <div className="font-medium">{ag.clienteNome}</div>
+                    <div className="text-xs text-muted-foreground">{ag.servicoNome}</div>
+                  </div>
+                ) : <span className="text-muted-foreground">—</span>}
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className="gap-1">
@@ -299,8 +322,39 @@ export default function FinanceiroPagamentos() {
                   );
                 })()}
               </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  {isPendente && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => {
+                        setMetodoConfirmar(pagamento.metodo as any || "dinheiro");
+                        setModalConfirmar({ id: pagamento.id, valor: pagamento.valor });
+                      }}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      Confirmar
+                    </Button>
+                  )}
+                  {isPendente && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        if (window.confirm("Remover este registro de pagamento?")) {
+                          cancelarPagamento(pagamento.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
             </TableRow>
-          ))
+          );
+          })
         )}
       </TableBody>
     </Table>
@@ -478,6 +532,17 @@ export default function FinanceiroPagamentos() {
       )}
 
       {/* Tabelas por Aba */}
+      {/* Info: como funciona o histórico */}
+      <Card className="border-primary/40 bg-primary/5">
+        <CardContent className="pt-4 flex gap-3 items-start">
+          <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="text-sm space-y-1">
+            <p><strong>Como funciona:</strong> quando o cliente agenda e escolhe pagar na barbearia, o pagamento entra como <em>Pendente</em> com método padrão <em>Dinheiro</em> e sem data. No dia do atendimento, clique em <strong>Confirmar</strong> na linha do pagamento, escolha o método real (Dinheiro, PIX, Débito ou Crédito) e o registro passa a <em>Pago</em> com a data de hoje.</p>
+            <p><strong>Taxa Gateway:</strong> é a taxa cobrada pela operadora quando o pagamento é online (ex.: Mercado Pago). Pagamentos presenciais (dinheiro/PIX/máquina própria) ficam com taxa <strong>R$ 0,00</strong> — só aparece valor quando o pagamento passou pelo checkout online integrado.</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="todos">
         <TabsList>
           <TabsTrigger value="todos">
@@ -723,6 +788,53 @@ export default function FinanceiroPagamentos() {
                   Registrar Pagamento
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Confirmar Pagamento Pendente */}
+      <Dialog open={!!modalConfirmar} onOpenChange={(o) => !o && setModalConfirmar(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Recebimento</DialogTitle>
+            <DialogDescription>
+              Escolha como o cliente pagou. O pagamento será marcado como <strong>Pago</strong> com a data de hoje.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="p-3 bg-muted rounded-md text-sm">
+              Valor a receber: <strong>{modalConfirmar ? formatarMoeda(modalConfirmar.valor) : ""}</strong>
+            </div>
+            <div className="space-y-2">
+              <Label>Método de Pagamento</Label>
+              <Select value={metodoConfirmar} onValueChange={(v) => setMetodoConfirmar(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dinheiro"><div className="flex items-center gap-2"><Wallet className="h-4 w-4"/>Dinheiro</div></SelectItem>
+                  <SelectItem value="pix"><div className="flex items-center gap-2"><QrCode className="h-4 w-4"/>PIX</div></SelectItem>
+                  <SelectItem value="cartao_debito"><div className="flex items-center gap-2"><CreditCard className="h-4 w-4"/>Cartão Débito</div></SelectItem>
+                  <SelectItem value="cartao_credito"><div className="flex items-center gap-2"><CreditCard className="h-4 w-4"/>Cartão Crédito</div></SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalConfirmar(null)} disabled={confirmando}>Cancelar</Button>
+            <Button
+              disabled={confirmando}
+              onClick={async () => {
+                if (!modalConfirmar) return;
+                setConfirmando(true);
+                try {
+                  await confirmarPagamento(modalConfirmar.id, metodoConfirmar);
+                  setModalConfirmar(null);
+                } finally {
+                  setConfirmando(false);
+                }
+              }}
+            >
+              {confirmando ? <><Loader2 className="h-4 w-4 mr-2 animate-spin"/>Confirmando...</> : <><CheckCircle2 className="h-4 w-4 mr-2"/>Confirmar Pagamento</>}
             </Button>
           </DialogFooter>
         </DialogContent>

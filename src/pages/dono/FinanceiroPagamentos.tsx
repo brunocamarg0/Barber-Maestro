@@ -792,6 +792,53 @@ export default function FinanceiroPagamentos() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Confirmar Pagamento Pendente */}
+      <Dialog open={!!modalConfirmar} onOpenChange={(o) => !o && setModalConfirmar(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Recebimento</DialogTitle>
+            <DialogDescription>
+              Escolha como o cliente pagou. O pagamento será marcado como <strong>Pago</strong> com a data de hoje.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="p-3 bg-muted rounded-md text-sm">
+              Valor a receber: <strong>{modalConfirmar ? formatarMoeda(modalConfirmar.valor) : ""}</strong>
+            </div>
+            <div className="space-y-2">
+              <Label>Método de Pagamento</Label>
+              <Select value={metodoConfirmar} onValueChange={(v) => setMetodoConfirmar(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dinheiro"><div className="flex items-center gap-2"><Wallet className="h-4 w-4"/>Dinheiro</div></SelectItem>
+                  <SelectItem value="pix"><div className="flex items-center gap-2"><QrCode className="h-4 w-4"/>PIX</div></SelectItem>
+                  <SelectItem value="cartao_debito"><div className="flex items-center gap-2"><CreditCard className="h-4 w-4"/>Cartão Débito</div></SelectItem>
+                  <SelectItem value="cartao_credito"><div className="flex items-center gap-2"><CreditCard className="h-4 w-4"/>Cartão Crédito</div></SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalConfirmar(null)} disabled={confirmando}>Cancelar</Button>
+            <Button
+              disabled={confirmando}
+              onClick={async () => {
+                if (!modalConfirmar) return;
+                setConfirmando(true);
+                try {
+                  await confirmarPagamento(modalConfirmar.id, metodoConfirmar);
+                  setModalConfirmar(null);
+                } finally {
+                  setConfirmando(false);
+                }
+              }}
+            >
+              {confirmando ? <><Loader2 className="h-4 w-4 mr-2 animate-spin"/>Confirmando...</> : <><CheckCircle2 className="h-4 w-4 mr-2"/>Confirmar Pagamento</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

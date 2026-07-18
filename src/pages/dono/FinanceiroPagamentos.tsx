@@ -32,7 +32,10 @@ import {
   Calendar,
   Filter,
   Plus,
-  Loader2
+  Loader2,
+  CheckCircle2,
+  Trash2,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import {

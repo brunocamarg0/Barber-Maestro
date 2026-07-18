@@ -53,7 +53,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 export default function FinanceiroPagamentos() {
-  const { pagamentos, agendamentos, registrarPagamentoManual } = useDono();
+  const { pagamentos, agendamentos, registrarPagamentoManual, confirmarPagamento, cancelarPagamento } = useDono();
+  const [modalConfirmar, setModalConfirmar] = useState<{ id: string; valor: number } | null>(null);
+  const [metodoConfirmar, setMetodoConfirmar] = useState<"dinheiro" | "pix" | "cartao_credito" | "cartao_debito">("dinheiro");
+  const [confirmando, setConfirmando] = useState(false);
   const [dataInicio, setDataInicio] = useState(
     new Date(new Date().setDate(1)).toISOString().split("T")[0]
   );

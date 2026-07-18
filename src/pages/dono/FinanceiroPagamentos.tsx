@@ -532,6 +532,17 @@ export default function FinanceiroPagamentos() {
       )}
 
       {/* Tabelas por Aba */}
+      {/* Info: como funciona o histórico */}
+      <Card className="border-primary/40 bg-primary/5">
+        <CardContent className="pt-4 flex gap-3 items-start">
+          <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="text-sm space-y-1">
+            <p><strong>Como funciona:</strong> quando o cliente agenda e escolhe pagar na barbearia, o pagamento entra como <em>Pendente</em> com método padrão <em>Dinheiro</em> e sem data. No dia do atendimento, clique em <strong>Confirmar</strong> na linha do pagamento, escolha o método real (Dinheiro, PIX, Débito ou Crédito) e o registro passa a <em>Pago</em> com a data de hoje.</p>
+            <p><strong>Taxa Gateway:</strong> é a taxa cobrada pela operadora quando o pagamento é online (ex.: Mercado Pago). Pagamentos presenciais (dinheiro/PIX/máquina própria) ficam com taxa <strong>R$ 0,00</strong> — só aparece valor quando o pagamento passou pelo checkout online integrado.</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="todos">
         <TabsList>
           <TabsTrigger value="todos">

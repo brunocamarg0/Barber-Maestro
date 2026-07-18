@@ -61,6 +61,8 @@ interface DonoContextType {
 
   registrarPagamento: (p: any) => Promise<void>;
   registrarPagamentoManual: (agendamentoId: string, valor: number, metodo: string, observacao?: string) => Promise<void>;
+  confirmarPagamento: (pagamentoId: string, metodo: string) => Promise<void>;
+  cancelarPagamento: (pagamentoId: string) => Promise<void>;
 
   criarPromocao: (p: any) => Promise<void>;
   atualizarPromocao: (id: string, dados: any) => Promise<void>;

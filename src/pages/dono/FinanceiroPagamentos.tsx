@@ -234,30 +234,47 @@ export default function FinanceiroPagamentos() {
       <TableHeader>
         <TableRow>
           <TableHead>Data</TableHead>
+          <TableHead>Cliente / Serviço</TableHead>
           <TableHead>Método</TableHead>
           <TableHead>Valor</TableHead>
           <TableHead>Taxa Gateway</TableHead>
           <TableHead>Líquido</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {pagamentosLista.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+            <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
               Nenhum pagamento encontrado
             </TableCell>
           </TableRow>
         ) : (
-          pagamentosLista.map((pagamento) => (
+          pagamentosLista.map((pagamento) => {
+            const ag = agendamentos.find(a => a.id === pagamento.agendamentoId);
+            const isPendente = pagamento.status === "pendente";
+            return (
             <TableRow key={pagamento.id}>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   {pagamento.dataPagamento
                     ? new Date(pagamento.dataPagamento).toLocaleDateString("pt-BR")
-                    : "-"}
+                    : ag?.data
+                      ? <span className="text-muted-foreground">
+                          {format(parseDateOnlyToSafeDate(ag.data), "dd/MM/yyyy")} (previsto)
+                        </span>
+                      : "-"}
                 </div>
+              </TableCell>
+              <TableCell className="text-sm">
+                {ag ? (
+                  <div>
+                    <div className="font-medium">{ag.clienteNome}</div>
+                    <div className="text-xs text-muted-foreground">{ag.servicoNome}</div>
+                  </div>
+                ) : <span className="text-muted-foreground">—</span>}
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className="gap-1">
@@ -305,8 +322,39 @@ export default function FinanceiroPagamentos() {
                   );
                 })()}
               </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  {isPendente && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => {
+                        setMetodoConfirmar(pagamento.metodo as any || "dinheiro");
+                        setModalConfirmar({ id: pagamento.id, valor: pagamento.valor });
+                      }}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      Confirmar
+                    </Button>
+                  )}
+                  {isPendente && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        if (window.confirm("Remover este registro de pagamento?")) {
+                          cancelarPagamento(pagamento.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
             </TableRow>
-          ))
+          );
+          })
         )}
       </TableBody>
     </Table>

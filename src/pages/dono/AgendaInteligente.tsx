@@ -913,7 +913,7 @@ export default function AgendaInteligente() {
                   {agendamentosDoDia.map((agendamento) => (
                     <div
                       key={agendamento.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer"
+                      className="flex items-center justify-between p-4 border rounded-lg transition-colors hover:bg-muted/40 hover:border-primary/40 cursor-pointer"
                       onClick={() => abrirEdicao(agendamento)}
                       title="Clique para reagendar"
                     >

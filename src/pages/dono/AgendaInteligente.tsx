@@ -572,14 +572,14 @@ export default function AgendaInteligente() {
 
   const getStatusColor = (status: string) => {
     const cores: Record<string, string> = {
-      confirmado: "bg-green-100 text-green-800 border-green-300",
-      pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      cancelado: "bg-red-100 text-red-800 border-red-300",
-      recusado: "bg-orange-100 text-orange-800 border-orange-300",
-      concluido: "bg-blue-100 text-blue-800 border-blue-300",
-      realizado: "bg-blue-100 text-blue-800 border-blue-300",
+      confirmado: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20",
+      pendente: "bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20",
+      cancelado: "bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/20",
+      recusado: "bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/20",
+      concluido: "bg-sky-500/15 text-sky-400 border border-sky-500/30 hover:bg-sky-500/20",
+      realizado: "bg-sky-500/15 text-sky-400 border border-sky-500/30 hover:bg-sky-500/20",
     };
-    return cores[status] || "bg-gray-100 text-gray-800 border-gray-300";
+    return cores[status] || "bg-muted text-muted-foreground border border-border";
   };
 
   return (
@@ -913,7 +913,7 @@ export default function AgendaInteligente() {
                   {agendamentosDoDia.map((agendamento) => (
                     <div
                       key={agendamento.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer"
+                      className="flex items-center justify-between p-4 border rounded-lg transition-colors hover:bg-muted/40 hover:border-primary/40 cursor-pointer"
                       onClick={() => abrirEdicao(agendamento)}
                       title="Clique para reagendar"
                     >
@@ -971,7 +971,7 @@ export default function AgendaInteligente() {
                 {agendamentosDaSemana.map(({ dia, agendamentos }) => (
                   <div
                     key={dia.toISOString()}
-                    className={`border rounded-lg p-2 min-h-[200px] ${isSameDay(dia, new Date()) ? "bg-blue-50 border-blue-300" : ""
+                    className={`border rounded-lg p-2 min-h-[200px] transition-colors ${isSameDay(dia, new Date()) ? "bg-primary/10 border-primary/40" : "hover:bg-muted/30"
                       } ${isSameDay(dia, dataSelecionada) ? "ring-2 ring-primary" : ""}`}
                   >
                     <div className="font-semibold text-sm mb-2">
@@ -1024,10 +1024,10 @@ export default function AgendaInteligente() {
                     {semana.map(({ dia, agendamentos, pertenceAoMes }) => (
                       <div
                         key={dia.toISOString()}
-                        className={`border rounded-lg p-2 min-h-[120px] ${!pertenceAoMes ? "opacity-40" : ""
-                          } ${isSameDay(dia, new Date()) ? "bg-blue-50 border-blue-300" : ""
+                        className={`border rounded-lg p-2 min-h-[120px] transition-colors ${!pertenceAoMes ? "opacity-40" : ""
+                          } ${isSameDay(dia, new Date()) ? "bg-primary/10 border-primary/40" : "hover:bg-muted/30 hover:border-primary/30"
                           } ${isSameDay(dia, dataSelecionada) ? "ring-2 ring-primary" : ""
-                          } cursor-pointer hover:bg-accent`}
+                          } cursor-pointer`}
                         onClick={() => {
                           setDataSelecionada(dia);
                           setVisualizacao("dia");

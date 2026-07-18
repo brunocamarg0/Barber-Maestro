@@ -907,6 +907,27 @@ export function DonoProvider({ children }: { children: ReactNode }) {
     carregar();
   };
 
+  const confirmarPagamento = async (pagamentoId: string, metodo: string) => {
+    const { error } = await supabase
+      .from("pagamentos")
+      .update({
+        status: "pago",
+        metodo,
+        data_pagamento: new Date().toISOString(),
+      })
+      .eq("id", pagamentoId);
+    if (error) { toast.error(traduzirErro(error.message)); return; }
+    toast.success("Pagamento confirmado");
+    carregar();
+  };
+
+  const cancelarPagamento = async (pagamentoId: string) => {
+    const { error } = await supabase.from("pagamentos").delete().eq("id", pagamentoId);
+    if (error) { toast.error(traduzirErro(error.message)); return; }
+    toast.success("Pagamento removido");
+    carregar();
+  };
+
   // ===== Planos cliente =====
   const criarPlanoCliente = async (p: any) => {
     if (!guardBarbearia()) return;

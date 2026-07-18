@@ -971,7 +971,7 @@ export default function AgendaInteligente() {
                 {agendamentosDaSemana.map(({ dia, agendamentos }) => (
                   <div
                     key={dia.toISOString()}
-                    className={`border rounded-lg p-2 min-h-[200px] ${isSameDay(dia, new Date()) ? "bg-blue-50 border-blue-300" : ""
+                    className={`border rounded-lg p-2 min-h-[200px] transition-colors ${isSameDay(dia, new Date()) ? "bg-primary/10 border-primary/40" : "hover:bg-muted/30"
                       } ${isSameDay(dia, dataSelecionada) ? "ring-2 ring-primary" : ""}`}
                   >
                     <div className="font-semibold text-sm mb-2">

@@ -180,8 +180,26 @@ Deno.serve(async (req) => {
         proximo.setMonth(proximo.getMonth() + 1);
         await admin
           .from("assinaturas")
-          .update({ status: "ativa", proximo_vencimento: proximo.toISOString() })
+          .update({
+            status: "ativa",
+            proximo_vencimento: proximo.toISOString(),
+            data_vencimento: proximo.toISOString(),
+            tentativas_cobranca: 0,
+            ultima_tentativa: null,
+            bloqueada_em: null,
+            motivo_bloqueio: null,
+            trial_ate: null,
+          })
           .eq("id", assinaturaId);
+        // Reativa barbearia se estava suspensa
+        const { data: assinFull } = await admin
+          .from("assinaturas")
+          .select("barbearia_id")
+          .eq("id", assinaturaId)
+          .maybeSingle();
+        if (assinFull?.barbearia_id) {
+          await admin.from("barbearias").update({ status: "ativa" }).eq("id", assinFull.barbearia_id);
+        }
       }
     } else if (externalRef?.startsWith("plano_cliente:")) {
       const assinaturaId = externalRef.split(":")[1];

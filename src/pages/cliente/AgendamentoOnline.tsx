@@ -651,25 +651,25 @@ export default function AgendamentoOnline() {
             ) : (
               <>
                 <div
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${!formData.profissionalId
-                      ? "border-primary bg-primary/5"
-                      : "hover:bg-accent"
+                  className={`p-4 border-b cursor-pointer transition-colors bg-transparent hover:bg-transparent ${!formData.profissionalId
+                      ? "border-b-2 border-primary"
+                      : "border-border hover:border-foreground/40"
                     }`}
                   onClick={() => setFormData({ ...formData, profissionalId: "" })}
                 >
                   <div className="flex items-center gap-3">
                     <User className="h-5 w-5" />
                     <div>
-                      <p className="font-medium">Qualquer profissional disponível</p>
+                      <p className={`font-medium ${!formData.profissionalId ? "text-primary" : ""}`}>Qualquer profissional disponível</p>
                     </div>
                   </div>
                 </div>
                 {profissionaisDisponiveis.map((profissional: any) => (
                   <div
                     key={profissional.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${formData.profissionalId === profissional.id
-                        ? "border-primary bg-primary/5"
-                        : "hover:bg-accent"
+                    className={`p-4 border-b cursor-pointer transition-colors bg-transparent hover:bg-transparent ${formData.profissionalId === profissional.id
+                        ? "border-b-2 border-primary"
+                        : "border-border hover:border-foreground/40"
                       }`}
                     onClick={() => setFormData({ ...formData, profissionalId: profissional.id })}
                   >
@@ -682,7 +682,7 @@ export default function AgendamentoOnline() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{profissional.nome}</p>
+                          <p className={`font-medium ${formData.profissionalId === profissional.id ? "text-primary" : ""}`}>{profissional.nome}</p>
                           {profissional.especialidades && profissional.especialidades.length > 0 && (
                             <div className="flex gap-2 mt-1">
                               {profissional.especialidades.map((esp: string) => (

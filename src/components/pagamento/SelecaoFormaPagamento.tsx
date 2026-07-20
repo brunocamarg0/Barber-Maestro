@@ -44,10 +44,8 @@ export function SelecaoFormaPagamento({
           .update({ forma_pagamento: "presencial" })
           .eq("id", agendamentoId);
 
-        toast({
-          title: "Agendamento confirmado!",
-          description: "Você pagará na barbearia no dia do atendimento.",
-        });
+        // Nota: o toast de confirmação é responsabilidade do chamador (onPagamentoPresencial),
+        // pois só ele conhece o modo_confirmacao da barbearia.
         onPagamentoPresencial();
         setTimeout(() => navigate("/cliente"), 1500);
         return;

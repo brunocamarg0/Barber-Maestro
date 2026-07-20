@@ -204,13 +204,16 @@ export default function AgendamentoOnline() {
       }
 
       const modo = (barbearia?.modo_confirmacao || "manual") as "automatico" | "manual" | "hibrido";
-      const autoConfirma = modo === "automatico" || modo === "hibrido";
+      const autoConfirma = modo === "automatico";
       const tituloToast = reagendarId
         ? (autoConfirma ? "Reagendamento confirmado!" : "Reagendamento solicitado!")
         : (autoConfirma ? "Agendamento confirmado!" : "Solicitação enviada!");
+      const descAguardando = modo === "hibrido"
+        ? "Aguardando confirmação da barbearia (confirmação automática em até 2h)."
+        : "Sua solicitação foi enviada e está aguardando confirmação da barbearia.";
       const descToast = servicosSelecionados.length > 1
-        ? `${servicosSelecionados.length} serviços agendados em sequência.${autoConfirma ? "" : " Aguardando confirmação da barbearia."}`
-        : (autoConfirma ? "Escolha a forma de pagamento..." : "Sua solicitação foi enviada e está aguardando confirmação da barbearia.");
+        ? `${servicosSelecionados.length} serviços agendados em sequência.${autoConfirma ? "" : " " + descAguardando}`
+        : (autoConfirma ? "Escolha a forma de pagamento..." : descAguardando);
       toast({
         title: tituloToast,
         description: descToast,
@@ -922,9 +925,15 @@ export default function AgendamentoOnline() {
             valor={servicosSelecionados[0]?.preco || 0}
 
             onPagamentoPresencial={() => {
+              const modo = (barbearia?.modo_confirmacao || "manual") as "automatico" | "manual" | "hibrido";
+              const auto = modo === "automatico";
               toast({
-                title: "Agendamento confirmado!",
-                description: "Você pagará na barbearia no dia do atendimento.",
+                title: auto ? "Agendamento confirmado!" : "Solicitação enviada!",
+                description: auto
+                  ? "Você pagará na barbearia no dia do atendimento."
+                  : (modo === "hibrido"
+                      ? "Aguardando confirmação da barbearia (confirmação automática em até 2h). Pagamento na barbearia."
+                      : "Aguardando confirmação da barbearia. Pagamento na barbearia."),
               });
               setTimeout(() => {
                 navigate("/cliente");

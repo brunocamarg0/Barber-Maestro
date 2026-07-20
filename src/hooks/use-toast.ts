@@ -1,186 +1,65 @@
-import * as React from "react";
+// Legacy bridge: forwards `useToast()` / `toast()` calls to sonner so we have
+// a SINGLE toast system across the app. Prevents duplicate notifications that
+// appeared when some code used shadcn's `useToast` and other code used sonner
+// simultaneously (both toasters mounted, same message rendered twice).
+import { toast as sonnerToast } from "sonner";
 
-import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
-
-const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
-
-type ToasterToast = ToastProps & {
-  id: string;
+type LegacyToastArgs = {
   title?: React.ReactNode;
   description?: React.ReactNode;
-  action?: ToastActionElement;
+  variant?: "default" | "destructive" | string;
+  action?: any;
+  duration?: number;
+  id?: string | number;
 };
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const;
-
-let count = 0;
-
-function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER;
-  return count.toString();
-}
-
-type ActionType = typeof actionTypes;
-
-type Action =
-  | {
-      type: ActionType["ADD_TOAST"];
-      toast: ToasterToast;
-    }
-  | {
-      type: ActionType["UPDATE_TOAST"];
-      toast: Partial<ToasterToast>;
-    }
-  | {
-      type: ActionType["DISMISS_TOAST"];
-      toastId?: ToasterToast["id"];
-    }
-  | {
-      type: ActionType["REMOVE_TOAST"];
-      toastId?: ToasterToast["id"];
-    };
-
-interface State {
-  toasts: ToasterToast[];
-}
-
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
-
-const addToRemoveQueue = (toastId: string) => {
-  if (toastTimeouts.has(toastId)) {
-    return;
+function normalizeMessage(v: React.ReactNode): string {
+  if (v == null) return "";
+  if (typeof v === "string" || typeof v === "number") return String(v);
+  try {
+    return JSON.stringify(v);
+  } catch {
+    return "";
   }
-
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId);
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    });
-  }, TOAST_REMOVE_DELAY);
-
-  toastTimeouts.set(toastId, timeout);
-};
-
-export const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case "ADD_TOAST":
-      return {
-        ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
-      };
-
-    case "UPDATE_TOAST":
-      return {
-        ...state,
-        toasts: state.toasts.map((t) => (t.id === action.toast.id ? { ...t, ...action.toast } : t)),
-      };
-
-    case "DISMISS_TOAST": {
-      const { toastId } = action;
-
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId);
-      } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id);
-        });
-      }
-
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
-            : t,
-        ),
-      };
-    }
-    case "REMOVE_TOAST":
-      if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        };
-      }
-      return {
-        ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
-      };
-  }
-};
-
-const listeners: Array<(state: State) => void> = [];
-
-let memoryState: State = { toasts: [] };
-
-function dispatch(action: Action) {
-  memoryState = reducer(memoryState, action);
-  listeners.forEach((listener) => {
-    listener(memoryState);
-  });
 }
 
-type Toast = Omit<ToasterToast, "id">;
+// Simple in-memory dedupe: if the exact same title+description was fired in
+// the last 1200ms, coalesce into a single toast (sonner reuses the id).
+const recent = new Map<string, number>();
+const DEDUPE_MS = 1200;
 
-function toast({ ...props }: Toast) {
-  const id = genId();
+function stableIdFor(title: string, description: string): string {
+  const key = `${title}\u0001${description}`;
+  const now = Date.now();
+  const last = recent.get(key);
+  recent.set(key, now);
+  // Cheap GC
+  if (recent.size > 100) {
+    for (const [k, t] of recent) if (now - t > 5000) recent.delete(k);
+  }
+  if (last && now - last < DEDUPE_MS) return `dedupe:${key}`;
+  return `dedupe:${key}:${now}`;
+}
 
-  const update = (props: ToasterToast) =>
-    dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
-    });
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
-
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss();
-      },
-    },
-  });
-
-  return {
-    id: id,
-    dismiss,
-    update,
+export function toast(args: LegacyToastArgs) {
+  const title = normalizeMessage(args.title);
+  const description = normalizeMessage(args.description);
+  const id = args.id ?? stableIdFor(title, description);
+  const opts: any = {
+    id,
+    description: args.description || undefined,
+    duration: args.duration,
   };
+  if (args.variant === "destructive") {
+    return sonnerToast.error(args.title || "Erro", opts);
+  }
+  return sonnerToast(args.title || "", opts);
 }
 
-function useToast() {
-  const [state, setState] = React.useState<State>(memoryState);
-
-  React.useEffect(() => {
-    listeners.push(setState);
-    return () => {
-      const index = listeners.indexOf(setState);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
-    };
-  }, [state]);
-
+export function useToast() {
   return {
-    ...state,
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    dismiss: (id?: string | number) => sonnerToast.dismiss(id as any),
+    toasts: [] as any[],
   };
 }
-
-export { useToast, toast };

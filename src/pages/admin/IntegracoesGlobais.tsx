@@ -84,51 +84,78 @@ export default function IntegracoesGlobais() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {integracoes.map((integracao) => (
-          <Card key={integracao.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{integracao.nome}</CardTitle>
-                  <CardDescription>{integracao.provider}</CardDescription>
+      <Card className="border-primary/40">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>WhatsApp — Z-API</CardTitle>
+              <CardDescription>Provider oficial de mensagens do sistema</CardDescription>
+            </div>
+            <Badge variant="default" className="gap-1">
+              <Check className="h-3 w-3" />
+              Ativo
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <p className="text-muted-foreground">
+            Credenciais gerenciadas via <strong>Secrets do Cloud</strong>{" "}
+            (<code>ZAPI_INSTANCE_ID</code>, <code>ZAPI_TOKEN</code>, <code>ZAPI_CLIENT_TOKEN</code>).
+          </p>
+          <p className="text-muted-foreground">
+            Usado por: confirmação, lembretes (1h antes) e pesquisa de avaliação (1h depois).
+          </p>
+        </CardContent>
+      </Card>
+
+      {integracoes.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {integracoes.map((integracao) => (
+            <Card key={integracao.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{integracao.nome}</CardTitle>
+                    <CardDescription>{integracao.provider}</CardDescription>
+                  </div>
+                  {integracao.ativa ? (
+                    <Badge variant="default" className="gap-1">
+                      <Check className="h-3 w-3" />
+                      Ativa
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="gap-1">
+                      <X className="h-3 w-3" />
+                      Inativa
+                    </Badge>
+                  )}
                 </div>
-                {integracao.ativa ? (
-                  <Badge variant="default" className="gap-1">
-                    <Check className="h-3 w-3" />
-                    Ativa
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="gap-1">
-                    <X className="h-3 w-3" />
-                    Inativa
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-sm">
-                <p className="text-muted-foreground">Custo por uso</p>
-                <p className="font-medium">{formatarMoeda(integracao.custos.porUso)}</p>
-              </div>
-              <div className="text-sm">
-                <p className="text-muted-foreground">Uso este mês</p>
-                <p className="font-medium">
-                  {integracao.custos.usadoEsteMes} / {integracao.custos.limiteMensal}
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => abrirConfigurar(integracao)}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Configurar
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-sm">
+                  <p className="text-muted-foreground">Custo por uso</p>
+                  <p className="font-medium">{formatarMoeda(integracao.custos.porUso)}</p>
+                </div>
+                <div className="text-sm">
+                  <p className="text-muted-foreground">Uso este mês</p>
+                  <p className="font-medium">
+                    {integracao.custos.usadoEsteMes} / {integracao.custos.limiteMensal}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => abrirConfigurar(integracao)}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configurar
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
 
       <Card>
         <CardHeader>

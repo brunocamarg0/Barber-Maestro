@@ -19,26 +19,8 @@ const IntegracoesGlobaisContext = createContext<IntegracoesGlobaisContextType | 
   undefined
 );
 
-const integracoesIniciais: IntegracaoGlobal[] = [
-  {
-    id: "1",
-    tipo: "whatsapp",
-    nome: "WhatsApp API",
-    provider: "Twilio",
-    ativa: true,
-    configuracoes: {
-      accountSid: "AC...",
-      authToken: "...",
-    },
-    custos: {
-      porUso: 0.05,
-      limiteMensal: 10000,
-      usadoEsteMes: 2500,
-    },
-    templates: [],
-    dataCriacao: "2024-01-01",
-  },
-];
+const integracoesIniciais: IntegracaoGlobal[] = [];
+
 
 const webhooksIniciais: WebhookGlobal[] = [
   {

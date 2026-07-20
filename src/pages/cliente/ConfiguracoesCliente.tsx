@@ -123,12 +123,23 @@ export default function ConfiguracoesCliente() {
   };
 
   const handleSalvarPreferencias = async () => {
+    if (!cliente?.id) return;
     setSalvando(true);
     try {
-      await atualizarPerfil({
-        preferenciasNotificacao: preferencias,
-      } as any);
-      
+      const payload = {
+        cliente_id: cliente.id,
+        notificacoes_email: preferencias.notificacoesEmail,
+        lembretes: preferencias.lembretes,
+        // valores fixos: app sempre on (essencial), whatsapp/promoções off
+        notificacoes_app: true,
+        notificacoes_whatsapp: false,
+        promocoes: false,
+      };
+      const { error } = await supabase
+        .from("cliente_preferencias_notificacao")
+        .upsert(payload, { onConflict: "cliente_id" });
+      if (error) throw error;
+
       toast({
         title: "Preferências salvas",
         description: "Suas preferências foram atualizadas com sucesso.",

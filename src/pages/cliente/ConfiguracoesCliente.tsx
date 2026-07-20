@@ -48,12 +48,27 @@ export default function ConfiguracoesCliente() {
   const [confirmarExclusao, setConfirmarExclusao] = useState("");
 
   const [preferencias, setPreferencias] = useState({
-    notificacoesApp: true,
     notificacoesEmail: true,
-    notificacoesWhatsapp: false,
-    promocoes: true,
     lembretes: true,
   });
+
+  // Carregar preferências salvas
+  React.useEffect(() => {
+    if (!cliente?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("cliente_preferencias_notificacao")
+        .select("notificacoes_email, lembretes")
+        .eq("cliente_id", cliente.id)
+        .maybeSingle();
+      if (data) {
+        setPreferencias({
+          notificacoesEmail: data.notificacoes_email ?? true,
+          lembretes: data.lembretes ?? true,
+        });
+      }
+    })();
+  }, [cliente?.id]);
 
   const handleAlterarSenha = async () => {
     if (!senhaAtual || !novaSenha || !confirmarSenha) {
@@ -108,12 +123,23 @@ export default function ConfiguracoesCliente() {
   };
 
   const handleSalvarPreferencias = async () => {
+    if (!cliente?.id) return;
     setSalvando(true);
     try {
-      await atualizarPerfil({
-        preferenciasNotificacao: preferencias,
-      } as any);
-      
+      const payload = {
+        cliente_id: cliente.id,
+        notificacoes_email: preferencias.notificacoesEmail,
+        lembretes: preferencias.lembretes,
+        // valores fixos: app sempre on (essencial), whatsapp/promoções off
+        notificacoes_app: true,
+        notificacoes_whatsapp: false,
+        promocoes: false,
+      };
+      const { error } = await supabase
+        .from("cliente_preferencias_notificacao")
+        .upsert(payload, { onConflict: "cliente_id" });
+      if (error) throw error;
+
       toast({
         title: "Preferências salvas",
         description: "Suas preferências foram atualizadas com sucesso.",
@@ -263,27 +289,12 @@ export default function ConfiguracoesCliente() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Notificações no App</Label>
-              <p className="text-sm text-muted-foreground">
-                Receba notificações dentro do aplicativo
-              </p>
-            </div>
-            <Switch
-              checked={preferencias.notificacoesApp}
-              onCheckedChange={(checked) =>
-                setPreferencias({ ...preferencias, notificacoesApp: checked })
-              }
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
               <Label className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
                 Notificações por Email
               </Label>
               <p className="text-sm text-muted-foreground">
-                Receba confirmações e lembretes por email
+                Receba confirmações e atualizações de agendamento por email
               </p>
             </div>
             <Switch
@@ -294,44 +305,26 @@ export default function ConfiguracoesCliente() {
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between opacity-60">
             <div className="space-y-0.5">
               <Label className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Notificações por WhatsApp
+                <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">Em breve</span>
               </Label>
               <p className="text-sm text-muted-foreground">
-                Receba lembretes via WhatsApp
+                Receberá lembretes via WhatsApp quando estiver disponível
               </p>
             </div>
-            <Switch
-              checked={preferencias.notificacoesWhatsapp}
-              onCheckedChange={(checked) =>
-                setPreferencias({ ...preferencias, notificacoesWhatsapp: checked })
-              }
-            />
+            <Switch checked={false} disabled />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Promoções e Ofertas</Label>
-              <p className="text-sm text-muted-foreground">
-                Receba ofertas e promoções exclusivas
-              </p>
-            </div>
-            <Switch
-              checked={preferencias.promocoes}
-              onCheckedChange={(checked) =>
-                setPreferencias({ ...preferencias, promocoes: checked })
-              }
-            />
-          </div>
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Lembretes de Agendamento</Label>
               <p className="text-sm text-muted-foreground">
-                Receba lembretes antes dos seus agendamentos
+                Receba um lembrete por e-mail 24h e 2h antes do seu agendamento
               </p>
             </div>
             <Switch

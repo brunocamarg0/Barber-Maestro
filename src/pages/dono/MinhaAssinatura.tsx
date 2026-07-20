@@ -265,7 +265,8 @@ export default function MinhaAssinatura() {
         body: { plano: planoSlug, nome, email, profissionaisExtras: 0 },
       });
       if (error) throw error;
-      const link = (data as any)?.link || (data as any)?.init_point;
+      const d = data as any;
+      const link = d?.initPoint || d?.init_point || d?.sandboxInitPoint || d?.sandbox_init_point || d?.link;
       if (link) window.location.href = link;
       else toast.error("Não foi possível gerar o link. Tente novamente.");
     } catch (e: any) {

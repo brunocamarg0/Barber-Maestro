@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Bell, Loader2, RefreshCw, Send } from "lucide-react";
+import { Plus, Bell, Loader2, RefreshCw, Send, Mail, MessageCircle, AppWindow } from "lucide-react";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -45,6 +46,9 @@ export default function Notificacoes() {
     mensagem: "",
     tipo: "info",
     audiencia: "todos_donos",
+    canalApp: true,
+    canalEmail: false,
+    canalWhatsapp: false,
   });
 
   const carregar = async () => {
@@ -66,48 +70,37 @@ export default function Notificacoes() {
       toast({ title: "Preencha título e mensagem", variant: "destructive" });
       return;
     }
+    if (!form.canalApp && !form.canalEmail && !form.canalWhatsapp) {
+      toast({ title: "Selecione ao menos um canal", variant: "destructive" });
+      return;
+    }
     setSending(true);
     try {
-      let inserts: any[] = [];
-      const base = { tipo: form.tipo, titulo: form.titulo, mensagem: form.mensagem, lida: false };
-
-      if (form.audiencia === "todos_donos") {
-        const { data } = await supabase.from("user_roles")
-          .select("user_id, barbearia_id").eq("role", "owner");
-        const { data: clientesData } = await supabase.from("clientes")
-          .select("id, user_id").in("user_id", (data || []).map((r: any) => r.user_id));
-        const clienteMap = new Map((clientesData || []).map((c: any) => [c.user_id, c.id]));
-        inserts = (data || []).map((r: any) => ({
-          ...base,
-          barbearia_id: r.barbearia_id,
-          cliente_id: clienteMap.get(r.user_id) || null,
-        }));
-      } else if (form.audiencia === "todos_clientes") {
-        const { data } = await supabase.from("clientes").select("id");
-        inserts = (data || []).map((c: any) => ({ ...base, cliente_id: c.id, barbearia_id: null }));
-      } else if (form.audiencia === "todos_profissionais") {
-        const { data } = await supabase.from("user_roles")
-          .select("user_id, barbearia_id").eq("role", "professional");
-        const { data: clientesData } = await supabase.from("clientes")
-          .select("id, user_id").in("user_id", (data || []).map((r: any) => r.user_id));
-        const clienteMap = new Map((clientesData || []).map((c: any) => [c.user_id, c.id]));
-        inserts = (data || []).map((r: any) => ({
-          ...base,
-          barbearia_id: r.barbearia_id,
-          cliente_id: clienteMap.get(r.user_id) || null,
-        }));
-      }
-
-      if (inserts.length === 0) {
-        toast({ title: "Nenhum destinatário encontrado", variant: "destructive" });
-      } else {
-        const { error } = await supabase.from("notificacoes").insert(inserts);
-        if (error) throw error;
-        toast({ title: "Notificações enviadas", description: `${inserts.length} destinatário(s)` });
-        setOpen(false);
-        setForm({ titulo: "", mensagem: "", tipo: "info", audiencia: "todos_donos" });
-        carregar();
-      }
+      const { data, error } = await supabase.functions.invoke("broadcast-notification", {
+        body: {
+          audiencia: form.audiencia,
+          titulo: form.titulo,
+          mensagem: form.mensagem,
+          tipo: form.tipo,
+          canais: {
+            app: form.canalApp,
+            email: form.canalEmail,
+            whatsapp: form.canalWhatsapp,
+          },
+        },
+      });
+      if (error) throw error;
+      const r = data as any;
+      toast({
+        title: "Envio concluído",
+        description: `${r.destinatarios} destinatários · App ${r.app} · E-mail ${r.email}${r.email_falhou ? ` (${r.email_falhou} falhas)` : ""} · WhatsApp ${r.whatsapp}${r.whatsapp_falhou ? ` (${r.whatsapp_falhou} falhas)` : ""}`,
+      });
+      setOpen(false);
+      setForm({
+        titulo: "", mensagem: "", tipo: "info", audiencia: "todos_donos",
+        canalApp: true, canalEmail: false, canalWhatsapp: false,
+      });
+      carregar();
     } catch (e: any) {
       toast({ title: "Erro ao enviar", description: e.message, variant: "destructive" });
     } finally {
@@ -117,10 +110,10 @@ export default function Notificacoes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Notificações</h2>
-          <p className="text-muted-foreground">Envie comunicações em massa para donos, clientes ou profissionais</p>
+          <p className="text-muted-foreground">Envio real em massa via app, e-mail e WhatsApp</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={carregar} disabled={loading}>
@@ -162,6 +155,26 @@ export default function Notificacoes() {
                   <Label>Mensagem</Label>
                   <Textarea rows={5} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
                 </div>
+                <div>
+                  <Label>Canais de envio</Label>
+                  <div className="grid grid-cols-1 gap-2 mt-2">
+                    <label className="flex items-center gap-2 p-2 rounded-md border cursor-pointer">
+                      <Checkbox checked={form.canalApp} onCheckedChange={(v) => setForm({ ...form, canalApp: !!v })} />
+                      <AppWindow className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">No app (histórico + sino)</span>
+                    </label>
+                    <label className="flex items-center gap-2 p-2 rounded-md border cursor-pointer">
+                      <Checkbox checked={form.canalEmail} onCheckedChange={(v) => setForm({ ...form, canalEmail: !!v })} />
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">E-mail (fila transacional)</span>
+                    </label>
+                    <label className="flex items-center gap-2 p-2 rounded-md border cursor-pointer">
+                      <Checkbox checked={form.canalWhatsapp} onCheckedChange={(v) => setForm({ ...form, canalWhatsapp: !!v })} />
+                      <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">WhatsApp (Z-API)</span>
+                    </label>
+                  </div>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -178,7 +191,7 @@ export default function Notificacoes() {
       <Card>
         <CardHeader>
           <CardTitle>Histórico</CardTitle>
-          <CardDescription>Últimas {rows.length} notificações enviadas</CardDescription>
+          <CardDescription>Últimas {rows.length} notificações in-app</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (

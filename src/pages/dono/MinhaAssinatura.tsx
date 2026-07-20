@@ -56,6 +56,9 @@ interface Assinatura {
   };
   dataVencimento: string;
   proximoVencimento: string;
+  trialAte?: string | null;
+  bloqueadaEm?: string | null;
+  motivoBloqueio?: string | null;
 }
 
 interface Fatura {

@@ -48,12 +48,27 @@ export default function ConfiguracoesCliente() {
   const [confirmarExclusao, setConfirmarExclusao] = useState("");
 
   const [preferencias, setPreferencias] = useState({
-    notificacoesApp: true,
     notificacoesEmail: true,
-    notificacoesWhatsapp: false,
-    promocoes: true,
     lembretes: true,
   });
+
+  // Carregar preferências salvas
+  React.useEffect(() => {
+    if (!cliente?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("cliente_preferencias_notificacao")
+        .select("notificacoes_email, lembretes")
+        .eq("cliente_id", cliente.id)
+        .maybeSingle();
+      if (data) {
+        setPreferencias({
+          notificacoesEmail: data.notificacoes_email ?? true,
+          lembretes: data.lembretes ?? true,
+        });
+      }
+    })();
+  }, [cliente?.id]);
 
   const handleAlterarSenha = async () => {
     if (!senhaAtual || !novaSenha || !confirmarSenha) {

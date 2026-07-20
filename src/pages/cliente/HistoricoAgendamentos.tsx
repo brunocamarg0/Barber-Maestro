@@ -64,6 +64,7 @@ export default function HistoricoAgendamentos() {
   const { agendamentos, cancelarAgendamento, carregarDados, loading, cliente } = useCliente();
   const { toast } = useToast();
   const [filtroData, setFiltroData] = useState("");
+  const [filtroBarbearia, setFiltroBarbearia] = useState<string>("todas");
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 

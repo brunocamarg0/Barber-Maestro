@@ -289,27 +289,12 @@ export default function ConfiguracoesCliente() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Notificações no App</Label>
-              <p className="text-sm text-muted-foreground">
-                Receba notificações dentro do aplicativo
-              </p>
-            </div>
-            <Switch
-              checked={preferencias.notificacoesApp}
-              onCheckedChange={(checked) =>
-                setPreferencias({ ...preferencias, notificacoesApp: checked })
-              }
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
               <Label className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
                 Notificações por Email
               </Label>
               <p className="text-sm text-muted-foreground">
-                Receba confirmações e lembretes por email
+                Receba confirmações e atualizações de agendamento por email
               </p>
             </div>
             <Switch
@@ -320,38 +305,20 @@ export default function ConfiguracoesCliente() {
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between opacity-60">
             <div className="space-y-0.5">
               <Label className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Notificações por WhatsApp
+                <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">Em breve</span>
               </Label>
               <p className="text-sm text-muted-foreground">
-                Receba lembretes via WhatsApp
+                Receberá lembretes via WhatsApp quando estiver disponível
               </p>
             </div>
-            <Switch
-              checked={preferencias.notificacoesWhatsapp}
-              onCheckedChange={(checked) =>
-                setPreferencias({ ...preferencias, notificacoesWhatsapp: checked })
-              }
-            />
+            <Switch checked={false} disabled />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Promoções e Ofertas</Label>
-              <p className="text-sm text-muted-foreground">
-                Receba ofertas e promoções exclusivas
-              </p>
-            </div>
-            <Switch
-              checked={preferencias.promocoes}
-              onCheckedChange={(checked) =>
-                setPreferencias({ ...preferencias, promocoes: checked })
-              }
-            />
-          </div>
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">

@@ -150,8 +150,10 @@ const App = () => (
         <Sonner />
 
         <BrowserRouter>
+          <LowercasePathRedirect />
           <MaintenanceGate>
           <Routes>
+
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />

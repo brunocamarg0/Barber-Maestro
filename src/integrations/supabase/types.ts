@@ -136,41 +136,56 @@ export type Database = {
       assinaturas: {
         Row: {
           barbearia_id: string
+          bloqueada_em: string | null
           created_at: string
           data_inicio: string
           data_vencimento: string
           id: string
           mercadopago_subscription_id: string | null
+          motivo_bloqueio: string | null
           pagamento_recorrente: boolean
           plano_id: string
           proximo_vencimento: string
           status: string
+          tentativas_cobranca: number
+          trial_ate: string | null
+          ultima_tentativa: string | null
           updated_at: string
         }
         Insert: {
           barbearia_id: string
+          bloqueada_em?: string | null
           created_at?: string
           data_inicio?: string
           data_vencimento: string
           id?: string
           mercadopago_subscription_id?: string | null
+          motivo_bloqueio?: string | null
           pagamento_recorrente?: boolean
           plano_id: string
           proximo_vencimento: string
           status?: string
+          tentativas_cobranca?: number
+          trial_ate?: string | null
+          ultima_tentativa?: string | null
           updated_at?: string
         }
         Update: {
           barbearia_id?: string
+          bloqueada_em?: string | null
           created_at?: string
           data_inicio?: string
           data_vencimento?: string
           id?: string
           mercadopago_subscription_id?: string | null
+          motivo_bloqueio?: string | null
           pagamento_recorrente?: boolean
           plano_id?: string
           proximo_vencimento?: string
           status?: string
+          tentativas_cobranca?: number
+          trial_ate?: string | null
+          ultima_tentativa?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1750,6 +1765,18 @@ export type Database = {
       }
     }
     Functions: {
+      assinatura_status_dono: {
+        Args: { _user_id: string }
+        Returns: {
+          barbearia_id: string
+          bloqueada: boolean
+          dias_atraso: number
+          dias_trial_restantes: number
+          proximo_vencimento: string
+          status: string
+          trial_ate: string
+        }[]
+      }
       criar_agendamento_publico: {
         Args: {
           _barbearia_id: string

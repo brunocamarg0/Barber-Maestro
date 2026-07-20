@@ -56,6 +56,9 @@ interface Assinatura {
   };
   dataVencimento: string;
   proximoVencimento: string;
+  trialAte?: string | null;
+  bloqueadaEm?: string | null;
+  motivoBloqueio?: string | null;
 }
 
 interface Fatura {
@@ -90,7 +93,7 @@ export default function MinhaAssinatura() {
     try {
       const { data: ass, error: errAss } = await supabase
         .from("assinaturas")
-        .select("id, status, data_vencimento, proximo_vencimento, plano:planos(id, nome, valor_mensal)")
+        .select("id, status, data_vencimento, proximo_vencimento, trial_ate, bloqueada_em, motivo_bloqueio, plano:planos(id, nome, valor_mensal)")
         .eq("barbearia_id", barbeariaId)
         .maybeSingle();
 
@@ -108,6 +111,9 @@ export default function MinhaAssinatura() {
         status: ass.status,
         dataVencimento: ass.data_vencimento,
         proximoVencimento: ass.proximo_vencimento,
+        trialAte: (ass as any).trial_ate,
+        bloqueadaEm: (ass as any).bloqueada_em,
+        motivoBloqueio: (ass as any).motivo_bloqueio,
         plano: {
           id: planoRel?.id,
           nome: planoRel?.nome,
@@ -217,7 +223,37 @@ export default function MinhaAssinatura() {
   }
 
   const faturaPendente = faturas.find(f => f.status === 'pendente' || f.status === 'vencida');
-  const proximaFatura = faturas[0]; // Primeira da lista (mais recente)
+  const proximaFatura = faturas[0];
+
+  // Estado do trial / atraso
+  const agora = new Date();
+  const trialAte = assinatura.trialAte ? new Date(assinatura.trialAte) : null;
+  const emTrial = assinatura.status === 'em_teste' && trialAte;
+  const diasTrialRestantes = emTrial ? Math.max(0, Math.ceil((trialAte!.getTime() - agora.getTime()) / 86400000)) : 0;
+  const vencimento = new Date(assinatura.proximoVencimento);
+  const diasAtraso = vencimento < agora ? Math.floor((agora.getTime() - vencimento.getTime()) / 86400000) : 0;
+  const bloqueada = !!assinatura.bloqueadaEm || assinatura.status === 'suspensa';
+  const emAtraso = diasAtraso > 0 && !bloqueada && !emTrial;
+
+  const iniciarRenovacao = async () => {
+    toast.info("Gerando link de pagamento...");
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email || "";
+      const nome = (userData.user?.user_metadata as any)?.nome || (userData.user?.user_metadata as any)?.full_name || email;
+      const planoNome = (assinatura.plano.nome || "").toLowerCase();
+      const planoSlug = planoNome.includes("prof") ? "profissional" : "basico";
+      const { data, error } = await supabase.functions.invoke("mercadopago-assinatura-checkout", {
+        body: { plano: planoSlug, nome, email, profissionaisExtras: 0 },
+      });
+      if (error) throw error;
+      const link = (data as any)?.link || (data as any)?.init_point;
+      if (link) window.location.href = link;
+      else toast.error("Não foi possível gerar o link. Tente novamente.");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao iniciar renovação");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -227,6 +263,63 @@ export default function MinhaAssinatura() {
           Gerencie sua assinatura e pagamentos
         </p>
       </div>
+
+      {bloqueada && (
+        <Card className="border-destructive bg-destructive/10">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <XCircle className="h-5 w-5" /> Assinatura suspensa
+            </CardTitle>
+            <CardDescription>
+              {assinatura.motivoBloqueio === 'trial_expirado'
+                ? 'Seu teste gratuito de 7 dias terminou. Ative um plano para voltar a usar o Barber Maestro.'
+                : 'Sua assinatura foi suspensa por falta de pagamento. Regularize para reativar o acesso.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={iniciarRenovacao} size="lg">
+              <CreditCard className="h-4 w-4 mr-2" /> Assinar / Renovar agora
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {emTrial && !bloqueada && (
+        <Card className="border-amber-500/40 bg-amber-500/10">
+          <CardHeader>
+            <CardTitle className="text-amber-500 flex items-center gap-2">
+              <Clock className="h-5 w-5" /> Período de teste: {diasTrialRestantes} dia(s) restante(s)
+            </CardTitle>
+            <CardDescription>
+              Você está no teste gratuito de 7 dias. Assine antes do fim para não perder o acesso.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={iniciarRenovacao}>
+              <CreditCard className="h-4 w-4 mr-2" /> Assinar agora
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {emAtraso && (
+        <Card className="border-amber-500/40 bg-amber-500/10">
+          <CardHeader>
+            <CardTitle className="text-amber-500 flex items-center gap-2">
+              <Clock className="h-5 w-5" /> Pagamento em atraso: {diasAtraso} dia(s)
+            </CardTitle>
+            <CardDescription>
+              Regularize sua assinatura para evitar a suspensão automática após 6 dias de atraso.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={iniciarRenovacao}>
+              <CreditCard className="h-4 w-4 mr-2" /> Renovar agora
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
 
       {/* Card de Assinatura Atual */}
       <Card>

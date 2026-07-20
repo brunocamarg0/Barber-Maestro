@@ -730,7 +730,16 @@ export default function AgendamentoOnline() {
                 onChange={(e) => {
                   setFormData({ ...formData, data: e.target.value, hora: "" });
                 }}
+                onClick={(e) => {
+                  const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                  try { el.showPicker?.(); } catch { /* noop */ }
+                }}
+                onFocus={(e) => {
+                  const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                  try { el.showPicker?.(); } catch { /* noop */ }
+                }}
                 min={new Date().toISOString().split("T")[0]}
+                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
             </div>
             <div className="space-y-2">
@@ -754,18 +763,24 @@ export default function AgendamentoOnline() {
                   <div className="grid grid-cols-4 gap-2">
                     {todosHorarios.map((horario) => {
                       const isOcupado = horariosOcupados.includes(horario);
+                      const isSelected = formData.hora === horario;
                       return (
-                        <Button
+                        <button
                           key={horario}
                           type="button"
-                          variant={formData.hora === horario ? "default" : isOcupado ? "ghost" : "outline"}
                           onClick={() => !isOcupado && setFormData({ ...formData, hora: horario })}
                           disabled={isOcupado}
-                          className={isOcupado ? "opacity-50 cursor-not-allowed line-through" : ""}
+                          className={`inline-flex items-center justify-center gap-1 h-10 px-3 text-sm rounded-none bg-transparent transition-colors border-b-2 ${
+                            isOcupado
+                              ? "opacity-50 cursor-not-allowed line-through border-transparent text-muted-foreground"
+                              : isSelected
+                                ? "border-primary text-primary font-semibold"
+                                : "border-transparent text-foreground hover:border-foreground/40"
+                          }`}
                         >
-                          <Clock className="h-4 w-4 mr-1" />
+                          <Clock className="h-4 w-4" />
                           {horario}
-                        </Button>
+                        </button>
                       );
                     })}
                   </div>

@@ -14,12 +14,8 @@ export default function PaginaLegal({ campo, titulo }: Props) {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("platform_settings")
-        .select(campo)
-        .eq("id", 1)
-        .maybeSingle();
-      setConteudo((data as any)?.[campo] ?? "");
+      const { data } = await supabase.rpc("get_legal_text", { _campo: campo });
+      setConteudo((data as string | null) ?? "");
       setLoading(false);
     })();
   }, [campo]);

@@ -1837,6 +1837,14 @@ export type Database = {
           horario: string
         }[]
       }
+      get_legal_text: { Args: { _campo: string }; Returns: string }
+      get_maintenance_status: {
+        Args: never
+        Returns: {
+          mensagem_manutencao: string
+          modo_manutencao: boolean
+        }[]
+      }
       get_mp_connection_status: {
         Args: { _barbearia_id: string }
         Returns: {

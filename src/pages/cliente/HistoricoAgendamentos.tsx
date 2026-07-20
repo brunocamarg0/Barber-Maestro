@@ -334,6 +334,7 @@ export default function HistoricoAgendamentos() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data/Horário</TableHead>
+                    <TableHead>Barbearia</TableHead>
                     <TableHead>Serviço</TableHead>
                     <TableHead>Profissional</TableHead>
                     <TableHead>Valor</TableHead>
@@ -344,7 +345,7 @@ export default function HistoricoAgendamentos() {
                 <TableBody>
                   {agendamentosOrdenados.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         <div className="flex flex-col items-center gap-2">
                           <Calendar className="h-8 w-8 text-muted-foreground/50" />
                           <span>Nenhum agendamento encontrado</span>

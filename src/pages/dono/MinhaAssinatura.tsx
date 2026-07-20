@@ -262,7 +262,7 @@ export default function MinhaAssinatura() {
         planoSlug = planoNome.includes("prof") ? "profissional" : "basico";
       }
       const { data, error } = await supabase.functions.invoke("mercadopago-assinatura-checkout", {
-        body: { plano: planoSlug, nome, email, profissionaisExtras: 0 },
+        body: { plano: planoSlug, nome, email, profissionaisExtras: extrasOverride ?? 0 },
       });
       if (error) throw error;
       const d = data as any;

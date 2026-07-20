@@ -82,10 +82,24 @@ export default function MinhaAssinatura() {
   const [modalPagamento, setModalPagamento] = useState(false);
   const [faturaSelecionada, setFaturaSelecionada] = useState<Fatura | null>(null);
   const [metodoPagamento, setMetodoPagamento] = useState<string>("pix");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const ativarSlug = searchParams.get("ativar");
+  const autoAtivadoRef = useRef(false);
 
   useEffect(() => {
     carregarDados();
   }, [barbeariaId]);
+
+  useEffect(() => {
+    if (!assinatura || !ativarSlug || autoAtivadoRef.current) return;
+    autoAtivadoRef.current = true;
+    toast.success(`Ativando plano ${ativarSlug}...`);
+    iniciarRenovacao(ativarSlug);
+    const next = new URLSearchParams(searchParams);
+    next.delete("ativar");
+    setSearchParams(next, { replace: true });
+  }, [assinatura, ativarSlug]);
+
 
   const carregarDados = async () => {
     if (!barbeariaId) return;

@@ -21,3 +21,11 @@ project_id = "oyfgyoutpwmoqdtubveb"
     verify_jwt = false
   [functions.handle-email-suppression]
     verify_jwt = false
+  [functions.enviar-confirmacao]
+    verify_jwt = false
+  [functions.enviar-lembretes]
+    verify_jwt = false
+  [functions.enviar-avaliacao]
+    verify_jwt = false
+  [functions.auto-confirmar-hibrido]
+    verify_jwt = false

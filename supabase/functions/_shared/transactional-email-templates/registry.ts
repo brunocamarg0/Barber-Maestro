@@ -15,6 +15,7 @@ import { template as cobrancaGerada } from './cobranca-gerada.tsx'
 import { template as agendamentoCriadoCliente } from './agendamento-criado-cliente.tsx'
 import { template as agendamentoConfirmadoCliente } from './agendamento-confirmado-cliente.tsx'
 import { template as lembreteAgendamentoCliente } from './lembrete-agendamento-cliente.tsx'
+import { template as broadcastAdmin } from './broadcast-admin.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'boas-vindas-dono': boasVindasDono,
@@ -23,4 +24,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'agendamento-criado-cliente': agendamentoCriadoCliente,
   'agendamento-confirmado-cliente': agendamentoConfirmadoCliente,
   'lembrete-agendamento-cliente': lembreteAgendamentoCliente,
+  'broadcast-admin': broadcastAdmin,
 }

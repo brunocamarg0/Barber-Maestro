@@ -108,9 +108,19 @@ export default function HistoricoAgendamentos() {
     return statusConfig[status] || { label: status, variant: "default" as const };
   };
 
-  const agendamentosFiltrados = filtroData
-    ? agendamentosArray.filter((a) => a.data === filtroData)
-    : agendamentosArray;
+  const barbeariasUnicas = Array.from(
+    new Map(
+      agendamentosArray
+        .filter((a) => a.barbeariaId)
+        .map((a) => [a.barbeariaId!, { id: a.barbeariaId!, nome: a.barbeariaNome || "Barbearia" }])
+    ).values()
+  );
+
+  const agendamentosFiltrados = agendamentosArray.filter((a) => {
+    if (filtroData && a.data !== filtroData) return false;
+    if (filtroBarbearia !== "todas" && a.barbeariaId !== filtroBarbearia) return false;
+    return true;
+  });
 
   const agendamentosOrdenados = [...agendamentosFiltrados].sort((a, b) => {
     const dataA = new Date(`${a.data}T${a.hora || '00:00'}`);

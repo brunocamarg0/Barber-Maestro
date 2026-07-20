@@ -203,9 +203,17 @@ export default function AgendamentoOnline() {
         }
       }
 
+      const modo = (barbearia?.modo_confirmacao || "manual") as "automatico" | "manual" | "hibrido";
+      const autoConfirma = modo === "automatico" || modo === "hibrido";
+      const tituloToast = reagendarId
+        ? (autoConfirma ? "Reagendamento confirmado!" : "Reagendamento solicitado!")
+        : (autoConfirma ? "Agendamento confirmado!" : "Solicitação enviada!");
+      const descToast = servicosSelecionados.length > 1
+        ? `${servicosSelecionados.length} serviços agendados em sequência.${autoConfirma ? "" : " Aguardando confirmação da barbearia."}`
+        : (autoConfirma ? "Escolha a forma de pagamento..." : "Sua solicitação foi enviada e está aguardando confirmação da barbearia.");
       toast({
-        title: reagendarId ? "Reagendamento confirmado!" : "Agendamento criado!",
-        description: servicosSelecionados.length > 1 ? `${servicosSelecionados.length} serviços agendados em sequência.` : "Escolha a forma de pagamento...",
+        title: tituloToast,
+        description: descToast,
       });
 
       setAgendamentoIdsCriados(idsCriados);

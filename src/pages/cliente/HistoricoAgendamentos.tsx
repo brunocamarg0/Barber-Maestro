@@ -18,7 +18,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, Star, CalendarCheck, RefreshCw, Eye, XCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Star, CalendarCheck, RefreshCw, Eye, XCircle, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -39,6 +40,8 @@ interface Agendamento {
   status: string;
   profissionalNome?: string;
   observacao?: string;
+  barbeariaId?: string;
+  barbeariaNome?: string;
   servico?: {
     nome: string;
     preco: number;
@@ -62,6 +65,7 @@ export default function HistoricoAgendamentos() {
   const { agendamentos, cancelarAgendamento, carregarDados, loading, cliente } = useCliente();
   const { toast } = useToast();
   const [filtroData, setFiltroData] = useState("");
+  const [filtroBarbearia, setFiltroBarbearia] = useState<string>("todas");
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -105,9 +109,19 @@ export default function HistoricoAgendamentos() {
     return statusConfig[status] || { label: status, variant: "default" as const };
   };
 
-  const agendamentosFiltrados = filtroData
-    ? agendamentosArray.filter((a) => a.data === filtroData)
-    : agendamentosArray;
+  const barbeariasUnicas = Array.from(
+    new Map(
+      agendamentosArray
+        .filter((a) => a.barbeariaId)
+        .map((a) => [a.barbeariaId!, { id: a.barbeariaId!, nome: a.barbeariaNome || "Barbearia" }])
+    ).values()
+  );
+
+  const agendamentosFiltrados = agendamentosArray.filter((a) => {
+    if (filtroData && a.data !== filtroData) return false;
+    if (filtroBarbearia !== "todas" && a.barbeariaId !== filtroBarbearia) return false;
+    return true;
+  });
 
   const agendamentosOrdenados = [...agendamentosFiltrados].sort((a, b) => {
     const dataA = new Date(`${a.data}T${a.hora || '00:00'}`);
@@ -182,6 +196,7 @@ export default function HistoricoAgendamentos() {
         <TableCell>
           {agendamento.data ? formatarData(agendamento.data, getHorario(agendamento)) : 'N/A'}
         </TableCell>
+        <TableCell className="text-muted-foreground">{agendamento.barbeariaNome || '—'}</TableCell>
         <TableCell>{getServicoNome(agendamento)}</TableCell>
         <TableCell>{getProfissionalNome(agendamento)}</TableCell>
         <TableCell>{formatarMoeda(getValor(agendamento))}</TableCell>
@@ -253,7 +268,19 @@ export default function HistoricoAgendamentos() {
             Veja todos os seus agendamentos realizados
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Select value={filtroBarbearia} onValueChange={setFiltroBarbearia}>
+            <SelectTrigger className="w-56">
+              <Store className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Todas as barbearias" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as barbearias</SelectItem>
+              {barbeariasUnicas.map((b) => (
+                <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             type="date"
             value={filtroData}
@@ -261,11 +288,11 @@ export default function HistoricoAgendamentos() {
             placeholder="Filtrar por data"
             className="w-48"
           />
-          <Button variant="outline" onClick={() => setFiltroData("")}>
+          <Button variant="outline" onClick={() => { setFiltroData(""); setFiltroBarbearia("todas"); }}>
             Limpar
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             onClick={() => carregarDados && carregarDados()}
             title="Atualizar"
@@ -307,6 +334,7 @@ export default function HistoricoAgendamentos() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data/Horário</TableHead>
+                    <TableHead>Barbearia</TableHead>
                     <TableHead>Serviço</TableHead>
                     <TableHead>Profissional</TableHead>
                     <TableHead>Valor</TableHead>
@@ -317,7 +345,7 @@ export default function HistoricoAgendamentos() {
                 <TableBody>
                   {agendamentosOrdenados.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         <div className="flex flex-col items-center gap-2">
                           <Calendar className="h-8 w-8 text-muted-foreground/50" />
                           <span>Nenhum agendamento encontrado</span>
@@ -357,6 +385,7 @@ export default function HistoricoAgendamentos() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Data/Horário</TableHead>
+                        <TableHead>Barbearia</TableHead>
                         <TableHead>Serviço</TableHead>
                         <TableHead>Profissional</TableHead>
                         <TableHead>Valor</TableHead>
@@ -366,7 +395,7 @@ export default function HistoricoAgendamentos() {
                     <TableBody>
                       {filtered.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                             Nenhum agendamento {getStatusConfig(statusFilter).label.toLowerCase()} encontrado
                           </TableCell>
                         </TableRow>
@@ -376,6 +405,7 @@ export default function HistoricoAgendamentos() {
                             <TableCell>
                               {agendamento.data ? formatarData(agendamento.data, getHorario(agendamento)) : 'N/A'}
                             </TableCell>
+                            <TableCell className="text-muted-foreground">{agendamento.barbeariaNome || '—'}</TableCell>
                             <TableCell>{getServicoNome(agendamento)}</TableCell>
                             <TableCell>{getProfissionalNome(agendamento)}</TableCell>
                             <TableCell>{formatarMoeda(getValor(agendamento))}</TableCell>

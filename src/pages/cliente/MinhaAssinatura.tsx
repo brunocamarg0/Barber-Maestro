@@ -238,7 +238,7 @@ export default function MinhaAssinatura() {
               <p className="text-muted-foreground mb-6">
                 Veja os planos disponíveis nas barbearias e contrate o seu.
               </p>
-              <Button onClick={() => navigate("/cliente/planos-disponiveis")}>
+              <Button onClick={() => navigate("/cliente/planos")}>
                 Ver planos disponíveis
               </Button>
             </div>

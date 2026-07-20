@@ -48,20 +48,47 @@ export default function PlanosDisponiveis() {
 
   useEffect(() => {
     carregarPlanos();
-  }, [barbeariaSelecionada]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [barbeariaSelecionada, cliente?.id]);
 
   const carregarPlanos = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      // 1) Descobrir barbearias em que o cliente possui agendamentos
+      let barbeariaIds: string[] = [];
+      if (cliente?.id) {
+        const { data: ags, error: agsErr } = await supabase
+          .from("agendamentos")
+          .select("barbearia_id")
+          .eq("cliente_id", cliente.id);
+        if (agsErr) throw agsErr;
+        barbeariaIds = Array.from(
+          new Set((ags || []).map((a: any) => a.barbearia_id).filter(Boolean))
+        );
+      }
+
+      // Sem agendamentos → nenhum plano
+      if (barbeariaIds.length === 0) {
+        setPlanos([]);
+        return;
+      }
+
+      const filtroIds = barbeariaSelecionada
+        ? [barbeariaSelecionada].filter((id) => barbeariaIds.includes(id))
+        : barbeariaIds;
+
+      if (filtroIds.length === 0) {
+        setPlanos([]);
+        return;
+      }
+
+      const { data, error } = await supabase
         .from("planos_cliente")
         .select(
           "id, nome, descricao, valor, duracao_meses, beneficios, barbearia_id, ativo, barbearia:barbearias(id, nome)"
         )
-        .eq("ativo", true);
-      if (barbeariaSelecionada) query = query.eq("barbearia_id", barbeariaSelecionada);
-
-      const { data, error } = await query;
+        .eq("ativo", true)
+        .in("barbearia_id", filtroIds);
       if (error) throw error;
 
       const mapped: Plano[] = (data || []).map((p: any) => ({

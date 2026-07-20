@@ -664,10 +664,17 @@ export default function ConfiguracoesBarbearia() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Modo de Confirmação de Agendamentos</CardTitle>
-          <CardDescription>
-            Configure como os agendamentos serão confirmados automaticamente
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Modo de Confirmação de Agendamentos</CardTitle>
+              <CardDescription>
+                Configure como os agendamentos serão confirmados automaticamente
+              </CardDescription>
+            </div>
+            <span className="text-xs rounded-full px-3 py-1 bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+              Ativo
+            </span>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">

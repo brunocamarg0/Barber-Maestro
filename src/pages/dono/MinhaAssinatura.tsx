@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useDono } from "@/context/DonoContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,10 +82,24 @@ export default function MinhaAssinatura() {
   const [modalPagamento, setModalPagamento] = useState(false);
   const [faturaSelecionada, setFaturaSelecionada] = useState<Fatura | null>(null);
   const [metodoPagamento, setMetodoPagamento] = useState<string>("pix");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const ativarSlug = searchParams.get("ativar");
+  const autoAtivadoRef = useRef(false);
 
   useEffect(() => {
     carregarDados();
   }, [barbeariaId]);
+
+  useEffect(() => {
+    if (!assinatura || !ativarSlug || autoAtivadoRef.current) return;
+    autoAtivadoRef.current = true;
+    toast.success(`Ativando plano ${ativarSlug}...`);
+    iniciarRenovacao(ativarSlug);
+    const next = new URLSearchParams(searchParams);
+    next.delete("ativar");
+    setSearchParams(next, { replace: true });
+  }, [assinatura, ativarSlug]);
+
 
   const carregarDados = async () => {
     if (!barbeariaId) return;
@@ -235,14 +250,17 @@ export default function MinhaAssinatura() {
   const bloqueada = !!assinatura.bloqueadaEm || assinatura.status === 'suspensa';
   const emAtraso = diasAtraso > 0 && !bloqueada && !emTrial;
 
-  const iniciarRenovacao = async () => {
+  const iniciarRenovacao = async (planoOverride?: string) => {
     toast.info("Gerando link de pagamento...");
     try {
       const { data: userData } = await supabase.auth.getUser();
       const email = userData.user?.email || "";
       const nome = (userData.user?.user_metadata as any)?.nome || (userData.user?.user_metadata as any)?.full_name || email;
-      const planoNome = (assinatura.plano.nome || "").toLowerCase();
-      const planoSlug = planoNome.includes("prof") ? "profissional" : "basico";
+      let planoSlug = planoOverride;
+      if (!planoSlug) {
+        const planoNome = (assinatura.plano.nome || "").toLowerCase();
+        planoSlug = planoNome.includes("prof") ? "profissional" : "basico";
+      }
       const { data, error } = await supabase.functions.invoke("mercadopago-assinatura-checkout", {
         body: { plano: planoSlug, nome, email, profissionaisExtras: 0 },
       });
@@ -254,6 +272,7 @@ export default function MinhaAssinatura() {
       toast.error(e?.message || "Falha ao iniciar renovação");
     }
   };
+
 
   return (
     <div className="space-y-6">
@@ -277,7 +296,7 @@ export default function MinhaAssinatura() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={iniciarRenovacao} size="lg">
+            <Button onClick={() => iniciarRenovacao()} size="lg">
               <CreditCard className="h-4 w-4 mr-2" /> Assinar / Renovar agora
             </Button>
           </CardContent>
@@ -295,7 +314,7 @@ export default function MinhaAssinatura() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={iniciarRenovacao}>
+            <Button onClick={() => iniciarRenovacao()}>
               <CreditCard className="h-4 w-4 mr-2" /> Assinar agora
             </Button>
           </CardContent>
@@ -313,7 +332,7 @@ export default function MinhaAssinatura() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={iniciarRenovacao}>
+            <Button onClick={() => iniciarRenovacao()}>
               <CreditCard className="h-4 w-4 mr-2" /> Renovar agora
             </Button>
           </CardContent>

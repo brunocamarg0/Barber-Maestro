@@ -134,7 +134,7 @@ const Pricing = () => {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 ) : (
-                  <Link to={`/checkout-assinatura?plano=${plan.slug}`}>
+                  <Link to={`/cadastro?tipo=dono&plano=${plan.slug}`}>
                     Assinar Agora
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>

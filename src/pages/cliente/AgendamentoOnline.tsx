@@ -925,9 +925,15 @@ export default function AgendamentoOnline() {
             valor={servicosSelecionados[0]?.preco || 0}
 
             onPagamentoPresencial={() => {
+              const modo = (barbearia?.modo_confirmacao || "manual") as "automatico" | "manual" | "hibrido";
+              const auto = modo === "automatico";
               toast({
-                title: "Agendamento confirmado!",
-                description: "Você pagará na barbearia no dia do atendimento.",
+                title: auto ? "Agendamento confirmado!" : "Solicitação enviada!",
+                description: auto
+                  ? "Você pagará na barbearia no dia do atendimento."
+                  : (modo === "hibrido"
+                      ? "Aguardando confirmação da barbearia (confirmação automática em até 2h). Pagamento na barbearia."
+                      : "Aguardando confirmação da barbearia. Pagamento na barbearia."),
               });
               setTimeout(() => {
                 navigate("/cliente");

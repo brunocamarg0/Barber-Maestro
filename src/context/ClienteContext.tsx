@@ -147,6 +147,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     id: a.id,
     clienteId: a.cliente_id,
     barbeariaId: a.barbearia_id,
+    barbeariaNome: a.barbearia?.nome,
     servicoId: a.servico_id,
     servico: a.servico
       ? {
@@ -165,7 +166,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
     observacoes: a.observacao || undefined,
     createdAt: a.created_at,
     updatedAt: a.updated_at,
-  }));
+  })) as any;
 
   const pagamentos: Pagamento[] = (agendamentosRaw || [])
     .flatMap((a: any) =>

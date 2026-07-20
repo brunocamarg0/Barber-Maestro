@@ -39,6 +39,8 @@ interface Agendamento {
   status: string;
   profissionalNome?: string;
   observacao?: string;
+  barbeariaId?: string;
+  barbeariaNome?: string;
   servico?: {
     nome: string;
     preco: number;

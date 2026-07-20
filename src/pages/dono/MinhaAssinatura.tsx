@@ -93,7 +93,7 @@ export default function MinhaAssinatura() {
     try {
       const { data: ass, error: errAss } = await supabase
         .from("assinaturas")
-        .select("id, status, data_vencimento, proximo_vencimento, plano:planos(id, nome, valor_mensal)")
+        .select("id, status, data_vencimento, proximo_vencimento, trial_ate, bloqueada_em, motivo_bloqueio, plano:planos(id, nome, valor_mensal)")
         .eq("barbearia_id", barbeariaId)
         .maybeSingle();
 
@@ -111,6 +111,9 @@ export default function MinhaAssinatura() {
         status: ass.status,
         dataVencimento: ass.data_vencimento,
         proximoVencimento: ass.proximo_vencimento,
+        trialAte: (ass as any).trial_ate,
+        bloqueadaEm: (ass as any).bloqueada_em,
+        motivoBloqueio: (ass as any).motivo_bloqueio,
         plano: {
           id: planoRel?.id,
           nome: planoRel?.nome,

@@ -586,7 +586,7 @@ export default function AgendamentoOnline() {
                 return (
                   <div
                     key={servico.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selecionado ? "border-primary bg-primary/5" : "hover:bg-accent"}`}
+                    className={`p-4 border-b cursor-pointer transition-colors bg-transparent hover:bg-transparent ${selecionado ? "border-b-2 border-primary" : "border-border hover:border-foreground/40"}`}
                     onClick={() =>
                       setServicoIds((prev) =>
                         prev.includes(servico.id) ? prev.filter((id) => id !== servico.id) : [...prev, servico.id]
@@ -600,7 +600,7 @@ export default function AgendamentoOnline() {
                         </div>
                         <Scissors className="h-5 w-5" />
                         <div>
-                          <p className="font-medium">{servico?.nome || 'Serviço sem nome'}</p>
+                          <p className={`font-medium ${selecionado ? "text-primary" : ""}`}>{servico?.nome || 'Serviço sem nome'}</p>
                           {servico?.descricao && (
                             <p className="text-sm text-muted-foreground">{servico.descricao}</p>
                           )}

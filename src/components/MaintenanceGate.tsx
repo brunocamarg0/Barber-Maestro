@@ -21,13 +21,10 @@ export function MaintenanceGate({ children }: Props) {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("platform_settings")
-        .select("modo_manutencao, mensagem_manutencao")
-        .eq("id", 1)
-        .maybeSingle();
-      setAtivo(!!data?.modo_manutencao);
-      setMensagem(data?.mensagem_manutencao ?? null);
+      const { data } = await supabase.rpc("get_maintenance_status");
+      const row = Array.isArray(data) ? data[0] : (data as any);
+      setAtivo(!!row?.modo_manutencao);
+      setMensagem(row?.mensagem_manutencao ?? null);
 
       if (user) {
         const { data: role } = await supabase

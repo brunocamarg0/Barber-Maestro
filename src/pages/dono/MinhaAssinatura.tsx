@@ -238,8 +238,13 @@ export default function MinhaAssinatura() {
   const iniciarRenovacao = async () => {
     toast.info("Gerando link de pagamento...");
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email || "";
+      const nome = (userData.user?.user_metadata as any)?.nome || (userData.user?.user_metadata as any)?.full_name || email;
+      const planoNome = (assinatura.plano.nome || "").toLowerCase();
+      const planoSlug = planoNome.includes("prof") ? "profissional" : "basico";
       const { data, error } = await supabase.functions.invoke("mercadopago-assinatura-checkout", {
-        body: { barbeariaId, planoId: assinatura.plano.id, renovacao: true },
+        body: { plano: planoSlug, nome, email, profissionaisExtras: 0 },
       });
       if (error) throw error;
       const link = (data as any)?.link || (data as any)?.init_point;

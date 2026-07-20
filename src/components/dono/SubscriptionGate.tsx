@@ -33,8 +33,8 @@ export function SubscriptionGate() {
   }, [barbeariaId, location.pathname]);
 
   if (status === "loading") return <Outlet />;
-  if (status === "blocked" && !location.pathname.includes("/dono/assinatura")) {
-    return <Navigate to="/dono/assinatura" replace />;
+  if (status === "blocked" && !location.pathname.includes("/dono/minha-assinatura")) {
+    return <Navigate to="/dono/minha-assinatura" replace />;
   }
   return <Outlet />;
 }

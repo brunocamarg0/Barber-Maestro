@@ -28,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Star, MessageSquare, ThumbsUp, AlertCircle, CheckCircle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { AvaliacaoDono } from "@/types/dono";
 
 export default function AvaliacoesReputacao() {

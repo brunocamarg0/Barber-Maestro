@@ -10,7 +10,7 @@ import {
   MetodoPagamento,
   StatusPagamento,
 } from "@/types/cliente";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

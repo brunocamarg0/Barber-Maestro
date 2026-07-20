@@ -37,7 +37,7 @@ import {
   Trash2,
   Info,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   Select,
   SelectContent,

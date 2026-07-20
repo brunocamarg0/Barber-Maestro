@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Copy, Check, Link2, Loader2 } from "lucide-react";
 
 const slugify = (s: string) =>

@@ -2,7 +2,7 @@
 // a SINGLE toast system across the app. Prevents duplicate notifications that
 // appeared when some code used shadcn's `useToast` and other code used sonner
 // simultaneously (both toasters mounted, same message rendered twice).
-import { toast as sonnerToast } from "sonner";
+import { toast as sonnerToast } from "@/lib/toast";
 
 type LegacyToastArgs = {
   title?: React.ReactNode;

@@ -237,6 +237,7 @@ const App = () => (
                 </ErrorBoundary>
               </ProtectedRoute>
             }>
+              <Route element={<SubscriptionGate />}>
               <Route index element={<ErrorBoundary><DonoDashboard /></ErrorBoundary>} />
               <Route path="agenda" element={<ErrorBoundary><FeatureGate feature="agenda"><AgendaInteligente /></FeatureGate></ErrorBoundary>} />
               <Route path="servicos" element={<ErrorBoundary><FeatureGate feature="servicos"><GestaoServicos /></FeatureGate></ErrorBoundary>} />
@@ -253,8 +254,7 @@ const App = () => (
               <Route path="configuracoes" element={<ErrorBoundary><ConfiguracoesBarbearia /></ErrorBoundary>} />
               <Route path="relatorios" element={<ErrorBoundary><FeatureGate feature="relatorios_basicos"><RelatoriosAvancados /></FeatureGate></ErrorBoundary>} />
               <Route path="minha-assinatura" element={<ErrorBoundary><MinhaAssinaturaDono /></ErrorBoundary>} />
-
-
+              </Route>
             </Route>
             <Route path="/:slug" element={<BarbeariaPublica />} />
             <Route path="*" element={<NotFound />} />

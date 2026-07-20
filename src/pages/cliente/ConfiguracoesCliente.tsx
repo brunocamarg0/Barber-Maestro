@@ -324,7 +324,7 @@ export default function ConfiguracoesCliente() {
             <div className="space-y-0.5">
               <Label>Lembretes de Agendamento</Label>
               <p className="text-sm text-muted-foreground">
-                Receba lembretes antes dos seus agendamentos
+                Receba um lembrete por e-mail 24h e 2h antes do seu agendamento
               </p>
             </div>
             <Switch

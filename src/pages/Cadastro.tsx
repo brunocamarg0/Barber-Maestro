@@ -149,7 +149,8 @@ const Cadastro = () => {
         });
         if (signInErr) throw signInErr;
 
-        redirectPath = '/dono';
+        const planoParam = searchParams.get('plano');
+        redirectPath = planoParam ? `/dono/minha-assinatura?ativar=${planoParam}` : '/dono';
       } else {
         if (!formCliente.nome || !formCliente.email || !formCliente.senha) {
           toast.error("Preencha todos os campos obrigatórios.");

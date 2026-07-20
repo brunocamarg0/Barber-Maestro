@@ -236,14 +236,17 @@ export default function MinhaAssinatura() {
   const bloqueada = !!assinatura.bloqueadaEm || assinatura.status === 'suspensa';
   const emAtraso = diasAtraso > 0 && !bloqueada && !emTrial;
 
-  const iniciarRenovacao = async () => {
+  const iniciarRenovacao = async (planoOverride?: string) => {
     toast.info("Gerando link de pagamento...");
     try {
       const { data: userData } = await supabase.auth.getUser();
       const email = userData.user?.email || "";
       const nome = (userData.user?.user_metadata as any)?.nome || (userData.user?.user_metadata as any)?.full_name || email;
-      const planoNome = (assinatura.plano.nome || "").toLowerCase();
-      const planoSlug = planoNome.includes("prof") ? "profissional" : "basico";
+      let planoSlug = planoOverride;
+      if (!planoSlug) {
+        const planoNome = (assinatura.plano.nome || "").toLowerCase();
+        planoSlug = planoNome.includes("prof") ? "profissional" : "basico";
+      }
       const { data, error } = await supabase.functions.invoke("mercadopago-assinatura-checkout", {
         body: { plano: planoSlug, nome, email, profissionaisExtras: 0 },
       });
@@ -255,6 +258,7 @@ export default function MinhaAssinatura() {
       toast.error(e?.message || "Falha ao iniciar renovação");
     }
   };
+
 
   return (
     <div className="space-y-6">

@@ -719,6 +719,28 @@ export function DonoProvider({ children }: { children: ReactNode }) {
       }
     }
     await atualizarAgendamento(id, { status: "recusado", observacao: motivo });
+
+    // Notifica o cliente (se estiver cadastrado)
+    try {
+      if (ag?.clienteId) {
+        const dataFmt = ag.data ? new Date(ag.data).toLocaleDateString("pt-BR") : "";
+        const msg = motivo
+          ? `Seu agendamento em ${dataFmt} ${ag.horario ?? ""} foi recusado. Motivo: ${motivo}`
+          : `Seu agendamento em ${dataFmt} ${ag.horario ?? ""} foi recusado pela barbearia.`;
+        await supabase.from("notificacoes").insert({
+          tipo: "agendamento",
+          titulo: "Agendamento recusado",
+          mensagem: msg,
+          cliente_id: ag.clienteId,
+          barbearia_id: null,
+          url_acao: "/cliente/historico",
+          label_acao: "Ver histórico",
+        });
+      }
+    } catch (e) {
+      console.warn("Falha ao notificar cliente da recusa:", e);
+    }
+
     toast.success("Agendamento recusado");
   };
 

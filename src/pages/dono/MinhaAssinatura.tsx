@@ -250,7 +250,7 @@ export default function MinhaAssinatura() {
   const bloqueada = !!assinatura.bloqueadaEm || assinatura.status === 'suspensa';
   const emAtraso = diasAtraso > 0 && !bloqueada && !emTrial;
 
-  const iniciarRenovacao = async (planoOverride?: string) => {
+  const iniciarRenovacao = async (planoOverride?: string, extrasOverride?: number) => {
     toast.info("Gerando link de pagamento...");
     try {
       const { data: userData } = await supabase.auth.getUser();

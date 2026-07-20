@@ -385,6 +385,7 @@ export default function HistoricoAgendamentos() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Data/Horário</TableHead>
+                        <TableHead>Barbearia</TableHead>
                         <TableHead>Serviço</TableHead>
                         <TableHead>Profissional</TableHead>
                         <TableHead>Valor</TableHead>
@@ -394,7 +395,7 @@ export default function HistoricoAgendamentos() {
                     <TableBody>
                       {filtered.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                             Nenhum agendamento {getStatusConfig(statusFilter).label.toLowerCase()} encontrado
                           </TableCell>
                         </TableRow>
@@ -404,6 +405,7 @@ export default function HistoricoAgendamentos() {
                             <TableCell>
                               {agendamento.data ? formatarData(agendamento.data, getHorario(agendamento)) : 'N/A'}
                             </TableCell>
+                            <TableCell className="text-muted-foreground">{agendamento.barbeariaNome || '—'}</TableCell>
                             <TableCell>{getServicoNome(agendamento)}</TableCell>
                             <TableCell>{getProfissionalNome(agendamento)}</TableCell>
                             <TableCell>{formatarMoeda(getValor(agendamento))}</TableCell>

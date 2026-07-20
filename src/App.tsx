@@ -2,7 +2,21 @@ import type { ReactNode } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+
+function LowercasePathRedirect() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const lower = location.pathname.toLowerCase();
+    if (lower !== location.pathname) {
+      navigate(lower + location.search + location.hash, { replace: true });
+    }
+  }, [location, navigate]);
+  return null;
+}
+
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";

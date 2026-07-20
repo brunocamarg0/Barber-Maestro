@@ -267,7 +267,19 @@ export default function HistoricoAgendamentos() {
             Veja todos os seus agendamentos realizados
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Select value={filtroBarbearia} onValueChange={setFiltroBarbearia}>
+            <SelectTrigger className="w-56">
+              <Store className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Todas as barbearias" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as barbearias</SelectItem>
+              {barbeariasUnicas.map((b) => (
+                <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             type="date"
             value={filtroData}
@@ -275,11 +287,11 @@ export default function HistoricoAgendamentos() {
             placeholder="Filtrar por data"
             className="w-48"
           />
-          <Button variant="outline" onClick={() => setFiltroData("")}>
+          <Button variant="outline" onClick={() => { setFiltroData(""); setFiltroBarbearia("todas"); }}>
             Limpar
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             onClick={() => carregarDados && carregarDados()}
             title="Atualizar"

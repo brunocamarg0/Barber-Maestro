@@ -38,7 +38,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Plus, AlertTriangle, Package, Edit, Trash2, TrendingUp, TrendingDown } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ProdutoDono } from "@/types/dono";
 
 export default function ProdutosEstoque() {

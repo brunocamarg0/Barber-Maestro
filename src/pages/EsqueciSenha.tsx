@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Scissors, MailCheck } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const EsqueciSenha = () => {

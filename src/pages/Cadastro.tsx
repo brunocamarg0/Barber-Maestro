@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Scissors, ArrowLeft, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { buscarCep, formatarCep } from "@/lib/viacep";
 

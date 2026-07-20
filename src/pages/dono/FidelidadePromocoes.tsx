@@ -37,7 +37,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Gift, Tag, Edit, Trash2, Calendar } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { PromocaoDono } from "@/types/dono";
 
 export default function FidelidadePromocoes() {

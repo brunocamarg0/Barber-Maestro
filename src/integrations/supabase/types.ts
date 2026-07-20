@@ -59,9 +59,11 @@ export type Database = {
       }
       agendamentos: {
         Row: {
+          avaliacao_enviada: boolean
           barbearia_id: string
           cliente_id: string | null
           cliente_nome: string
+          confirmacao_enviada: boolean
           confirmado_automaticamente: boolean
           created_at: string
           data: string
@@ -71,6 +73,7 @@ export type Database = {
           id: string
           lembrete_24h_enviado: boolean
           lembrete_2h_enviado: boolean
+          lembrete_enviado: boolean
           observacao: string | null
           servico_id: string
           status: string
@@ -78,9 +81,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avaliacao_enviada?: boolean
           barbearia_id: string
           cliente_id?: string | null
           cliente_nome: string
+          confirmacao_enviada?: boolean
           confirmado_automaticamente?: boolean
           created_at?: string
           data: string
@@ -90,6 +95,7 @@ export type Database = {
           id?: string
           lembrete_24h_enviado?: boolean
           lembrete_2h_enviado?: boolean
+          lembrete_enviado?: boolean
           observacao?: string | null
           servico_id: string
           status?: string
@@ -97,9 +103,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avaliacao_enviada?: boolean
           barbearia_id?: string
           cliente_id?: string | null
           cliente_nome?: string
+          confirmacao_enviada?: boolean
           confirmado_automaticamente?: boolean
           created_at?: string
           data?: string
@@ -109,6 +117,7 @@ export type Database = {
           id?: string
           lembrete_24h_enviado?: boolean
           lembrete_2h_enviado?: boolean
+          lembrete_enviado?: boolean
           observacao?: string | null
           servico_id?: string
           status?: string
@@ -1940,6 +1949,10 @@ export type Database = {
       slugify: { Args: { _text: string }; Returns: string }
       trigger_agendamento_email: {
         Args: { _action: string; _agendamento_id: string }
+        Returns: undefined
+      }
+      trigger_whatsapp_confirmacao: {
+        Args: { _agendamento_id: string }
         Returns: undefined
       }
       validar_agendamento_input: {

@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import SeletorDePlanos from "@/components/dono/SeletorDePlanos";
 
 interface Assinatura {
   id: string;
@@ -250,7 +251,7 @@ export default function MinhaAssinatura() {
   const bloqueada = !!assinatura.bloqueadaEm || assinatura.status === 'suspensa';
   const emAtraso = diasAtraso > 0 && !bloqueada && !emTrial;
 
-  const iniciarRenovacao = async (planoOverride?: string) => {
+  const iniciarRenovacao = async (planoOverride?: string, extrasOverride?: number) => {
     toast.info("Gerando link de pagamento...");
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -262,7 +263,7 @@ export default function MinhaAssinatura() {
         planoSlug = planoNome.includes("prof") ? "profissional" : "basico";
       }
       const { data, error } = await supabase.functions.invoke("mercadopago-assinatura-checkout", {
-        body: { plano: planoSlug, nome, email, profissionaisExtras: 0 },
+        body: { plano: planoSlug, nome, email, profissionaisExtras: extrasOverride ?? 0 },
       });
       if (error) throw error;
       const d = data as any;
@@ -407,6 +408,13 @@ export default function MinhaAssinatura() {
           )}
         </CardContent>
       </Card>
+
+      {/* Escolha / troca de plano */}
+      <SeletorDePlanos
+        planoAtualNome={assinatura.plano.nome}
+        onAssinar={(slug, extras) => iniciarRenovacao(slug, extras)}
+      />
+
 
       {/* Histórico de Faturas */}
       <Card>

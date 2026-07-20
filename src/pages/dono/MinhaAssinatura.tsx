@@ -408,6 +408,13 @@ export default function MinhaAssinatura() {
         </CardContent>
       </Card>
 
+      {/* Escolha / troca de plano */}
+      <SeletorDePlanos
+        planoAtualNome={assinatura.plano.nome}
+        onAssinar={(slug, extras) => iniciarRenovacao(slug, extras)}
+      />
+
+
       {/* Histórico de Faturas */}
       <Card>
         <CardHeader>

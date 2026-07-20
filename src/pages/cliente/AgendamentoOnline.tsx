@@ -601,13 +601,13 @@ export default function AgendamentoOnline() {
                       )
                     }
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${selecionado ? "bg-primary border-primary" : "border-muted-foreground"}`}>
+                    <div className="flex items-center justify-between gap-6">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selecionado ? "bg-primary border-primary" : "border-muted-foreground"}`}>
                           {selecionado && <CheckCircle className="w-3 h-3 text-primary-foreground" />}
                         </div>
-                        <Scissors className="h-5 w-5" />
-                        <div>
+                        <Scissors className="h-5 w-5 shrink-0" />
+                        <div className="space-y-1 min-w-0">
                           <p className={`font-medium ${selecionado ? "text-primary" : ""}`}>{servico?.nome || 'Serviço sem nome'}</p>
                           {servico?.descricao && (
                             <p className="text-sm text-muted-foreground">{servico.descricao}</p>
@@ -618,7 +618,7 @@ export default function AgendamentoOnline() {
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0 pl-4">
                         <p className="font-bold">{formatarMoeda(servico.preco)}</p>
                       </div>
                     </div>

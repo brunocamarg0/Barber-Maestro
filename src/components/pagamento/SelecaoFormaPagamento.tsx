@@ -104,24 +104,24 @@ export function SelecaoFormaPagamento({
           value={formaPagamento}
           onValueChange={(v) => setFormaPagamento(v as "online" | "presencial")}
         >
-          <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
+          <div className={`flex items-center space-x-3 p-4 border-b cursor-pointer transition-colors bg-transparent hover:bg-transparent ${formaPagamento === "online" ? "border-b-2 border-primary" : "border-border hover:border-foreground/40"}`} onClick={() => setFormaPagamento("online")}>
             <RadioGroupItem value="online" id="online" />
             <Label htmlFor="online" className="flex-1 cursor-pointer flex items-center gap-3">
-              <CreditCard className="h-5 w-5 text-primary" />
+              <CreditCard className={`h-5 w-5 ${formaPagamento === "online" ? "text-primary" : "text-foreground"}`} />
               <div>
-                <p className="font-medium">Pagamento Online</p>
+                <p className={`font-medium ${formaPagamento === "online" ? "text-primary" : ""}`}>Pagamento Online</p>
                 <p className="text-sm text-muted-foreground">
                   Pague agora com cartão ou PIX
                 </p>
               </div>
             </Label>
           </div>
-          <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
+          <div className={`flex items-center space-x-3 p-4 border-b cursor-pointer transition-colors bg-transparent hover:bg-transparent ${formaPagamento === "presencial" ? "border-b-2 border-primary" : "border-border hover:border-foreground/40"}`} onClick={() => setFormaPagamento("presencial")}>
             <RadioGroupItem value="presencial" id="presencial" />
             <Label htmlFor="presencial" className="flex-1 cursor-pointer flex items-center gap-3">
-              <Store className="h-5 w-5 text-primary" />
+              <Store className={`h-5 w-5 ${formaPagamento === "presencial" ? "text-primary" : "text-foreground"}`} />
               <div>
-                <p className="font-medium">Pagamento na Barbearia</p>
+                <p className={`font-medium ${formaPagamento === "presencial" ? "text-primary" : ""}`}>Pagamento na Barbearia</p>
                 <p className="text-sm text-muted-foreground">
                   Pague quando chegar no dia do atendimento
                 </p>

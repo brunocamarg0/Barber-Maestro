@@ -282,7 +282,7 @@ export default function MinhaAssinatura() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={iniciarRenovacao} size="lg">
+            <Button onClick={() => iniciarRenovacao()} size="lg">
               <CreditCard className="h-4 w-4 mr-2" /> Assinar / Renovar agora
             </Button>
           </CardContent>
@@ -300,7 +300,7 @@ export default function MinhaAssinatura() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={iniciarRenovacao}>
+            <Button onClick={() => iniciarRenovacao()}>
               <CreditCard className="h-4 w-4 mr-2" /> Assinar agora
             </Button>
           </CardContent>
@@ -318,7 +318,7 @@ export default function MinhaAssinatura() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={iniciarRenovacao}>
+            <Button onClick={() => iniciarRenovacao()}>
               <CreditCard className="h-4 w-4 mr-2" /> Renovar agora
             </Button>
           </CardContent>

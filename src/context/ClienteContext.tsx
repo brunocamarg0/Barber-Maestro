@@ -133,6 +133,7 @@ export function ClienteProvider({ children }: { children: ReactNode }) {
           `id, cliente_id, barbearia_id, servico_id, data, horario, status, observacao,
            created_at, updated_at, forma_pagamento,
            servico:servicos(id, nome, descricao, duracao, preco, barbearia_id, ativo),
+           barbearia:barbearias(id, nome),
            pagamentos(id, valor, metodo, status, created_at, updated_at)`
         )
         .eq("cliente_id", cliente!.id)

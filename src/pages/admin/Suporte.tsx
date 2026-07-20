@@ -227,29 +227,42 @@ export default function Suporte() {
       {estatisticas && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
               <CardDescription>Total</CardDescription>
-              <CardTitle className="text-2xl">{estatisticas.total}</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{estatisticas.total}</div>
+            </CardContent>
           </Card>
-          <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
-            <CardHeader className="pb-2">
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
               <CardDescription>Abertos</CardDescription>
-              <CardTitle className="text-2xl text-red-600">{estatisticas.abertos}</CardTitle>
+              <AlertCircle className="h-4 w-4 text-primary" />
             </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{estatisticas.abertos}</div>
+            </CardContent>
           </Card>
-          <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
-            <CardHeader className="pb-2">
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
               <CardDescription>Em Andamento</CardDescription>
-              <CardTitle className="text-2xl text-yellow-600">{estatisticas.emAndamento}</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{estatisticas.emAndamento}</div>
+            </CardContent>
           </Card>
-          <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
-            <CardHeader className="pb-2">
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
               <CardDescription>Resolvidos</CardDescription>
-              <CardTitle className="text-2xl text-green-600">{estatisticas.resolvidos}</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{estatisticas.resolvidos}</div>
+            </CardContent>
           </Card>
+
         </div>
       )}
 

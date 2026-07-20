@@ -203,9 +203,17 @@ export default function AgendamentoOnline() {
         }
       }
 
+      const modo = (barbearia?.modo_confirmacao || "manual") as "automatico" | "manual" | "hibrido";
+      const autoConfirma = modo === "automatico" || modo === "hibrido";
+      const tituloToast = reagendarId
+        ? (autoConfirma ? "Reagendamento confirmado!" : "Reagendamento solicitado!")
+        : (autoConfirma ? "Agendamento confirmado!" : "Solicitação enviada!");
+      const descToast = servicosSelecionados.length > 1
+        ? `${servicosSelecionados.length} serviços agendados em sequência.${autoConfirma ? "" : " Aguardando confirmação da barbearia."}`
+        : (autoConfirma ? "Escolha a forma de pagamento..." : "Sua solicitação foi enviada e está aguardando confirmação da barbearia.");
       toast({
-        title: reagendarId ? "Reagendamento confirmado!" : "Agendamento criado!",
-        description: servicosSelecionados.length > 1 ? `${servicosSelecionados.length} serviços agendados em sequência.` : "Escolha a forma de pagamento...",
+        title: tituloToast,
+        description: descToast,
       });
 
       setAgendamentoIdsCriados(idsCriados);
@@ -586,7 +594,7 @@ export default function AgendamentoOnline() {
                 return (
                   <div
                     key={servico.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selecionado ? "border-primary bg-primary/5" : "hover:bg-accent"}`}
+                    className={`p-4 border-b cursor-pointer transition-colors bg-transparent hover:bg-transparent ${selecionado ? "border-b-2 border-primary" : "border-border hover:border-foreground/40"}`}
                     onClick={() =>
                       setServicoIds((prev) =>
                         prev.includes(servico.id) ? prev.filter((id) => id !== servico.id) : [...prev, servico.id]
@@ -600,7 +608,7 @@ export default function AgendamentoOnline() {
                         </div>
                         <Scissors className="h-5 w-5" />
                         <div>
-                          <p className="font-medium">{servico?.nome || 'Serviço sem nome'}</p>
+                          <p className={`font-medium ${selecionado ? "text-primary" : ""}`}>{servico?.nome || 'Serviço sem nome'}</p>
                           {servico?.descricao && (
                             <p className="text-sm text-muted-foreground">{servico.descricao}</p>
                           )}
@@ -651,25 +659,25 @@ export default function AgendamentoOnline() {
             ) : (
               <>
                 <div
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${!formData.profissionalId
-                      ? "border-primary bg-primary/5"
-                      : "hover:bg-accent"
+                  className={`p-4 border-b cursor-pointer transition-colors bg-transparent hover:bg-transparent ${!formData.profissionalId
+                      ? "border-b-2 border-primary"
+                      : "border-border hover:border-foreground/40"
                     }`}
                   onClick={() => setFormData({ ...formData, profissionalId: "" })}
                 >
                   <div className="flex items-center gap-3">
                     <User className="h-5 w-5" />
                     <div>
-                      <p className="font-medium">Qualquer profissional disponível</p>
+                      <p className={`font-medium ${!formData.profissionalId ? "text-primary" : ""}`}>Qualquer profissional disponível</p>
                     </div>
                   </div>
                 </div>
                 {profissionaisDisponiveis.map((profissional: any) => (
                   <div
                     key={profissional.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${formData.profissionalId === profissional.id
-                        ? "border-primary bg-primary/5"
-                        : "hover:bg-accent"
+                    className={`p-4 border-b cursor-pointer transition-colors bg-transparent hover:bg-transparent ${formData.profissionalId === profissional.id
+                        ? "border-b-2 border-primary"
+                        : "border-border hover:border-foreground/40"
                       }`}
                     onClick={() => setFormData({ ...formData, profissionalId: profissional.id })}
                   >
@@ -682,7 +690,7 @@ export default function AgendamentoOnline() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{profissional.nome}</p>
+                          <p className={`font-medium ${formData.profissionalId === profissional.id ? "text-primary" : ""}`}>{profissional.nome}</p>
                           {profissional.especialidades && profissional.especialidades.length > 0 && (
                             <div className="flex gap-2 mt-1">
                               {profissional.especialidades.map((esp: string) => (
@@ -730,7 +738,16 @@ export default function AgendamentoOnline() {
                 onChange={(e) => {
                   setFormData({ ...formData, data: e.target.value, hora: "" });
                 }}
+                onClick={(e) => {
+                  const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                  try { el.showPicker?.(); } catch { /* noop */ }
+                }}
+                onFocus={(e) => {
+                  const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                  try { el.showPicker?.(); } catch { /* noop */ }
+                }}
                 min={new Date().toISOString().split("T")[0]}
+                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
             </div>
             <div className="space-y-2">
@@ -754,18 +771,24 @@ export default function AgendamentoOnline() {
                   <div className="grid grid-cols-4 gap-2">
                     {todosHorarios.map((horario) => {
                       const isOcupado = horariosOcupados.includes(horario);
+                      const isSelected = formData.hora === horario;
                       return (
-                        <Button
+                        <button
                           key={horario}
                           type="button"
-                          variant={formData.hora === horario ? "default" : isOcupado ? "ghost" : "outline"}
                           onClick={() => !isOcupado && setFormData({ ...formData, hora: horario })}
                           disabled={isOcupado}
-                          className={isOcupado ? "opacity-50 cursor-not-allowed line-through" : ""}
+                          className={`inline-flex items-center justify-center gap-1 h-10 px-3 text-sm rounded-none bg-transparent transition-colors border-b-2 ${
+                            isOcupado
+                              ? "opacity-50 cursor-not-allowed line-through border-transparent text-muted-foreground"
+                              : isSelected
+                                ? "border-primary text-primary font-semibold"
+                                : "border-transparent text-foreground hover:border-foreground/40"
+                          }`}
                         >
-                          <Clock className="h-4 w-4 mr-1" />
+                          <Clock className="h-4 w-4" />
                           {horario}
-                        </Button>
+                        </button>
                       );
                     })}
                   </div>

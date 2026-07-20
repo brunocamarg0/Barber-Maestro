@@ -532,16 +532,21 @@ export default function ConfiguracoesBarbearia() {
       <Card>
         <CardHeader>
           <CardTitle>Horário de Funcionamento</CardTitle>
+          <CardDescription>
+            Ative os dias em que a barbearia abre e defina o intervalo. Você pode digitar a hora direto (ex.: 09:30) ou clicar no ícone do relógio para selecionar.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {formData.horarioFuncionamento && Object.entries(formData.horarioFuncionamento)
             .filter(([_, horario]) => horario && typeof horario === 'object')
             .map(([dia, horario]) => {
               const horarioSeguro = horario || { aberto: false, inicio: "09:00", fim: "18:00" };
               return (
-                <div key={dia} className="flex items-center justify-between">
-                  <div className="flex items-center gap-4 flex-1">
-                    <Label className="w-24 capitalize">{dia}</Label>
+                <div
+                  key={dia}
+                  className="flex flex-wrap items-center gap-4 rounded-full border border-border/60 bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-3 min-w-[180px]">
                     <Switch
                       checked={horarioSeguro.aberto || false}
                       onCheckedChange={(checked) =>
@@ -553,41 +558,48 @@ export default function ConfiguracoesBarbearia() {
                           },
                         })
                       }
+                      className="h-6 w-11"
                     />
-                    {horarioSeguro.aberto && (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="time"
-                          value={horarioSeguro.inicio || "09:00"}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              horarioFuncionamento: {
-                                ...formData.horarioFuncionamento,
-                                [dia]: { ...horarioSeguro, inicio: e.target.value },
-                              },
-                            })
-                          }
-                          className="w-32"
-                        />
-                        <span>até</span>
-                        <Input
-                          type="time"
-                          value={horarioSeguro.fim || "18:00"}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              horarioFuncionamento: {
-                                ...formData.horarioFuncionamento,
-                                [dia]: { ...horarioSeguro, fim: e.target.value },
-                              },
-                            })
-                          }
-                          className="w-32"
-                        />
-                      </div>
-                    )}
+                    <Label className="capitalize font-medium">{dia}</Label>
+                    <span className={`text-xs rounded-full px-2 py-0.5 ${horarioSeguro.aberto ? "bg-emerald-500/15 text-emerald-500" : "bg-muted text-muted-foreground"}`}>
+                      {horarioSeguro.aberto ? "Aberto" : "Fechado"}
+                    </span>
                   </div>
+                  {horarioSeguro.aberto && (
+                    <div className="flex items-center gap-2 ml-auto">
+                      <Input
+                        type="time"
+                        step={300}
+                        value={horarioSeguro.inicio || "09:00"}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            horarioFuncionamento: {
+                              ...formData.horarioFuncionamento,
+                              [dia]: { ...horarioSeguro, inicio: e.target.value },
+                            },
+                          })
+                        }
+                        className="w-32 rounded-full text-center"
+                      />
+                      <span className="text-muted-foreground text-sm">até</span>
+                      <Input
+                        type="time"
+                        step={300}
+                        value={horarioSeguro.fim || "18:00"}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            horarioFuncionamento: {
+                              ...formData.horarioFuncionamento,
+                              [dia]: { ...horarioSeguro, fim: e.target.value },
+                            },
+                          })
+                        }
+                        className="w-32 rounded-full text-center"
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -652,10 +664,17 @@ export default function ConfiguracoesBarbearia() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Modo de Confirmação de Agendamentos</CardTitle>
-          <CardDescription>
-            Configure como os agendamentos serão confirmados automaticamente
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Modo de Confirmação de Agendamentos</CardTitle>
+              <CardDescription>
+                Configure como os agendamentos serão confirmados automaticamente
+              </CardDescription>
+            </div>
+            <span className="text-xs rounded-full px-3 py-1 bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+              Ativo
+            </span>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">

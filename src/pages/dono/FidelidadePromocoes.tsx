@@ -174,6 +174,42 @@ export default function FidelidadePromocoes() {
         </Button>
       </div>
 
+      <Card className="border-primary/30 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Gift className="h-4 w-4 text-primary" />
+            Como funcionam as promoções
+          </CardTitle>
+          <CardDescription>
+            Escolha um tipo ao criar. O desconto é aplicado no valor do serviço na hora do agendamento e do pagamento.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-2 text-sm">
+          <div>
+            <p className="font-semibold">Desconto percentual</p>
+            <p className="text-muted-foreground">Reduz um % sobre o valor do serviço. Ex.: 10% em um corte de R$ 50 = R$ 45.</p>
+          </div>
+          <div>
+            <p className="font-semibold">Desconto fixo</p>
+            <p className="text-muted-foreground">Abate um valor em reais. Ex.: R$ 5 de desconto em qualquer corte.</p>
+          </div>
+          <div>
+            <p className="font-semibold">Cashback</p>
+            <p className="text-muted-foreground">Devolve um % do que o cliente pagou como crédito para usar em atendimentos futuros.</p>
+          </div>
+          <div>
+            <p className="font-semibold">Pontos (fidelidade)</p>
+            <p className="text-muted-foreground">Cada atendimento gera pontos. O cliente acumula e resgata em benefícios definidos por você.</p>
+          </div>
+          <div className="md:col-span-2 border-t border-primary/20 pt-3">
+            <p className="font-semibold">Onde aplicar</p>
+            <p className="text-muted-foreground">
+              <b>Todos</b>: vale para qualquer serviço. <b>Serviço específico</b>: só o serviço escolhido. <b>Horário específico</b>: só em janelas ociosas (ex.: 14h-16h). <b>VIPs</b>: só clientes marcados como VIP na aba Clientes.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader>

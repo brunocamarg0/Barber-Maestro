@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import SeletorDePlanos from "@/components/dono/SeletorDePlanos";
 
 interface Assinatura {
   id: string;

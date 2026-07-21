@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MapPin, Phone, Scissors, Clock, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader2, MapPin, Phone, Scissors, Clock, CheckCircle2, ArrowLeft, LogIn, UserPlus, Zap, History, Bell, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -313,27 +313,69 @@ export default function BarbeariaPublica() {
 
       <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4">
         {modoAcesso === "escolha" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Bem-vindo à {barbearia.nome}</CardTitle>
-              <CardDescription>Entre na sua conta para agendar mais rápido — ou continue sem cadastro.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button className="w-full" onClick={() => setModoAcesso("login")}>Entrar na minha conta</Button>
-              <Button className="w-full" variant="outline" onClick={() => setModoAcesso("cadastro")}>Criar conta rápida</Button>
-              <div className="relative py-1">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                <div className="relative flex justify-center"><span className="bg-card px-2 text-xs text-muted-foreground">ou</span></div>
-              </div>
-              <Button className="w-full" variant="ghost" onClick={() => setModoAcesso("convidado")}>
-                Continuar sem cadastro
-              </Button>
-              <p className="text-[11px] text-center text-muted-foreground">
-                Sem conta você ainda consegue agendar, mas não terá histórico nem lembretes automáticos.
+          <div className="space-y-4">
+            <div className="text-center space-y-2 pt-2">
+              <Badge variant="outline" className="border-primary/40 text-primary">Agendamento online</Badge>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+                Como você prefere agendar?
+              </h2>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Entre na sua conta para agendar em segundos e acompanhar seu histórico — ou continue sem cadastro, é rápido também.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Opção 1: Com conta */}
+              <Card className="relative border-primary/40 hover:border-primary transition-colors overflow-hidden">
+                <div className="absolute top-3 right-3">
+                  <Badge className="bg-primary text-primary-foreground">Recomendado</Badge>
+                </div>
+                <CardHeader>
+                  <div className="w-11 h-11 rounded-lg bg-primary/15 flex items-center justify-center mb-2">
+                    <LogIn className="w-5 h-5 text-primary" />
+                  </div>
+                  <CardTitle>Tenho conta ou quero criar</CardTitle>
+                  <CardDescription>Login rápido para clientes cadastrados.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li className="flex items-start gap-2"><Zap className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Agendamento em poucos cliques</li>
+                    <li className="flex items-start gap-2"><History className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Histórico de todos os cortes</li>
+                    <li className="flex items-start gap-2"><Bell className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Lembretes automáticos por e-mail e WhatsApp</li>
+                  </ul>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <Button className="w-full" onClick={() => setModoAcesso("login")}>Entrar</Button>
+                    <Button className="w-full" variant="outline" onClick={() => setModoAcesso("cadastro")}>
+                      <UserPlus className="w-4 h-4 mr-1" /> Criar conta
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Opção 2: Sem conta */}
+              <Card className="border-border hover:border-muted-foreground/40 transition-colors">
+                <CardHeader>
+                  <div className="w-11 h-11 rounded-lg bg-muted flex items-center justify-center mb-2">
+                    <ShieldCheck className="w-5 h-5 text-foreground" />
+                  </div>
+                  <CardTitle>Agendar sem cadastro</CardTitle>
+                  <CardDescription>Rápido, só precisa de nome e telefone.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 mt-0.5 text-foreground shrink-0" /> Sem senhas nem confirmação de e-mail</li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 mt-0.5 text-foreground shrink-0" /> A barbearia confirma pelo telefone</li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 mt-0.5 text-foreground shrink-0" /> Sem histórico salvo nem lembretes</li>
+                  </ul>
+                  <Button className="w-full" variant="secondary" onClick={() => setModoAcesso("convidado")}>
+                    Continuar sem cadastro
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )}
+
 
         {modoAcesso === "login" && (
           <Card>
